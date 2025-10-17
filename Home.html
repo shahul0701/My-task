@@ -76,78 +76,10 @@
     }
     .sidebar .menu-item a:hover { background: #34495e; }
 
-    /* Attendance Toggle Styles */
-    .attendance-toggle-container {
-      margin: 20px 0;
-      padding: 15px;
-      background: #34495e;
-      border-radius: 8px;
-      border-left: 4px solid #3498db;
-    }
-
-    .toggle-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-
-    .toggle-label {
-      font-weight: 600;
-      font-size: 14px;
-      color: #ecf0f1;
-    }
-
-    /* Toggle Switch */
-    .toggle-switch {
-      position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 24px;
-    }
-
-    .toggle-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #7f8c8d;
-      transition: .4s;
-      border-radius: 24px;
-    }
-
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 16px;
-      width: 16px;
-      left: 4px;
-      bottom: 4px;
-      background-color: white;
-      transition: .4s;
-      border-radius: 50%;
-    }
-
-    input:checked + .slider {
-      background-color: #27ae60;
-    }
-
-    input:checked + .slider:before {
-      transform: translateX(26px);
-    }
-
     /* Attendance Menu Item */
     .attendance-menu-item {
       display: none;
-      margin-top: 10px;
+      margin-bottom: 12px;
       background: #27ae60;
       border-radius: 6px;
       overflow: hidden;
@@ -264,26 +196,12 @@
       <li class="menu-item"><a href="Chart.html">📊 Charts</a></li>
       <li class="menu-item"><a href="AssignTask.html">🎯 Assign Task</a></li>
       <li class="menu-item"><a href="Genrate Report.html">📈 Report</a></li>
+      
+      <!-- Attendance Menu Item (Controlled by user setting) -->
+      <li class="attendance-menu-item" id="attendanceMenuItem">
+        <a href="Attendance.html">⏱️ Attendance</a>
+      </li>
     </ul>
-
-    <!-- Attendance Toggle Section -->
-    <div class="attendance-toggle-container">
-      <div class="toggle-header">
-        <span class="toggle-label">📅 Attendance Tracking</span>
-        <label class="toggle-switch">
-          <input type="checkbox" id="attendanceToggle">
-          <span class="slider"></span>
-        </label>
-      </div>
-      <p style="font-size: 12px; color: #bdc3c7; margin: 0;">
-        Enable attendance tracking features
-      </p>
-    </div>
-
-    <!-- Attendance Menu Item (Hidden by default) -->
-    <div class="attendance-menu-item" id="attendanceMenuItem">
-      <a href="Attendance.html">⏱️ Attendance</a>
-    </div>
   </nav>
 
   <main class="main-content" id="mainContent">
@@ -464,46 +382,45 @@
       }
     });
 
-    // Attendance toggle functionality
-    const attendanceToggle = document.getElementById("attendanceToggle");
-    const attendanceMenuItem = document.getElementById("attendanceMenuItem");
-
-    // Load attendance toggle state from localStorage
-    const savedAttendanceState = localStorage.getItem('attendanceEnabled');
-    if (savedAttendanceState === 'true') {
-      attendanceToggle.checked = true;
-      attendanceMenuItem.classList.add('visible');
-    }
-
-    attendanceToggle.addEventListener('change', function() {
-      if (this.checked) {
-        attendanceMenuItem.classList.add('visible');
-        localStorage.setItem('attendanceEnabled', 'true');
-      } else {
-        attendanceMenuItem.classList.remove('visible');
-        localStorage.setItem('attendanceEnabled', 'false');
-      }
-    });
-
-    // Check if user is admin and show attendance features
-    async function checkAdminStatus() {
+    // Attendance menu visibility based on user setting
+    async function checkAttendanceSetting() {
       try {
-        const userDoc = await db.collection("users").doc(username).get();
+        const currentUser = sessionStorage.getItem("username");
+        if (!currentUser) return;
+
+        const userDoc = await db.collection("users").doc(currentUser).get();
         if (userDoc.exists) {
           const userData = userDoc.data();
-          if (userData.role === 'Admin') {
-            // Admin users can always see attendance
-            attendanceToggle.checked = true;
-            attendanceMenuItem.classList.add('visible');
-            localStorage.setItem('attendanceEnabled', 'true');
+          const attendanceEnabled = userData.attendanceEnabled || false;
+          const attendanceMenuItem = document.getElementById('attendanceMenuItem');
+          
+          if (attendanceMenuItem) {
+            if (attendanceEnabled) {
+              attendanceMenuItem.classList.add('visible');
+            } else {
+              attendanceMenuItem.classList.remove('visible');
+            }
           }
         }
       } catch (error) {
-        console.log("Error checking admin status:", error);
+        console.error("Error checking attendance setting:", error);
       }
     }
 
-    checkAdminStatus();
+    // Check attendance setting on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      checkAttendanceSetting();
+    });
+
+    // Real-time listener for user setting changes
+    const currentUser = sessionStorage.getItem("username");
+    if (currentUser) {
+      db.collection("users").doc(currentUser).onSnapshot((doc) => {
+        if (doc.exists) {
+          checkAttendanceSetting();
+        }
+      });
+    }
   </script>
 </body>
 </html>
