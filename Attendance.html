@@ -100,12 +100,7 @@
       box-shadow: 2px 0 10px rgba(0,0,0,0.1);
       padding: 20px 0;
       z-index: 99;
-      transform: translateX(-100%);
-      transition: transform 0.3s ease;
-    }
-
-    .sidebar.visible {
-      transform: translateX(0);
+      overflow-y: auto;
     }
 
     .sidebar-toggle {
@@ -162,7 +157,7 @@
 
     /* Main Content */
     .main-content {
-      margin: 90px 30px 30px;
+      margin: 90px 30px 30px 280px;
       padding: 30px;
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(10px);
@@ -170,10 +165,6 @@
       box-shadow: 0 20px 60px rgba(0,0,0,0.1);
       min-height: calc(100vh - 120px);
       transition: margin-left 0.3s ease;
-    }
-
-    .main-content.shifted {
-      margin-left: 280px;
     }
 
     /* User Info Card */
@@ -357,6 +348,11 @@
       font-weight: 600;
     }
 
+    .status-working {
+      color: #3498db;
+      font-weight: 600;
+    }
+
     .status-break {
       color: #f39c12;
       font-weight: 600;
@@ -415,17 +411,22 @@
         display: block;
       }
 
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+
+      .sidebar.visible {
+        transform: translateX(0);
+      }
+
       .main-content {
-        margin: 90px 15px 15px;
+        margin: 90px 15px 15px 15px;
         padding: 20px;
       }
 
       .main-content.shifted {
         margin-left: 15px;
-      }
-
-      .sidebar {
-        width: 280px;
       }
 
       .attendance-actions {
@@ -476,9 +477,9 @@
   <!-- Sidebar -->
   <nav class="sidebar" id="sidebar">
     <ul>
-      <li><a href="Leave.html" class="active">📋 Leave</a></li>
+      <li><a href="Leave.html">📋 Leave</a></li>
       <li><a href="Holiday.html">🎄 Holiday</a></li>
-      <li><a href="Attendance.html">⏱️ Attendance Tracker</a></li>
+      <li><a href="Attendance.html" class="active">⏱️ Attendance Tracker</a></li>
       <li><a href="Hours.html">🕒 Hours</a></li>
       <li><a href="Reports.html">📊 Reports</a></li>
       <!-- Admin Only Menu -->
@@ -519,7 +520,7 @@
         <span>Login</span>
         <small>Start your day</small>
       </button>
-      <button class="attendance-btn btn-break" id="breakBtn" onclick="markAttendance('break')" disabled>
+      <button class="attendance-btn btn-break" id="breakBtn" onclick="markAttendance('breakOut')" disabled>
         <span class="btn-icon">☕</span>
         <span>Break Out</span>
         <small>Take a break</small>
@@ -694,8 +695,8 @@
         // Load last 5 days attendance
         await loadAttendanceHistory();
         
-        // Initialize charts
-        initializeCharts();
+        // Initialize charts with real data
+        await initializeCharts();
 
       } catch (error) {
         console.error("Error initializing app:", error);
@@ -851,14 +852,15 @@
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           };
 
-          await db.collection("attendance").add(todayAttendance);
+          const docRef = await db.collection("attendance").add(todayAttendance);
+          todayAttendance.id = docRef.id;
           showToast('Login recorded successfully!', 'success');
         } else {
           // Update existing attendance record
           const updateData = {};
           
           switch (action) {
-            case 'break':
+            case 'breakOut':
               updateData.breakOutTime = timeString;
               showToast('Break started!', 'info');
               break;
@@ -874,12 +876,15 @@
 
           updateData.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
           await db.collection("attendance").doc(todayAttendance.id).update(updateData);
+          
+          // Update local data
+          Object.assign(todayAttendance, updateData);
         }
 
         // Reload attendance data
-        await loadTodayAttendance();
+        updateUIFromAttendance();
         await loadAttendanceHistory();
-        updateCharts();
+        await updateCharts();
 
       } catch (error) {
         console.error("Error marking attendance:", error);
@@ -967,89 +972,145 @@
       return row;
     }
 
-    // Initialize charts
-    function initializeCharts() {
-      // Attendance Chart
-      const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
-      attendanceChart = new Chart(attendanceCtx, {
-        type: 'bar',
-        data: {
-          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-          datasets: [{
-            label: 'Hours Worked',
-            data: [8, 7.5, 8.5, 7, 8, 0, 0],
-            backgroundColor: 'rgba(102, 126, 234, 0.8)',
-            borderColor: 'rgba(102, 126, 234, 1)',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Hours'
-              }
-            }
-          }
-        }
-      });
+    // Initialize charts with real data
+    async function initializeCharts() {
+      // Get last 7 days data for the chart
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
 
-      // Timeline Chart
-      const timelineCtx = document.getElementById('timelineChart').getContext('2d');
-      timelineChart = new Chart(timelineCtx, {
-        type: 'line',
-        data: {
-          labels: ['9 AM', '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM'],
-          datasets: [{
-            label: 'Activity',
-            data: [1, 1, 1, 0, 0, 1, 1, 1, 1],
-            borderColor: 'rgba(39, 174, 96, 1)',
-            backgroundColor: 'rgba(39, 174, 96, 0.1)',
-            tension: 0.4,
-            fill: true
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              min: 0,
-              max: 1,
-              ticks: {
-                callback: function(value) {
-                  return value === 1 ? 'Working' : 'Break';
+      try {
+        const attendanceQuery = await db.collection("attendance")
+          .where("userId", "==", currentUser)
+          .where("date", ">=", sevenDaysAgoStr)
+          .orderBy("date", "asc")
+          .get();
+
+        const weeklyData = {};
+        const days = [];
+        const hoursWorked = [];
+
+        // Initialize last 7 days
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          const dateStr = date.toISOString().split('T')[0];
+          const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+          days.push(dayName);
+          weeklyData[dateStr] = 0; // Default to 0 hours
+        }
+
+        // Fill with actual data
+        attendanceQuery.forEach(doc => {
+          const record = doc.data();
+          if (record.loginTime && record.logoutTime) {
+            const login = new Date(`${record.date} ${record.loginTime}`);
+            const logout = new Date(`${record.date} ${record.logoutTime}`);
+            const totalMs = logout - login;
+            
+            // Subtract break time
+            let breakMs = 0;
+            if (record.breakOutTime && record.breakInTime) {
+              const breakOut = new Date(`${record.date} ${record.breakOutTime}`);
+              const breakIn = new Date(`${record.date} ${record.breakInTime}`);
+              breakMs = breakIn - breakOut;
+            }
+
+            const workMs = totalMs - breakMs;
+            const hours = workMs / (1000 * 60 * 60);
+            weeklyData[record.date] = parseFloat(hours.toFixed(1));
+          }
+        });
+
+        // Prepare data for chart
+        Object.keys(weeklyData).forEach(date => {
+          hoursWorked.push(weeklyData[date]);
+        });
+
+        // Attendance Chart
+        const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
+        attendanceChart = new Chart(attendanceCtx, {
+          type: 'bar',
+          data: {
+            labels: days,
+            datasets: [{
+              label: 'Hours Worked',
+              data: hoursWorked,
+              backgroundColor: 'rgba(102, 126, 234, 0.8)',
+              borderColor: 'rgba(102, 126, 234, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Hours'
                 }
               }
             }
           }
-        }
-      });
+        });
+
+        // Timeline Chart (Today's activity)
+        const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+        timelineChart = new Chart(timelineCtx, {
+          type: 'line',
+          data: {
+            labels: ['9 AM', '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM'],
+            datasets: [{
+              label: 'Activity',
+              data: [1, 1, 1, 0, 0, 1, 1, 1, 1],
+              borderColor: 'rgba(39, 174, 96, 1)',
+              backgroundColor: 'rgba(39, 174, 96, 0.1)',
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                min: 0,
+                max: 1,
+                ticks: {
+                  callback: function(value) {
+                    return value === 1 ? 'Working' : 'Break';
+                  }
+                }
+              }
+            }
+          }
+        });
+
+      } catch (error) {
+        console.error("Error loading chart data:", error);
+      }
     }
 
-    function updateCharts() {
-      // This would be updated with real data from Firestore
-      // For now, we'll use sample data
+    async function updateCharts() {
+      // Reinitialize charts with updated data
+      await initializeCharts();
     }
 
-    // Sidebar functionality
+    // Sidebar functionality for mobile
     document.getElementById('sidebarToggle').addEventListener('click', function() {
       document.getElementById('sidebar').classList.toggle('visible');
-      document.getElementById('mainContent').classList.toggle('shifted');
     });
 
-    // Close sidebar when clicking outside
+    // Close sidebar when clicking outside on mobile
     document.addEventListener('click', function(e) {
       const sidebar = document.getElementById('sidebar');
       const toggle = document.getElementById('sidebarToggle');
       
-      if (sidebar.classList.contains('visible') && 
+      if (window.innerWidth <= 768 && 
+          sidebar.classList.contains('visible') && 
           !sidebar.contains(e.target) && 
           !toggle.contains(e.target)) {
         sidebar.classList.remove('visible');
-        document.getElementById('mainContent').classList.remove('shifted');
       }
     });
 
