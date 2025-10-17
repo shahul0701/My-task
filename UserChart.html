@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>User Task Analytics Dashboard</title>
+<title>Advanced Task Analytics Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -23,7 +23,7 @@
   }
 
   .dashboard-container {
-    max-width: 1400px;
+    max-width: 1800px;
     margin: 0 auto;
     background: rgba(255, 255, 255, 0.95);
     border-radius: 20px;
@@ -87,6 +87,11 @@
     color: white;
   }
 
+  .btn-info { 
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+  }
+
   .btn-home { 
     background: linear-gradient(135deg, #34495e, #2c3e50);
     color: white;
@@ -146,51 +151,55 @@
 
   .stats-overview {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
     margin-bottom: 30px;
   }
 
   .stat-card {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    padding: 25px;
-    border-radius: 15px;
+    padding: 20px;
+    border-radius: 12px;
     text-align: center;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
   }
 
   .stat-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-3px);
   }
 
   .stat-number {
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 700;
     margin-bottom: 5px;
   }
 
   .stat-label {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     opacity: 0.9;
     font-weight: 500;
   }
 
+  /* Fixed Chart Grid with Consistent Sizing */
   .chart-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-    gap: 25px;
+    gap: 20px;
     margin-bottom: 30px;
   }
 
   .chart-container {
     background: white;
-    padding: 25px;
-    border-radius: 15px;
+    padding: 20px;
+    border-radius: 12px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
     border: 1px solid #e9ecef;
     transition: transform 0.3s ease;
+    height: 400px; /* Fixed height for all charts */
+    display: flex;
+    flex-direction: column;
   }
 
   .chart-container:hover {
@@ -202,11 +211,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
+    flex-shrink: 0;
   }
 
   .chart-title {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: #2c3e50;
     margin: 0;
@@ -223,9 +233,15 @@
     border-radius: 6px;
   }
 
+  .chart-canvas-container {
+    flex: 1;
+    position: relative;
+    min-height: 300px;
+  }
+
   .chart-canvas {
     width: 100% !important;
-    height: 300px !important;
+    height: 100% !important;
   }
 
   .loading {
@@ -270,6 +286,23 @@
     border-radius: 8px;
   }
 
+  .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+  }
+
+  @media (max-width: 1200px) {
+    .chart-grid {
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    }
+  }
+
   @media (max-width: 768px) {
     .chart-grid {
       grid-template-columns: 1fr;
@@ -290,19 +323,26 @@
       flex-direction: column;
       align-items: flex-start;
     }
+
+    .chart-container {
+      height: 350px;
+    }
   }
 </style>
 </head>
 <body>
   <div class="dashboard-container">
     <div class="dashboard-header">
-      <h1>📊 Task Analytics Dashboard</h1>
+      <h1>📊 Advanced Task Analytics</h1>
       <div class="header-controls">
         <button class="btn btn-home" onclick="window.location.href='userdashboard.html'">
-          🏠 Dashboard Home
+          🏠 Dashboard
         </button>
         <button class="btn btn-primary" onclick="refreshData()">
-          🔄 Refresh Data
+          🔄 Refresh
+        </button>
+        <button class="btn btn-info" onclick="exportAllCharts()">
+          📥 Export All
         </button>
       </div>
     </div>
@@ -313,6 +353,7 @@
         <button class="btn btn-primary" onclick="applyThisMonth()">This Month</button>
         <button class="btn btn-warning" onclick="applyPrevMonth()">Last Month</button>
         <button class="btn btn-success" onclick="applyThisWeek()">This Week</button>
+        <button class="btn btn-info" onclick="applyLastQuarter()">Last Quarter</button>
         <button class="btn btn-danger" onclick="resetFilter()">All Time</button>
       </div>
       
@@ -329,7 +370,7 @@
 
     <div id="loadingMessage" class="loading">
       <div class="loading-spinner"></div>
-      Loading your task analytics...
+      Loading your comprehensive task analytics...
     </div>
 
     <div id="errorMessage" style="display:none;" class="error-message"></div>
@@ -350,25 +391,35 @@
           <div class="stat-label">In Progress</div>
         </div>
         <div class="stat-card">
+          <div class="stat-number" id="pendingTasks">0</div>
+          <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card">
           <div class="stat-number" id="totalHours">0h</div>
           <div class="stat-label">Work Hours</div>
         </div>
+        <div class="stat-card">
+          <div class="stat-number" id="avgCompletion">0%</div>
+          <div class="stat-label">Completion Rate</div>
+        </div>
       </div>
 
-      <!-- Charts Grid -->
+      <!-- Charts Grid - 14 Charts -->
       <div class="chart-grid">
-        <!-- Status Breakdown -->
+        <!-- Chart 1: Status Distribution -->
         <div class="chart-container">
           <div class="chart-header">
-            <h3 class="chart-title">📈 Task Status Distribution</h3>
+            <h3 class="chart-title">📊 Task Status Distribution</h3>
             <div class="chart-actions">
               <button class="btn btn-sm btn-primary" onclick="downloadChart('statusChart')">📥</button>
             </div>
           </div>
-          <canvas id="statusChart" class="chart-canvas"></canvas>
+          <div class="chart-canvas-container">
+            <canvas id="statusChart" class="chart-canvas"></canvas>
+          </div>
         </div>
 
-        <!-- Work Hours by Type -->
+        <!-- Chart 2: Work Hours by Type -->
         <div class="chart-container">
           <div class="chart-header">
             <h3 class="chart-title">⏱️ Work Hours by Task Type</h3>
@@ -376,10 +427,12 @@
               <button class="btn btn-sm btn-primary" onclick="downloadChart('workHoursChart')">📥</button>
             </div>
           </div>
-          <canvas id="workHoursChart" class="chart-canvas"></canvas>
+          <div class="chart-canvas-container">
+            <canvas id="workHoursChart" class="chart-canvas"></canvas>
+          </div>
         </div>
 
-        <!-- Completion Progress -->
+        <!-- Chart 3: Completion Progress -->
         <div class="chart-container">
           <div class="chart-header">
             <h3 class="chart-title">✅ Completion Progress</h3>
@@ -387,10 +440,12 @@
               <button class="btn btn-sm btn-primary" onclick="downloadChart('completeChart')">📥</button>
             </div>
           </div>
-          <canvas id="completeChart" class="chart-canvas"></canvas>
+          <div class="chart-canvas-container">
+            <canvas id="completeChart" class="chart-canvas"></canvas>
+          </div>
         </div>
 
-        <!-- Monthly Distribution -->
+        <!-- Chart 4: Monthly Distribution -->
         <div class="chart-container">
           <div class="chart-header">
             <h3 class="chart-title">📅 Monthly Work Distribution</h3>
@@ -398,10 +453,12 @@
               <button class="btn btn-sm btn-primary" onclick="downloadChart('monthlyWorkChart')">📥</button>
             </div>
           </div>
-          <canvas id="monthlyWorkChart" class="chart-canvas"></canvas>
+          <div class="chart-canvas-container">
+            <canvas id="monthlyWorkChart" class="chart-canvas"></canvas>
+          </div>
         </div>
 
-        <!-- Company Hours -->
+        <!-- Chart 5: Company Hours -->
         <div class="chart-container">
           <div class="chart-header">
             <h3 class="chart-title">🏢 Work Hours by Company</h3>
@@ -409,23 +466,133 @@
               <button class="btn btn-sm btn-primary" onclick="downloadChart('companyHoursChart')">📥</button>
             </div>
           </div>
-          <canvas id="companyHoursChart" class="chart-canvas"></canvas>
+          <div class="chart-canvas-container">
+            <canvas id="companyHoursChart" class="chart-canvas"></canvas>
+          </div>
         </div>
 
-        <!-- Timeline -->
+        <!-- Chart 6: Timeline -->
         <div class="chart-container">
           <div class="chart-header">
-            <h3 class="chart-title">📊 Last 14 Days Activity</h3>
+            <h3 class="chart-title">📈 Last 30 Days Activity</h3>
             <div class="chart-actions">
               <button class="btn btn-sm btn-primary" onclick="downloadChart('timelineChart')">📥</button>
             </div>
           </div>
-          <canvas id="timelineChart" class="chart-canvas"></canvas>
+          <div class="chart-canvas-container">
+            <canvas id="timelineChart" class="chart-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 7: Task Priority -->
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3 class="chart-title">🎯 Task Priority Distribution</h3>
+            <div class="chart-actions">
+              <button class="btn btn-sm btn-primary" onclick="downloadChart('priorityChart')">📥</button>
+            </div>
+          </div>
+          <div class="chart-canvas-container">
+            <canvas id="priorityChart" class="chart-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 8: Work vs Pause Hours -->
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3 class="chart-title">⚖️ Work vs Pause Hours</h3>
+            <div class="chart-actions">
+              <button class="btn btn-sm btn-primary" onclick="downloadChart('workPauseChart')">📥</button>
+            </div>
+          </div>
+          <div class="chart-canvas-container">
+            <canvas id="workPauseChart" class="chart-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 9: Weekly Performance -->
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3 class="chart-title">📆 Weekly Performance</h3>
+            <div class="chart-actions">
+              <button class="btn btn-sm btn-primary" onclick="downloadChart('weeklyChart')">📥</button>
+            </div>
+          </div>
+          <div class="chart-canvas-container">
+            <canvas id="weeklyChart" class="chart-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 10: Task Duration Analysis -->
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3 class="chart-title">⏰ Task Duration Analysis</h3>
+            <div class="chart-actions">
+              <button class="btn btn-sm btn-primary" onclick="downloadChart('durationChart')">📥</button>
+            </div>
+          </div>
+          <div class="chart-canvas-container">
+            <canvas id="durationChart" class="chart-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 11: Assigned By -->
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3 class="chart-title">👥 Tasks Assigned By</h3>
+            <div class="chart-actions">
+              <button class="btn btn-sm btn-primary" onclick="downloadChart('assignedByChart')">📥</button>
+            </div>
+          </div>
+          <div class="chart-canvas-container">
+            <canvas id="assignedByChart" class="chart-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 12: Efficiency Metrics -->
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3 class="chart-title">📐 Efficiency Metrics</h3>
+            <div class="chart-actions">
+              <button class="btn btn-sm btn-primary" onclick="downloadChart('efficiencyChart')">📥</button>
+            </div>
+          </div>
+          <div class="chart-canvas-container">
+            <canvas id="efficiencyChart" class="chart-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 13: Task Complexity -->
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3 class="chart-title">🎪 Task Complexity Analysis</h3>
+            <div class="chart-actions">
+              <button class="btn btn-sm btn-primary" onclick="downloadChart('complexityChart')">📥</button>
+            </div>
+          </div>
+          <div class="chart-canvas-container">
+            <canvas id="complexityChart" class="chart-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 14: Progress Trend -->
+        <div class="chart-container">
+          <div class="chart-header">
+            <h3 class="chart-title">📉 Progress Trend</h3>
+            <div class="chart-actions">
+              <button class="btn btn-sm btn-primary" onclick="downloadChart('progressChart')">📥</button>
+            </div>
+          </div>
+          <div class="chart-canvas-container">
+            <canvas id="progressChart" class="chart-canvas"></canvas>
+          </div>
         </div>
       </div>
 
       <div class="last-update" id="lastUpdate">
         Last updated: <span id="updateTime">Never</span>
+        | Total Charts: <span id="chartCount">14</span>
+        | Tasks Analyzed: <span id="tasksAnalyzed">0</span>
       </div>
     </div>
   </div>
@@ -457,17 +624,27 @@
     content: document.getElementById("dashboardContent"),
     statsOverview: document.getElementById("statsOverview"),
     lastUpdate: document.getElementById("lastUpdate"),
-    updateTime: document.getElementById("updateTime")
+    updateTime: document.getElementById("updateTime"),
+    chartCount: document.getElementById("chartCount"),
+    tasksAnalyzed: document.getElementById("tasksAnalyzed")
   };
 
-  // Chart contexts
+  // Chart contexts for all 14 charts
   const chartContexts = {
     status: document.getElementById("statusChart").getContext("2d"),
     work: document.getElementById("workHoursChart").getContext("2d"),
     complete: document.getElementById("completeChart").getContext("2d"),
     monthly: document.getElementById("monthlyWorkChart").getContext("2d"),
     companyHours: document.getElementById("companyHoursChart").getContext("2d"),
-    timeline: document.getElementById("timelineChart").getContext("2d")
+    timeline: document.getElementById("timelineChart").getContext("2d"),
+    priority: document.getElementById("priorityChart").getContext("2d"),
+    workPause: document.getElementById("workPauseChart").getContext("2d"),
+    weekly: document.getElementById("weeklyChart").getContext("2d"),
+    duration: document.getElementById("durationChart").getContext("2d"),
+    assignedBy: document.getElementById("assignedByChart").getContext("2d"),
+    efficiency: document.getElementById("efficiencyChart").getContext("2d"),
+    complexity: document.getElementById("complexityChart").getContext("2d"),
+    progress: document.getElementById("progressChart").getContext("2d")
   };
 
   // Initialize dashboard
@@ -483,7 +660,6 @@
     const user = sessionStorage.getItem("username");
     if (!user) return;
 
-    // Subscribe to task changes
     dataSubscription = db.collection("tasks")
       .where("Owner", "==", user)
       .onSnapshot(
@@ -551,6 +727,7 @@
     updateStatsOverview();
     renderAllCharts();
     showContent();
+    elements.tasksAnalyzed.textContent = filteredTasks.length;
   }
 
   // Update stats overview
@@ -558,23 +735,25 @@
     const total = filteredTasks.length;
     const completed = filteredTasks.filter(t => t.Status === 'Complete').length;
     const inProgress = filteredTasks.filter(t => t.Status === 'In Progress').length;
+    const pending = filteredTasks.filter(t => t.Status === 'Pending').length;
     const totalHours = filteredTasks.reduce((sum, task) => sum + getWorkHours(task), 0);
+    const completionRate = total > 0 ? ((completed / total) * 100).toFixed(1) : 0;
 
     document.getElementById('totalTasks').textContent = total;
     document.getElementById('completedTasks').textContent = completed;
     document.getElementById('inProgressTasks').textContent = inProgress;
+    document.getElementById('pendingTasks').textContent = pending;
     document.getElementById('totalHours').textContent = `${totalHours.toFixed(1)}h`;
+    document.getElementById('avgCompletion').textContent = `${completionRate}%`;
   }
 
   // Get work hours from task
   function getWorkHours(task) {
     try {
-      // Try different field names
       const hours = task["Total Work Hours"] || task["TotalWorkHours"] || task["workHours"] || 0;
       
       if (typeof hours === 'number') return hours;
       if (typeof hours === 'string') {
-        // Handle HH:MM:SS format
         if (hours.includes(':')) {
           const parts = hours.split(':');
           const h = parseInt(parts[0]) || 0;
@@ -590,7 +769,7 @@
     }
   }
 
-  // Render all charts
+  // Render all 14 charts
   function renderAllCharts() {
     renderStatusChart();
     renderWorkHoursChart();
@@ -598,27 +777,21 @@
     renderMonthlyChart();
     renderCompanyHoursChart();
     renderTimelineChart();
+    renderPriorityChart();
+    renderWorkPauseChart();
+    renderWeeklyChart();
+    renderDurationChart();
+    renderAssignedByChart();
+    renderEfficiencyChart();
+    renderComplexityChart();
+    renderProgressChart();
   }
 
-  // Individual chart renderers
+  // Individual chart renderers for all 14 charts
   function renderStatusChart() {
-    const statusCounts = {
-      "Not Started": 0,
-      "In Progress": 0,
-      "Pending": 0,
-      "Complete": 0
-    };
-
-    filteredTasks.forEach(task => {
-      statusCounts[task.Status] = (statusCounts[task.Status] || 0) + 1;
-    });
-
-    createOrUpdateChart('status', 'doughnut', {
-      labels: Object.keys(statusCounts),
-      data: Object.values(statusCounts),
-      colors: ['#95a5a6', '#3498db', '#f39c12', '#27ae60'],
-      title: 'Task Status Distribution'
-    });
+    const statusCounts = { "Not Started": 0, "In Progress": 0, "Pending": 0, "Complete": 0 };
+    filteredTasks.forEach(task => statusCounts[task.Status] = (statusCounts[task.Status] || 0) + 1);
+    createOrUpdateChart('status', 'doughnut', Object.keys(statusCounts), Object.values(statusCounts), ['#95a5a6', '#3498db', '#f39c12', '#27ae60']);
   }
 
   function renderWorkHoursChart() {
@@ -627,41 +800,24 @@
       const type = task["TYPE OF WORK"] || "Other";
       typeHours[type] = (typeHours[type] || 0) + getWorkHours(task);
     });
-
-    createOrUpdateChart('work', 'bar', {
-      labels: Object.keys(typeHours),
-      data: Object.values(typeHours),
-      colors: ['#2980b9'],
-      title: 'Work Hours by Task Type'
-    });
+    const sorted = Object.entries(typeHours).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    createOrUpdateChart('work', 'bar', sorted.map(([type]) => type), sorted.map(([, hours]) => hours), ['#2980b9']);
   }
 
   function renderCompletionChart() {
     const completed = filteredTasks.filter(t => t.Status === 'Complete').length;
     const remaining = filteredTasks.length - completed;
-
-    createOrUpdateChart('complete', 'pie', {
-      labels: ['Completed', 'Remaining'],
-      data: [completed, remaining],
-      colors: ['#27ae60', '#e74c3c'],
-      title: 'Completion Progress'
-    });
+    createOrUpdateChart('complete', 'pie', ['Completed', 'Remaining'], [completed, remaining], ['#27ae60', '#e74c3c']);
   }
 
   function renderMonthlyChart() {
     const monthlyHours = Array(12).fill(0);
     filteredTasks.forEach(task => {
-      if (task.dueDate) {
-        monthlyHours[task.dueDate.getMonth()] += getWorkHours(task);
-      }
+      if (task.dueDate) monthlyHours[task.dueDate.getMonth()] += getWorkHours(task);
     });
-
-    createOrUpdateChart('monthly', 'line', {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      data: monthlyHours,
-      colors: ['#9b59b6'],
-      title: 'Monthly Work Distribution'
-    });
+    createOrUpdateChart('monthly', 'line', 
+      ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      monthlyHours, ['#9b59b6']);
   }
 
   function renderCompanyHoursChart() {
@@ -670,78 +826,130 @@
       const company = task["Existing Company Name"] || "Unknown";
       companyHours[company] = (companyHours[company] || 0) + getWorkHours(task);
     });
-
-    // Limit to top 8 companies for better visualization
-    const sortedCompanies = Object.entries(companyHours)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8);
-
-    createOrUpdateChart('companyHours', 'bar', {
-      labels: sortedCompanies.map(([company]) => company),
-      data: sortedCompanies.map(([, hours]) => hours),
-      colors: ['#17a2b8'],
-      title: 'Work Hours by Company'
-    });
+    const sorted = Object.entries(companyHours).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    createOrUpdateChart('companyHours', 'horizontalBar', sorted.map(([company]) => company), sorted.map(([, hours]) => hours), ['#17a2b8']);
   }
 
   function renderTimelineChart() {
     const dailyHours = {};
     const today = new Date();
-    
-    // Initialize last 14 days
-    for (let i = 13; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-      dailyHours[dateStr] = 0;
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today); date.setDate(date.getDate() - i);
+      dailyHours[date.toISOString().split('T')[0]] = 0;
     }
-
-    // Sum hours for each day
     filteredTasks.forEach(task => {
       if (task.dueDate) {
         const dateStr = task.dueDate.toISOString().split('T')[0];
-        if (dailyHours.hasOwnProperty(dateStr)) {
-          dailyHours[dateStr] += getWorkHours(task);
-        }
+        if (dailyHours.hasOwnProperty(dateStr)) dailyHours[dateStr] += getWorkHours(task);
       }
     });
+    createOrUpdateChart('timeline', 'line', 
+      Object.keys(dailyHours).map(date => new Date(date).getDate() + '/' + (new Date(date).getMonth() + 1)),
+      Object.values(dailyHours), ['#1abc9c']);
+  }
 
-    createOrUpdateChart('timeline', 'line', {
-      labels: Object.keys(dailyHours).map(date => {
-        const d = new Date(date);
-        return `${d.getDate()}/${d.getMonth() + 1}`;
-      }),
-      data: Object.values(dailyHours),
-      colors: ['#1abc9c'],
-      title: 'Last 14 Days Activity'
+  function renderPriorityChart() {
+    const priorityCounts = { "High": 0, "Medium": 0, "Low": 0 };
+    filteredTasks.forEach(task => {
+      const priority = task.Priority || task.Urgency || "Medium";
+      priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
     });
+    createOrUpdateChart('priority', 'polarArea', Object.keys(priorityCounts), Object.values(priorityCounts), ['#e74c3c', '#f39c12', '#2ecc71']);
+  }
+
+  function renderWorkPauseChart() {
+    const workHours = filteredTasks.reduce((sum, task) => sum + getWorkHours(task), 0);
+    const pauseHours = filteredTasks.reduce((sum, task) => sum + (task["TotalPauseHours"] || 0), 0);
+    createOrUpdateChart('workPause', 'bar', ['Work Hours', 'Pause Hours'], [workHours, pauseHours], ['#2ecc71', '#e67e22']);
+  }
+
+  function renderWeeklyChart() {
+    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayHours = Array(7).fill(0);
+    filteredTasks.forEach(task => {
+      if (task.dueDate) dayHours[task.dueDate.getDay()] += getWorkHours(task);
+    });
+    createOrUpdateChart('weekly', 'radar', weekDays, dayHours, ['#8e44ad']);
+  }
+
+  function renderDurationChart() {
+    const durations = filteredTasks.map(task => getWorkHours(task)).filter(h => h > 0);
+    const ranges = ['<1h', '1-4h', '4-8h', '8-24h', '>24h'];
+    const rangeCounts = [0, 0, 0, 0, 0];
+    durations.forEach(hours => {
+      if (hours < 1) rangeCounts[0]++;
+      else if (hours <= 4) rangeCounts[1]++;
+      else if (hours <= 8) rangeCounts[2]++;
+      else if (hours <= 24) rangeCounts[3]++;
+      else rangeCounts[4]++;
+    });
+    createOrUpdateChart('duration', 'bar', ranges, rangeCounts, ['#d35400']);
+  }
+
+  function renderAssignedByChart() {
+    const assignedBy = {};
+    filteredTasks.forEach(task => {
+      const assigner = task["Assigned By"] || "Self";
+      assignedBy[assigner] = (assignedBy[assigner] || 0) + 1;
+    });
+    createOrUpdateChart('assignedBy', 'pie', Object.keys(assignedBy), Object.values(assignedBy), ['#f1c40f', '#e67e22', '#d35400', '#c0392b']);
+  }
+
+  function renderEfficiencyChart() {
+    const completedTasks = filteredTasks.filter(t => t.Status === 'Complete');
+    const estimated = completedTasks.reduce((sum, task) => sum + (task["Estimated Hours"] || 0), 0);
+    const actual = completedTasks.reduce((sum, task) => sum + getWorkHours(task), 0);
+    const efficiency = estimated > 0 ? ((estimated / actual) * 100) : 100;
+    createOrUpdateChart('efficiency', 'doughnut', ['Efficiency', 'Inefficiency'], [Math.min(efficiency, 100), Math.max(100 - efficiency, 0)], ['#27ae60', '#e74c3c']);
+  }
+
+  function renderComplexityChart() {
+    const complexity = { "Simple": 0, "Moderate": 0, "Complex": 0 };
+    filteredTasks.forEach(task => {
+      const hours = getWorkHours(task);
+      if (hours < 2) complexity["Simple"]++;
+      else if (hours < 8) complexity["Moderate"]++;
+      else complexity["Complex"]++;
+    });
+    createOrUpdateChart('complexity', 'pie', Object.keys(complexity), Object.values(complexity), ['#2ecc71', '#f39c12', '#e74c3c']);
+  }
+
+  function renderProgressChart() {
+    const monthlyProgress = Array(12).fill(0);
+    filteredTasks.forEach(task => {
+      if (task.Status === 'Complete' && task.dueDate) {
+        monthlyProgress[task.dueDate.getMonth()]++;
+      }
+    });
+    createOrUpdateChart('progress', 'line', 
+      ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      monthlyProgress, ['#3498db']);
   }
 
   // Chart creation/update helper
-  function createOrUpdateChart(chartId, type, { labels, data, colors, title }) {
-    if (charts[chartId]) {
-      charts[chartId].destroy();
-    }
+  function createOrUpdateChart(chartId, type, labels, data, colors) {
+    if (charts[chartId]) charts[chartId].destroy();
 
-    // Skip if no data
-    if (!data || data.length === 0 || data.every(val => val === 0)) {
-      const ctx = chartContexts[chartId];
+    const ctx = chartContexts[chartId];
+    const isEmpty = !data || data.length === 0 || data.every(val => val === 0);
+
+    if (isEmpty) {
       ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       ctx.fillStyle = '#f8f9fa';
       ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       ctx.fillStyle = '#6c757d';
       ctx.textAlign = 'center';
-      ctx.font = '16px Arial';
-      ctx.fillText('No data available', ctx.canvas.width / 2, ctx.canvas.height / 2);
+      ctx.font = '14px Arial';
+      ctx.fillText('No data available for this chart', ctx.canvas.width / 2, ctx.canvas.height / 2);
       return;
     }
 
-    charts[chartId] = new Chart(chartContexts[chartId], {
+    charts[chartId] = new Chart(ctx, {
       type: type,
       data: {
         labels: labels,
         datasets: [{
-          label: title,
+          label: labels[0] || 'Data',
           data: data,
           backgroundColor: colors,
           borderColor: colors.map(color => color.replace('0.2', '1')),
@@ -754,23 +962,11 @@
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: {
-            position: 'top',
-          },
-          title: {
-            display: true,
-            text: title
-          }
+          legend: { position: 'top' },
+          tooltip: { enabled: true }
         },
-        scales: type === 'bar' || type === 'line' ? {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              callback: function(value) {
-                return value + (type === 'bar' ? 'h' : '');
-              }
-            }
-          }
+        scales: (type === 'bar' || type === 'line' || type === 'horizontalBar') ? {
+          y: { beginAtZero: true }
         } : {}
       }
     });
@@ -799,6 +995,14 @@
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
     end.setHours(23, 59, 59, 999);
+    applyFilter(start, end);
+  }
+
+  function applyLastQuarter() {
+    const now = new Date();
+    const currentQuarter = Math.floor(now.getMonth() / 3);
+    const start = new Date(now.getFullYear(), (currentQuarter - 1) * 3, 1);
+    const end = new Date(now.getFullYear(), currentQuarter * 3, 0, 23, 59, 59);
     applyFilter(start, end);
   }
 
@@ -852,6 +1056,14 @@
     }
   }
 
+  function exportAllCharts() {
+    Object.keys(charts).forEach(chartId => {
+      if (charts[chartId]) {
+        setTimeout(() => downloadChart(chartId), 100 * Object.keys(charts).indexOf(chartId));
+      }
+    });
+  }
+
   function updateLastUpdateTime() {
     elements.updateTime.textContent = new Date().toLocaleString();
   }
@@ -878,15 +1090,12 @@
 
   // Event listeners
   function setupEventListeners() {
-    // Auto-refresh every 5 minutes
     setInterval(refreshData, 5 * 60 * 1000);
   }
 
   // Cleanup on page unload
   window.addEventListener('beforeunload', () => {
-    if (dataSubscription) {
-      dataSubscription();
-    }
+    if (dataSubscription) dataSubscription();
   });
 
   // Initialize dashboard when page loads
