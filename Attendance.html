@@ -462,7 +462,7 @@
   <!-- Topbar -->
   <div class="topbar">
     <div class="left">
-      <a href="Home.html">🏠 Home</a>
+      <a href="#" id="homeButton">🏠 Home</a>
     </div>
     <div id="dateTime">Loading...</div>
     <div class="profile">
@@ -620,6 +620,7 @@
     let todayAttendance = null;
     let attendanceChart = null;
     let timelineChart = null;
+    let userRole = null;
 
     // Toast notification function
     function showToast(message, type = 'info') {
@@ -652,6 +653,15 @@
       document.getElementById('todayDate').textContent = now.toLocaleDateString('en-US', todayOptions);
     }
 
+    // Home button click handler
+    function handleHomeClick() {
+      if (userRole === 'Admin') {
+        window.location.href = 'Home.html';
+      } else {
+        window.location.href = 'UserDashboard.html';
+      }
+    }
+
     // Initialize the application
     async function initializeApp() {
       updateDateTime();
@@ -668,6 +678,9 @@
       document.getElementById('profileName').textContent = username;
       document.getElementById('displayUsername').textContent = username;
 
+      // Set up home button click handler
+      document.getElementById('homeButton').addEventListener('click', handleHomeClick);
+
       // Find user in Firestore
       try {
         const userQuery = await db.collection("users")
@@ -681,11 +694,12 @@
 
         userData = userQuery.docs[0].data();
         currentUser = userQuery.docs[0].id;
+        userRole = userData.role || 'User';
 
         document.getElementById('empId').textContent = userData.empId || 'N/A';
 
         // Check if user is admin
-        if (userData.role === 'Admin') {
+        if (userRole === 'Admin') {
           document.getElementById('adminMenu').classList.add('visible');
         }
 
