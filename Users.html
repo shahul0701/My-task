@@ -272,12 +272,16 @@
 
     /* Action buttons */
     .action-btn {
-      padding: 6px 12px;
+      padding: 8px 12px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       font-size: 12px;
       transition: all 0.3s ease;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
     }
 
     .btn-edit {
@@ -296,8 +300,8 @@
     }
 
     .action-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
 
     /* Status indicators */
@@ -390,7 +394,7 @@
       margin-bottom: 15px;
     }
 
-    .form-group input {
+    .form-group input, .form-group select {
       width: 100%;
       padding: 12px 15px;
       border: 2px solid #e9ecef;
@@ -400,7 +404,7 @@
       background: #f8f9fa;
     }
 
-    .form-group input:focus {
+    .form-group input:focus, .form-group select:focus {
       outline: none;
       border-color: #667eea;
       background: white;
@@ -460,6 +464,55 @@
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
+    }
+
+    /* Confirmation Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      width: 400px;
+      max-width: 90%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .modal-body {
+      margin-bottom: 20px;
+      color: #5a6c7d;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
     }
 
     /* Responsive Design */
@@ -563,7 +616,7 @@
             <th width="100">Passcode</th>
             <th width="120">Attendance</th>
             <th width="100">Status</th>
-            <th width="120">Actions</th>
+            <th width="150">Actions</th>
           </tr>
         </thead>
         <tbody id="usersTableBody">
@@ -597,12 +650,35 @@
       <input id="email" placeholder="Email Address" type="email" />
     </div>
     <div class="form-group">
-      <input id="role" placeholder="Role (Admin/User)" />
+      <select id="role">
+        <option value="">Select Role</option>
+        <option value="Admin">Admin</option>
+        <option value="User">User</option>
+        <option value="Sub Admin">Sub Admin</option>
+      </select>
     </div>
     <div class="form-group">
       <input id="passcode" placeholder="Passcode" />
     </div>
     <button class="btn btn-primary" onclick="addUser()" style="width: 100%;">Add User</button>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal" id="deleteModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🗑️ Delete User</div>
+        <button class="close-btn" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to delete user "<span id="deleteUserName"></span>"? 
+        This action cannot be undone.
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn">Delete User</button>
+      </div>
+    </div>
   </div>
 
   <button class="add-btn" onclick="toggleForm()">+</button>
@@ -629,6 +705,7 @@
 
     let editMode = false;
     let usersData = [];
+    let userToDelete = null;
 
     // Update date time
     function updateDateTime() {
@@ -683,14 +760,14 @@
         email: document.getElementById('email').value.trim(),
         role: document.getElementById('role').value.trim(),
         passcode: document.getElementById('passcode').value.trim(),
-        attendanceEnabled: false, // Default to false
+        attendanceEnabled: false,
         lastActive: null,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       };
 
       // Validation
-      if (Object.values(user).some(v => !v && v !== false)) {
-        alert("Please fill all fields");
+      if (!user.empId || !user.username || !user.password || !user.email || !user.role || !user.passcode) {
+        showNotification('Please fill all fields', 'error');
         return;
       }
 
@@ -711,19 +788,15 @@
         const newStatus = !currentStatus;
         await db.collection("users").doc(userId).update({
           attendanceEnabled: newStatus,
-          lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+          lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+          lastSync: firebase.firestore.FieldValue.serverTimestamp() // Force sync
         });
         
         showNotification(`Attendance ${newStatus ? 'enabled' : 'disabled'} for ${username}`, 'success');
         
-        // Force refresh all listeners by updating a timestamp field
-        await db.collection("users").doc(userId).update({
-          lastSync: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
       } catch (error) {
         console.error("Error updating attendance:", error);
-        showNotification('Error updating attendance', 'error');
+        showNotification('Error updating attendance: ' + error.message, 'error');
       }
     }
 
@@ -734,27 +807,47 @@
           [field]: value,
           lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
         });
+        showNotification('User updated successfully!', 'success');
       } catch (error) {
         console.error("Error updating user:", error);
         showNotification('Error updating user', 'error');
       }
     }
 
+    // Show delete confirmation modal
+    function showDeleteConfirmation(userId, username) {
+      userToDelete = { id: userId, username: username };
+      document.getElementById('deleteUserName').textContent = username;
+      document.getElementById('deleteModal').style.display = 'flex';
+    }
+
+    // Close modal
+    function closeModal() {
+      document.getElementById('deleteModal').style.display = 'none';
+      userToDelete = null;
+    }
+
     // Delete user
-    async function deleteUser(userId, username) {
-      if (confirm(`Are you sure you want to delete user "${username}"?`)) {
-        try {
-          await db.collection("users").doc(userId).delete();
-          showNotification('User deleted successfully!', 'success');
-        } catch (error) {
-          console.error("Error deleting user:", error);
-          showNotification('Error deleting user', 'error');
-        }
+    async function deleteUser() {
+      if (!userToDelete) return;
+      
+      try {
+        await db.collection("users").doc(userToDelete.id).delete();
+        showNotification(`User "${userToDelete.username}" deleted successfully!`, 'success');
+        closeModal();
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        showNotification('Error deleting user: ' + error.message, 'error');
       }
     }
 
     // Export users data
     function exportUsers() {
+      if (usersData.length === 0) {
+        showNotification('No users to export', 'error');
+        return;
+      }
+
       const csv = ['Emp ID,Username,Email,Role,Passcode,Attendance Enabled,Last Active'];
       
       usersData.forEach(user => {
@@ -776,6 +869,7 @@
       a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
+      showNotification('Users exported successfully!', 'success');
     }
 
     // Show attendance report
@@ -784,16 +878,23 @@
       const totalUsers = usersData.length;
       const attendanceRate = totalUsers > 0 ? ((activeUsers / totalUsers) * 100).toFixed(1) : 0;
       
-      alert(`Attendance Report:\n\nTotal Users: ${totalUsers}\nActive Attendance: ${activeUsers}\nAttendance Rate: ${attendanceRate}%`);
+      alert(`📊 Attendance Report:\n\n• Total Users: ${totalUsers}\n• Active Attendance: ${activeUsers}\n• Attendance Rate: ${attendanceRate}%`);
     }
 
     // Show notification
     function showNotification(message, type = 'info') {
+      // Remove existing notifications
+      const existingNotifications = document.querySelectorAll('.custom-notification');
+      existingNotifications.forEach(notification => {
+        document.body.removeChild(notification);
+      });
+
       // Create notification element
       const notification = document.createElement('div');
+      notification.className = 'custom-notification';
       notification.style.cssText = `
         position: fixed;
-        top: 20px;
+        top: 90px;
         right: 20px;
         padding: 15px 20px;
         border-radius: 8px;
@@ -803,6 +904,7 @@
         transition: all 0.3s ease;
         background: ${type === 'success' ? '#27ae60' : type === 'error' ? '#e74c3c' : '#3498db'};
         box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        max-width: 300px;
       `;
       notification.textContent = message;
       
@@ -810,7 +912,11 @@
       
       setTimeout(() => {
         notification.style.transform = 'translateX(100%)';
-        setTimeout(() => document.body.removeChild(notification), 300);
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            document.body.removeChild(notification);
+          }
+        }, 300);
       }, 3000);
     }
 
@@ -819,6 +925,18 @@
       usersData = [];
       const tbody = document.getElementById('usersTableBody');
       tbody.innerHTML = '';
+
+      if (snapshot.empty) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="10" class="loading">
+              No users found. Click the + button to add a new user.
+            </td>
+          </tr>
+        `;
+        updateStats(usersData);
+        return;
+      }
 
       snapshot.forEach(doc => {
         const user = { id: doc.id, ...doc.data() };
@@ -849,7 +967,7 @@
             ${user.attendanceEnabled ? 'Active' : 'Inactive'}
           </td>
           <td>
-            <button class="action-btn btn-delete" onclick="deleteUser('${doc.id}', '${user.username}')">
+            <button class="action-btn btn-delete" onclick="showDeleteConfirmation('${doc.id}', '${user.username}')">
               🗑️ Delete
             </button>
           </td>
@@ -906,6 +1024,9 @@
         toggleForm();
       }
     });
+
+    // Set up delete confirmation
+    document.getElementById('confirmDeleteBtn').addEventListener('click', deleteUser);
 
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
