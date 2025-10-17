@@ -21,6 +21,8 @@
   .chart-box { width:48%; margin-bottom:30px; }
   canvas { background:#fff; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
   .chart-box h4 { text-align:center; margin:0 0 10px; color:#333; }
+  .error-message { color:#dc3545; text-align:center; padding:10px; background:#ffeaea; border-radius:4px; margin:10px 0; }
+  .loading { text-align:center; color:#6c757d; padding:20px; }
 </style>
 </head>
 <body>
@@ -36,7 +38,10 @@
     <button class="btn-danger" onclick="resetFilter()">Show All</button>
   </div>
 
-  <div class="chart-container">
+  <div id="loadingMessage" class="loading">Loading your task data...</div>
+  <div id="errorMessage" style="display:none;" class="error-message"></div>
+
+  <div class="chart-container" id="chartContainer" style="display:none;">
     <div class="chart-box"><h4>Status Breakdown</h4><canvas id="statusChart"></canvas></div>
     <div class="chart-box"><h4>Work Hours by Task Type</h4><canvas id="workHoursChart"></canvas></div>
     <div class="chart-box"><h4>Task Completion Status</h4><canvas id="completeChart"></canvas></div>
@@ -54,15 +59,18 @@
 <script>
   // Initialize Firebase
   const firebaseConfig = {
-  apiKey: "AIzaSyDYhLNuJKj2ucwGimfddTfpTb32Y0c-bXg",
-  authDomain: "mytask-96a79.firebaseapp.com",
-  databaseURL: "https://mytask-96a79-default-rtdb.firebaseio.com",
-  projectId: "mytask-96a79",
-  storageBucket: "mytask-96a79.firebasestorage.app",
-  messagingSenderId: "963509757773",
-  appId: "1:963509757773:web:d9c81a108f5873702eb904",
-  measurementId: "G-L9C1LTCZRN"
-};
+    apiKey: "AIzaSyDYhLNuJKj2ucwGimfddTfpTb32Y0c-bXg",
+    authDomain: "mytask-96a79.firebaseapp.com",
+    databaseURL: "https://mytask-96a79-default-rtdb.firebaseio.com",
+    projectId: "mytask-96a79",
+    storageBucket: "mytask-96a79.firebasestorage.app",
+    messagingSenderId: "963509757773",
+    appId: "1:963509757773:web:d9c81a108f5873702eb904",
+    measurementId: "G-L9C1LTCZRN"
+  };
+  
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
   let allTasks = [], filteredTasks = [];
@@ -81,6 +89,27 @@
     weekdayWork: document.getElementById("weekdayWorkChart").getContext("2d")
   };
   const charts = {};
+
+  // Error handling
+  function showError(message) {
+    document.getElementById('loadingMessage').style.display = 'none';
+    document.getElementById('chartContainer').style.display = 'none';
+    const errorDiv = document.getElementById('errorMessage');
+    errorDiv.style.display = 'block';
+    errorDiv.textContent = message;
+  }
+
+  function hideError() {
+    document.getElementById('errorMessage').style.display = 'none';
+    document.getElementById('loadingMessage').style.display = 'block';
+    document.getElementById('chartContainer').style.display = 'none';
+  }
+
+  function showCharts() {
+    document.getElementById('loadingMessage').style.display = 'none';
+    document.getElementById('errorMessage').style.display = 'none';
+    document.getElementById('chartContainer').style.display = 'flex';
+  }
 
   // Filter Functions
   function applyThisMonth() {
@@ -127,55 +156,103 @@
     renderAll(filteredTasks);
   }
 
-  // Load tasks from Firestore
+  // Load tasks from Firestore with better error handling
   async function loadTasks() {
     const user = sessionStorage.getItem("username");
     if (!user) {
-      alert("No user session found");
+      showError("No user session found. Please login first.");
       return;
     }
 
+    hideError();
+
     try {
       const snap = await db.collection("tasks").where("Owner", "==", user).get();
+      
+      if (snap.empty) {
+        showError("No tasks found for your account.");
+        return;
+      }
+
       allTasks = snap.docs.map(d => {
         const data = d.data();
         let dt = null;
         const due = data["Due date"];
-        if (due?.seconds) dt = new Date(due.seconds * 1000);
-        else if (typeof due === "string") dt = new Date(due);
-        return { id: d.id, ...data, "Due date": dt };
+        
+        // Handle different date formats
+        if (due?.seconds) {
+          dt = new Date(due.seconds * 1000);
+        } else if (due?.toDate) {
+          dt = due.toDate();
+        } else if (typeof due === "string") {
+          dt = new Date(due);
+        } else if (due instanceof Date) {
+          dt = due;
+        }
+        
+        return { 
+          id: d.id, 
+          ...data, 
+          "Due date": dt 
+        };
       });
 
       filteredTasks = allTasks;
+      showCharts();
       renderAll(filteredTasks);
+      
     } catch (error) {
       console.error("Error loading tasks:", error);
+      showError(`Failed to load tasks: ${error.message}. Please check your connection and try again.`);
     }
   }
 
-  // Helper to parse work hours
+  // Helper to parse work hours with better error handling
   function getWorkHours(t) {
-    const v = t["Total Work Hours"] || t["TotalWorkHours"];
-    return parseFloat(v) || 0;
+    try {
+      const v = t["Total Work Hours"] || t["TotalWorkHours"] || t["workHours"] || 0;
+      
+      if (typeof v === 'number') return v;
+      if (typeof v === 'string') {
+        // Handle HH:MM:SS format
+        if (v.includes(':')) {
+          const parts = v.split(':');
+          const hours = parseInt(parts[0]) || 0;
+          const minutes = parseInt(parts[1]) || 0;
+          const seconds = parseInt(parts[2]) || 0;
+          return hours + (minutes / 60) + (seconds / 3600);
+        }
+        return parseFloat(v) || 0;
+      }
+      return 0;
+    } catch (error) {
+      console.warn('Error parsing work hours:', error);
+      return 0;
+    }
   }
 
   // Render all charts
   function renderAll(tasks) {
-    renderStatus(tasks);
-    renderWorkHours(tasks);
-    renderCompletion(tasks);
-    renderTimeSpent(tasks);
-    renderMonthly(tasks);
-    renderTimeline(tasks);
-    renderAvgWorkPause(tasks);
-    renderCompanyHours(tasks);
-    renderAssignedBy(tasks);
-    renderTopTasks(tasks);
-    renderTypeDistribution(tasks);
-    renderWeekdayWork(tasks);
+    try {
+      renderStatus(tasks);
+      renderWorkHours(tasks);
+      renderCompletion(tasks);
+      renderTimeSpent(tasks);
+      renderMonthly(tasks);
+      renderTimeline(tasks);
+      renderAvgWorkPause(tasks);
+      renderCompanyHours(tasks);
+      renderAssignedBy(tasks);
+      renderTopTasks(tasks);
+      renderTypeDistribution(tasks);
+      renderWeekdayWork(tasks);
+    } catch (error) {
+      console.error('Error rendering charts:', error);
+      showError('Error displaying charts. Some data may be incomplete.');
+    }
   }
 
-  // Chart renderers
+  // Chart renderers (same as your existing functions)
   const renderStatus = tasks => {
     const counts = {"Not Started":0,"In Progress":0,"Pending":0,"Complete":0};
     tasks.forEach(x => { counts[x.Status] = (counts[x.Status]||0) + 1; });
@@ -183,7 +260,6 @@
   };
 
   const renderWorkHours = tasks => {
-    // Aggregate work hours by task type
     const map = {};
     tasks.forEach(t => {
       const type = t["TYPE OF WORK"] || "Other";
@@ -199,7 +275,6 @@
   };
 
   const renderTimeSpent = tasks => {
-    // Aggregate time spent per task type for line chart
     const map = {};
     tasks.forEach(t => {
       const type = t["TYPE OF WORK"] || "Other";
@@ -301,28 +376,47 @@
 
   // Chart update helper
   function updateChart(key, type, labels, data, colors) {
-    if (charts[key]) charts[key].destroy();
-    charts[key] = new Chart(ctxs[key], {
-      type,
-      data: {
-        labels,
-        datasets: [{
-          data,
-          backgroundColor: colors,
-          borderColor: colors,
-          borderWidth: 1,
-          fill: type === 'line' ? false : true,
-          tension: 0.3
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { position:'top' } },
-        scales: (type === 'bar' || type === 'line' || type === 'radar') ? {
-          y: { beginAtZero:true }
-        } : {}
+    try {
+      if (charts[key]) charts[key].destroy();
+      
+      // Skip if no data
+      if (!data || data.length === 0 || data.every(val => val === 0)) {
+        ctxs[key].clearRect(0, 0, ctxs[key].canvas.width, ctxs[key].canvas.height);
+        ctxs[key].fillStyle = '#f8f9fa';
+        ctxs[key].fillRect(0, 0, ctxs[key].canvas.width, ctxs[key].canvas.height);
+        ctxs[key].fillStyle = '#6c757d';
+        ctxs[key].textAlign = 'center';
+        ctxs[key].fillText('No data available', ctxs[key].canvas.width / 2, ctxs[key].canvas.height / 2);
+        return;
       }
-    });
+
+      charts[key] = new Chart(ctxs[key], {
+        type,
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: colors,
+            borderColor: colors,
+            borderWidth: 1,
+            fill: type === 'line' ? false : true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { 
+            legend: { position:'top' },
+            tooltip: { enabled: data.length > 0 }
+          },
+          scales: (type === 'bar' || type === 'line' || type === 'radar') ? {
+            y: { beginAtZero:true }
+          } : {}
+        }
+      });
+    } catch (error) {
+      console.error(`Error updating chart ${key}:`, error);
+    }
   }
 
   window.onload = loadTasks;
