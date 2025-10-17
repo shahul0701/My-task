@@ -272,16 +272,17 @@
 
     /* Action buttons */
     .action-btn {
-      padding: 8px 12px;
+      padding: 8px 16px;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 12px;
+      font-size: 13px;
       transition: all 0.3s ease;
       font-weight: 600;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
+      margin: 2px;
     }
 
     .btn-edit {
@@ -301,7 +302,7 @@
 
     .action-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
     /* Status indicators */
@@ -672,11 +673,12 @@
       </div>
       <div class="modal-body">
         Are you sure you want to delete user "<span id="deleteUserName"></span>"? 
-        This action cannot be undone.
+        <br><br>
+        <strong>This action cannot be undone!</strong>
       </div>
       <div class="modal-footer">
-        <button class="btn" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-danger" id="confirmDeleteBtn">Delete User</button>
+        <button class="btn" onclick="closeModal()" style="background: #95a5a6; color: white;">Cancel</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn">🗑️ Delete User</button>
       </div>
     </div>
   </div>
@@ -746,9 +748,12 @@
 
     // Clear form
     function clearForm() {
-      ['empId', 'username', 'password', 'email', 'role', 'passcode'].forEach(id => {
-        document.getElementById(id).value = '';
-      });
+      document.getElementById('empId').value = '';
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+      document.getElementById('email').value = '';
+      document.getElementById('role').value = '';
+      document.getElementById('passcode').value = '';
     }
 
     // Add new user
@@ -782,14 +787,14 @@
       }
     }
 
-    // Toggle attendance for user - ENHANCED FUNCTION
+    // Toggle attendance for user
     async function toggleAttendance(userId, currentStatus, username) {
       try {
         const newStatus = !currentStatus;
         await db.collection("users").doc(userId).update({
           attendanceEnabled: newStatus,
           lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
-          lastSync: firebase.firestore.FieldValue.serverTimestamp() // Force sync
+          lastSync: firebase.firestore.FieldValue.serverTimestamp()
         });
         
         showNotification(`Attendance ${newStatus ? 'enabled' : 'disabled'} for ${username}`, 'success');
@@ -886,7 +891,9 @@
       // Remove existing notifications
       const existingNotifications = document.querySelectorAll('.custom-notification');
       existingNotifications.forEach(notification => {
-        document.body.removeChild(notification);
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
+        }
       });
 
       // Create notification element
@@ -944,6 +951,9 @@
 
         const tr = document.createElement('tr');
         
+        // Escape username for the onclick attribute
+        const safeUsername = user.username.replace(/'/g, "\\'");
+        
         tr.innerHTML = `
           <td>
             <input type="checkbox" class="edit-checkbox" style="display: none;" 
@@ -958,7 +968,7 @@
           <td>
             <label class="attendance-toggle">
               <input type="checkbox" ${user.attendanceEnabled ? 'checked' : ''} 
-                     onchange="toggleAttendance('${doc.id}', ${user.attendanceEnabled}, '${user.username}')">
+                     onchange="toggleAttendance('${doc.id}', ${user.attendanceEnabled}, '${safeUsername}')">
               <span class="toggle-slider"></span>
             </label>
           </td>
@@ -967,7 +977,7 @@
             ${user.attendanceEnabled ? 'Active' : 'Inactive'}
           </td>
           <td>
-            <button class="action-btn btn-delete" onclick="showDeleteConfirmation('${doc.id}', '${user.username}')">
+            <button class="action-btn btn-delete" onclick="showDeleteConfirmation('${doc.id}', '${safeUsername}')">
               🗑️ Delete
             </button>
           </td>
@@ -1027,6 +1037,14 @@
 
     // Set up delete confirmation
     document.getElementById('confirmDeleteBtn').addEventListener('click', deleteUser);
+
+    // Close modal when clicking outside
+    document.addEventListener('click', (event) => {
+      const modal = document.getElementById('deleteModal');
+      if (event.target === modal) {
+        closeModal();
+      }
+    });
 
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
