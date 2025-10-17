@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Users - Task Manager</title>
+  <title>User Management - Task Manager</title>
   <style>
     /* === RESET & BASE === */
     * {
@@ -13,144 +13,310 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     body {
-      background: linear-gradient(135deg, #dfe9f3, #ffffff);
-      height: 100vh;
-      overflow: hidden;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
       color: #2c3e50;
+      overflow-x: hidden;
     }
 
     /* === TOPBAR === */
     .topbar {
-      height: 60px;
-      background: linear-gradient(to right, #1abc9c, #16a085);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      height: 70px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 20px;
+      padding: 0 30px;
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
-      z-index: 10;
-      color: white;
+      z-index: 100;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .topbar .left {
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 25px;
     }
 
     .topbar .left a {
-      color: white;
-      font-weight: bold;
+      color: #2c3e50;
+      font-weight: 600;
       text-decoration: none;
-      font-size: 18px;
-      padding: 6px 12px;
-      border-radius: 6px;
-      background: rgba(255 255 255 / 0.2);
-      transition: background 0.3s;
+      font-size: 16px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
     }
     .topbar .left a:hover {
-      background: rgba(255 255 255 / 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
     }
 
     #dateTime {
       font-weight: 600;
       font-size: 16px;
-      min-width: 180px;
-      text-align: center;
+      color: #2c3e50;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 8px 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
     .profile img {
       border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      width: 45px;
+      height: 45px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border: 2px solid #667eea;
     }
 
-    /* === SIDEBAR HIDDEN === */
-    .sidebar {
-      display: none;
+    .profile-name {
+      font-weight: 600;
+      color: #2c3e50;
     }
 
     /* === MAIN CONTENT === */
     main.main-content {
-      margin-left: 0;
-      padding: 80px 30px 30px;
-      background: linear-gradient(135deg, #fdfbfb, #e2e2f2, #cfd9df);
-      min-height: calc(100vh - 60px);
-      overflow-y: auto;
-      border-top-left-radius: 20px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      max-width: 900px;
-      margin: 80px auto 30px;
+      margin: 90px auto 30px;
+      padding: 30px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+      max-width: 1400px;
       position: relative;
+      min-height: calc(100vh - 120px);
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #e9ecef;
     }
 
     h1 {
-      margin-bottom: 20px;
-      color: #16a085;
-      display: inline-block;
+      color: #2c3e50;
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
-    /* Edit button */
-    .edit-btn {
-      float: right;
-      margin-left: 10px;
-      font-size: 24px;
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
       cursor: pointer;
-      color: #16a085;
-      user-select: none;
-      transition: color 0.3s;
-    }
-    .edit-btn:hover {
-      color: #1abc9c;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
 
-    /* Table */
+    .btn-primary { 
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .btn-success { 
+      background: linear-gradient(135deg, #27ae60, #2ecc71);
+      color: white;
+    }
+
+    .btn-warning { 
+      background: linear-gradient(135deg, #f39c12, #e67e22);
+      color: white;
+    }
+
+    .btn-danger { 
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: white;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Table Styling */
+    .table-container {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+      overflow: hidden;
+      margin-bottom: 30px;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       background: #fff;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
-      border-radius: 12px;
-      overflow: hidden;
-    }
-
-    table th, table td {
-      padding: 14px 18px;
-      border-bottom: 1px solid #ecf0f1;
-      text-align: left;
-      transition: background 0.3s;
     }
 
     table th {
-      background: #16a085;
-      color: #fff;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
       font-weight: 600;
-      user-select: none;
+      padding: 18px 20px;
+      text-align: left;
+      font-size: 14px;
+      border: none;
+    }
+
+    table td {
+      padding: 16px 20px;
+      border-bottom: 1px solid #f1f3f4;
+      transition: background 0.3s ease;
+    }
+
+    table tbody tr {
+      transition: all 0.3s ease;
     }
 
     table tbody tr:hover {
-      background: #d1f0e7;
+      background: #f8f9ff;
+      transform: translateX(5px);
     }
 
-    table td input[type="checkbox"] {
-      transform: scale(1.2);
+    /* Checkbox styling */
+    input[type="checkbox"] {
+      transform: scale(1.3);
       cursor: pointer;
+      accent-color: #667eea;
     }
 
     /* Editable cells */
     td.editable {
-      background-color: #eafaf6;
+      background-color: #f8f9ff;
       cursor: text;
+      border-radius: 6px;
+      transition: all 0.3s ease;
     }
 
-    td.editable[contenteditable="true"]:focus {
-      outline: 2px solid #1abc9c;
-      background-color: #d0f0e7;
+    td.editable[contenteditable="true"] {
+      background-color: #e3f2fd;
+      outline: 2px solid #667eea;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+    }
+
+    /* Attendance Toggle */
+    .attendance-toggle {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 26px;
+    }
+
+    .attendance-toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+      background: linear-gradient(135deg, #27ae60, #2ecc71);
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(24px);
+    }
+
+    /* Action buttons */
+    .action-btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-edit {
+      background: #3498db;
+      color: white;
+    }
+
+    .btn-delete {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .btn-attendance {
+      background: #9b59b6;
+      color: white;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    /* Status indicators */
+    .status-online {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background: #27ae60;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+
+    .status-offline {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background: #95a5a6;
+      border-radius: 50%;
+      margin-right: 8px;
     }
 
     /* Floating Add button */
@@ -158,214 +324,584 @@
       position: fixed;
       bottom: 30px;
       right: 30px;
-      background: #1abc9c;
+      background: linear-gradient(135deg, #667eea, #764ba2);
       color: white;
-      font-size: 32px;
+      font-size: 28px;
       border: none;
       border-radius: 50%;
-      width: 55px;
-      height: 55px;
+      width: 60px;
+      height: 60px;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      transition: background 0.3s;
-      z-index: 20;
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+      transition: all 0.3s ease;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .add-btn:hover {
-      background: #16a085;
+      transform: scale(1.1) rotate(90deg);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
     }
 
     /* Add User Form */
     .form-popup {
       display: none;
       position: fixed;
-      bottom: 95px;
+      bottom: 100px;
       right: 30px;
-      background: #fff;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-      width: 320px;
-      z-index: 30;
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+      width: 350px;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
     }
 
-    .form-popup input {
-      width: 100%;
-      margin-bottom: 12px;
-      padding: 10px;
-      border: 1.8px solid #16a085;
-      border-radius: 8px;
-      font-size: 16px;
+    .form-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .form-header h3 {
       color: #2c3e50;
-      transition: border-color 0.3s;
-    }
-    .form-popup input:focus {
-      border-color: #1abc9c;
-      outline: none;
-      background: #eafaf6;
+      margin: 0;
     }
 
-    .form-popup button {
-      background: #16a085;
-      color: white;
+    .close-btn {
+      background: none;
       border: none;
-      padding: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      border-radius: 8px;
+      font-size: 20px;
       cursor: pointer;
+      color: #95a5a6;
+      transition: color 0.3s;
+    }
+
+    .close-btn:hover {
+      color: #e74c3c;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group input {
       width: 100%;
-      transition: background 0.3s;
+      padding: 12px 15px;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      background: #f8f9fa;
     }
-    .form-popup button:hover {
-      background: #1abc9c;
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
-     .del-btn { color: #e74c3c; cursor: pointer; font-size: 18px; }
-    .del-btn:hover { color: #c0392b; }
+
+    /* Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 25px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    /* Loading animation */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #6c757d;
+    }
+
+    .loading-spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .topbar {
+        padding: 0 15px;
+      }
+      
+      .topbar .left {
+        gap: 10px;
+      }
+      
+      .topbar .left a {
+        font-size: 14px;
+        padding: 8px 12px;
+      }
+      
+      main.main-content {
+        margin: 80px 15px 15px;
+        padding: 20px;
+      }
+      
+      .page-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+      }
+      
+      .table-container {
+        overflow-x: auto;
+      }
+      
+      .form-popup {
+        width: calc(100vw - 60px);
+        right: 15px;
+      }
+    }
   </style>
 </head>
 <body>
 
   <div class="topbar">
     <div class="left">
-      <a href="Home.html" title="Go to Dashboard Home">🏠 Home</a>
+      <a href="Home.html" title="Go to Dashboard Home">🏠 Dashboard</a>
+      <a href="UserDashboard.html" title="User Dashboard">👥 User Dashboard</a>
     </div>
     <div id="dateTime">Loading...</div>
     <div class="profile">
-      <img src="https://i.pravatar.cc/40" alt="User" />
+      <img src="https://i.pravatar.cc/45" alt="User" />
+      <span class="profile-name">Admin</span>
     </div>
   </div>
 
-  <aside class="sidebar">
-    <!-- Sidebar hidden -->
-  </aside>
+  <main class="main-content">
+    <div class="page-header">
+      <h1>👥 User Management</h1>
+      <div class="controls">
+        <button class="btn btn-primary" onclick="toggleEditMode()">
+          <span id="editIcon">✏️</span> Edit Mode
+        </button>
+        <button class="btn btn-success" onclick="exportUsers()">
+          📊 Export Data
+        </button>
+        <button class="btn btn-warning" onclick="showAttendanceReport()">
+          📈 Attendance Report
+        </button>
+      </div>
+    </div>
 
-    <main class="main-content">
-    <h1>Users</h1>
-    <span class="edit-btn" id="editToggle">✏️</span>
-    <table id="userTable" spellcheck="false">
-      <thead>
-        <tr>
-          <th>Edit?</th><th>Emp ID</th><th>Username</th><th>Password</th><th>Mail ID</th>
-          <th>Role</th><th>Passcode</th><th>Delete</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </main>
-        <!-- Firestore data will populate here -->
-      </tbody>
-    </table>
+    <!-- Stats Overview -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number" id="totalUsers">0</div>
+        <div class="stat-label">Total Users</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="activeUsers">0</div>
+        <div class="stat-label">Active Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="adminUsers">0</div>
+        <div class="stat-label">Admin Users</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="attendanceRate">0%</div>
+        <div class="stat-label">Attendance Rate</div>
+      </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="table-container">
+      <table id="userTable" spellcheck="false">
+        <thead>
+          <tr>
+            <th width="60">Edit</th>
+            <th width="100">Emp ID</th>
+            <th>Username</th>
+            <th>Password</th>
+            <th>Email</th>
+            <th width="120">Role</th>
+            <th width="100">Passcode</th>
+            <th width="120">Attendance</th>
+            <th width="100">Status</th>
+            <th width="120">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="usersTableBody">
+          <tr>
+            <td colspan="10" class="loading">
+              <div class="loading-spinner"></div>
+              Loading users...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </main>
 
-   <div class="form-popup" id="formPopup">
-    <input id="empId" placeholder="Emp ID"/><input id="username" placeholder="Username"/>
-    <input id="password" placeholder="Password"/><input id="email" placeholder="Mail ID"/>
-    <input id="role" placeholder="Role"/><input id="passcode" placeholder="Passcode"/>
-    <button onclick="addUser()">Add User</button>
+  <!-- Add User Form -->
+  <div class="form-popup" id="formPopup">
+    <div class="form-header">
+      <h3>➕ Add New User</h3>
+      <button class="close-btn" onclick="toggleForm()">×</button>
+    </div>
+    <div class="form-group">
+      <input id="empId" placeholder="Employee ID" />
+    </div>
+    <div class="form-group">
+      <input id="username" placeholder="Username" />
+    </div>
+    <div class="form-group">
+      <input id="password" placeholder="Password" type="password" />
+    </div>
+    <div class="form-group">
+      <input id="email" placeholder="Email Address" type="email" />
+    </div>
+    <div class="form-group">
+      <input id="role" placeholder="Role (Admin/User)" />
+    </div>
+    <div class="form-group">
+      <input id="passcode" placeholder="Passcode" />
+    </div>
+    <button class="btn btn-primary" onclick="addUser()" style="width: 100%;">Add User</button>
   </div>
+
   <button class="add-btn" onclick="toggleForm()">+</button>
 
   <!-- Firebase scripts -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  
   <script>
-    // Firebase init
-const firebaseConfig = {
-  apiKey: "AIzaSyDYhLNuJKj2ucwGimfddTfpTb32Y0c-bXg",
-  authDomain: "mytask-96a79.firebaseapp.com",
-  databaseURL: "https://mytask-96a79-default-rtdb.firebaseio.com",
-  projectId: "mytask-96a79",
-  storageBucket: "mytask-96a79.firebasestorage.app",
-  messagingSenderId: "963509757773",
-  appId: "1:963509757773:web:d9c81a108f5873702eb904",
-  measurementId: "G-L9C1LTCZRN"
-};
+    // Firebase initialization
+    const firebaseConfig = {
+      apiKey: "AIzaSyDYhLNuJKj2ucwGimfddTfpTb32Y0c-bXg",
+      authDomain: "mytask-96a79.firebaseapp.com",
+      databaseURL: "https://mytask-96a79-default-rtdb.firebaseio.com",
+      projectId: "mytask-96a79",
+      storageBucket: "mytask-96a79.firebasestorage.app",
+      messagingSenderId: "963509757773",
+      appId: "1:963509757773:web:d9c81a108f5873702eb904",
+      measurementId: "G-L9C1LTCZRN"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
     let editMode = false;
+    let usersData = [];
 
-    document.getElementById("editToggle").onclick = () => {
-      editMode = !editMode;
-      document.querySelectorAll("#userTable tbody tr").forEach(row => {
-        row.querySelector(".chk-edit").disabled = !editMode;
-      });
-      document.getElementById("editToggle").style.color = editMode ? "#27ae60" : "#16a085";
-    }
-
-    function toggleForm() {
-      const f = document.getElementById("formPopup");
-      f.style.display = f.style.display === "block" ? "none" : "block";
-    }
-
-    function clearForm() {
-      ['empId','username','password','email','role','passcode'].forEach(id => document.getElementById(id).value = '')
-    }
-
-    function addUser() {
-      const u = {
-        empId: empId.value.trim(), username: username.value.trim(),
-        password: password.value.trim(), email: email.value.trim(),
-        role: role.value.trim(), passcode: passcode.value.trim()
+    // Update date time
+    function updateDateTime() {
+      const now = new Date();
+      const options = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
       };
-      if (Object.values(u).some(v => !v)) return alert("Fill all fields");
-      db.collection("users").add(u)
-        .then(() => { toggleForm(); clearForm(); })
-        .catch(e => alert(e));
+      document.getElementById('dateTime').textContent = now.toLocaleDateString('en-US', options);
+    }
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
+
+    // Toggle edit mode
+    function toggleEditMode() {
+      editMode = !editMode;
+      const editIcon = document.getElementById('editIcon');
+      const editCheckboxes = document.querySelectorAll('.edit-checkbox');
+      
+      editCheckboxes.forEach(checkbox => {
+        checkbox.style.display = editMode ? 'block' : 'none';
+      });
+      
+      editIcon.style.color = editMode ? '#27ae60' : '#667eea';
+      editIcon.textContent = editMode ? '✅' : '✏️';
     }
 
-    db.collection("users").onSnapshot(snap => {
-      const tb = document.querySelector("#userTable tbody");
-      tb.innerHTML = "";
+    // Toggle form popup
+    function toggleForm() {
+      const form = document.getElementById('formPopup');
+      form.style.display = form.style.display === 'block' ? 'none' : 'block';
+    }
 
-      snap.forEach(doc => {
-        const u = doc.data();
-        const tr = document.createElement("tr");
+    // Clear form
+    function clearForm() {
+      ['empId', 'username', 'password', 'email', 'role', 'passcode'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+    }
 
+    // Add new user
+    async function addUser() {
+      const user = {
+        empId: document.getElementById('empId').value.trim(),
+        username: document.getElementById('username').value.trim(),
+        password: document.getElementById('password').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        role: document.getElementById('role').value.trim(),
+        passcode: document.getElementById('passcode').value.trim(),
+        attendanceEnabled: false,
+        lastActive: null,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      // Validation
+      if (Object.values(user).some(v => !v && v !== false)) {
+        alert("Please fill all fields");
+        return;
+      }
+
+      try {
+        await db.collection("users").add(user);
+        toggleForm();
+        clearForm();
+        showNotification('User added successfully!', 'success');
+      } catch (error) {
+        console.error("Error adding user:", error);
+        showNotification('Error adding user: ' + error.message, 'error');
+      }
+    }
+
+    // Toggle attendance for user
+    async function toggleAttendance(userId, currentStatus) {
+      try {
+        await db.collection("users").doc(userId).update({
+          attendanceEnabled: !currentStatus,
+          lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showNotification('Attendance setting updated!', 'success');
+      } catch (error) {
+        console.error("Error updating attendance:", error);
+        showNotification('Error updating attendance', 'error');
+      }
+    }
+
+    // Update user data
+    async function updateUser(userId, field, value) {
+      try {
+        await db.collection("users").doc(userId).update({
+          [field]: value,
+          lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (error) {
+        console.error("Error updating user:", error);
+        showNotification('Error updating user', 'error');
+      }
+    }
+
+    // Delete user
+    async function deleteUser(userId, username) {
+      if (confirm(`Are you sure you want to delete user "${username}"?`)) {
+        try {
+          await db.collection("users").doc(userId).delete();
+          showNotification('User deleted successfully!', 'success');
+        } catch (error) {
+          console.error("Error deleting user:", error);
+          showNotification('Error deleting user', 'error');
+        }
+      }
+    }
+
+    // Export users data
+    function exportUsers() {
+      const csv = ['Emp ID,Username,Email,Role,Passcode,Attendance Enabled,Last Active'];
+      
+      usersData.forEach(user => {
+        csv.push([
+          user.empId,
+          user.username,
+          user.email,
+          user.role,
+          user.passcode,
+          user.attendanceEnabled ? 'Yes' : 'No',
+          user.lastActive ? new Date(user.lastActive.toDate()).toLocaleString() : 'Never'
+        ].join(','));
+      });
+
+      const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }
+
+    // Show attendance report
+    function showAttendanceReport() {
+      const activeUsers = usersData.filter(user => user.attendanceEnabled).length;
+      const totalUsers = usersData.length;
+      const attendanceRate = totalUsers > 0 ? ((activeUsers / totalUsers) * 100).toFixed(1) : 0;
+      
+      alert(`Attendance Report:\n\nTotal Users: ${totalUsers}\nActive Attendance: ${activeUsers}\nAttendance Rate: ${attendanceRate}%`);
+    }
+
+    // Show notification
+    function showNotification(message, type = 'info') {
+      // Create notification element
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        z-index: 10000;
+        transition: all 0.3s ease;
+        background: ${type === 'success' ? '#27ae60' : type === 'error' ? '#e74c3c' : '#3498db'};
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      `;
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => document.body.removeChild(notification), 300);
+      }, 3000);
+    }
+
+    // Real-time users listener
+    db.collection("users").onSnapshot(snapshot => {
+      usersData = [];
+      const tbody = document.getElementById('usersTableBody');
+      tbody.innerHTML = '';
+
+      snapshot.forEach(doc => {
+        const user = { id: doc.id, ...doc.data() };
+        usersData.push(user);
+
+        const tr = document.createElement('tr');
+        
         tr.innerHTML = `
-          <td><input type="checkbox" class="chk-edit" disabled></td>
-          <td>${u.empId}</td>
-<td class="editable">${u.username}</td>
-<td class="editable">${u.password}</td>
-<td class="editable">${u.email}</td>
-<td class="editable">${u.role}</td>
-          <td>${u.passcode}</td>
-          <td><span class="del-btn">🗑️</span></td>
+          <td>
+            <input type="checkbox" class="edit-checkbox" style="display: none;" 
+                   onchange="enableEditing('${doc.id}', this.checked)">
+          </td>
+          <td>${user.empId || 'N/A'}</td>
+          <td class="editable" data-field="username">${user.username || 'N/A'}</td>
+          <td class="editable" data-field="password">${user.password || 'N/A'}</td>
+          <td class="editable" data-field="email">${user.email || 'N/A'}</td>
+          <td class="editable" data-field="role">${user.role || 'User'}</td>
+          <td>${user.passcode || 'N/A'}</td>
+          <td>
+            <label class="attendance-toggle">
+              <input type="checkbox" ${user.attendanceEnabled ? 'checked' : ''} 
+                     onchange="toggleAttendance('${doc.id}', ${user.attendanceEnabled})">
+              <span class="toggle-slider"></span>
+            </label>
+          </td>
+          <td>
+            <span class="${user.attendanceEnabled ? 'status-online' : 'status-offline'}"></span>
+            ${user.attendanceEnabled ? 'Active' : 'Inactive'}
+          </td>
+          <td>
+            <button class="action-btn btn-delete" onclick="deleteUser('${doc.id}', '${user.username}')">
+              🗑️ Delete
+            </button>
+          </td>
         `;
 
-        // on edit checkbox select, allow user to update inline:
-        tr.querySelector(".chk-edit").onchange = e => {
-          if (!e.target.checked) return;
-          const cells = tr.querySelectorAll(".editable");
-          cells.forEach(cell => cell.contentEditable = "true");
-          cells.forEach(c => {
-            c.onblur = () => {
-              const updated = {
-                username: tr.children[2].innerText,
-                password: tr.children[3].innerText,
-                email:    tr.children[4].innerText,
-                role:     tr.children[5].innerText
-              };
-              db.collection("users").doc(doc.id).update(updated)
-                .then(() => e.target.checked = false)
-                .catch(err => alert(err));
-            };
-          });
-        };
-
-        // delete
-        tr.querySelector(".del-btn").onclick = () => {
-          if (confirm("Delete this user?")) 
-            db.collection("users").doc(doc.id).delete()
-              .catch(e => alert(e));
-        };
-
-        tb.appendChild(tr);
+        tbody.appendChild(tr);
       });
 
-      // make sure editCheckbox state reflects current mode
-      document.querySelectorAll("#userTable tbody .chk-edit").forEach(cb => cb.disabled = !editMode);
+      // Update stats
+      updateStats(usersData);
+    });
+
+    // Enable editing for user
+    function enableEditing(userId, enabled) {
+      const row = document.querySelector(`input[onchange*="${userId}"]`).closest('tr');
+      const editableCells = row.querySelectorAll('.editable');
+      
+      editableCells.forEach(cell => {
+        cell.contentEditable = enabled;
+        if (enabled) {
+          cell.style.background = '#e3f2fd';
+          cell.addEventListener('blur', () => {
+            const field = cell.getAttribute('data-field');
+            const value = cell.textContent;
+            updateUser(userId, field, value);
+          });
+        } else {
+          cell.style.background = '';
+        }
+      });
+    }
+
+    // Update statistics
+    function updateStats(users) {
+      const totalUsers = users.length;
+      const adminUsers = users.filter(user => user.role === 'Admin').length;
+      const activeUsers = users.filter(user => user.attendanceEnabled).length;
+      const attendanceRate = totalUsers > 0 ? ((activeUsers / totalUsers) * 100).toFixed(1) : 0;
+
+      document.getElementById('totalUsers').textContent = totalUsers;
+      document.getElementById('adminUsers').textContent = adminUsers;
+      document.getElementById('activeUsers').textContent = activeUsers;
+      document.getElementById('attendanceRate').textContent = attendanceRate + '%';
+    }
+
+    // Close form when clicking outside
+    document.addEventListener('click', (event) => {
+      const form = document.getElementById('formPopup');
+      const addButton = document.querySelector('.add-btn');
+      
+      if (form.style.display === 'block' && 
+          !form.contains(event.target) && 
+          !addButton.contains(event.target)) {
+        toggleForm();
+      }
+    });
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      updateDateTime();
     });
   </script>
 </body>
