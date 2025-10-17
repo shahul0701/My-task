@@ -683,7 +683,7 @@
         email: document.getElementById('email').value.trim(),
         role: document.getElementById('role').value.trim(),
         passcode: document.getElementById('passcode').value.trim(),
-        attendanceEnabled: false,
+        attendanceEnabled: false, // Default to false
         lastActive: null,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       };
@@ -705,14 +705,22 @@
       }
     }
 
-    // Toggle attendance for user
-    async function toggleAttendance(userId, currentStatus) {
+    // Toggle attendance for user - ENHANCED FUNCTION
+    async function toggleAttendance(userId, currentStatus, username) {
       try {
+        const newStatus = !currentStatus;
         await db.collection("users").doc(userId).update({
-          attendanceEnabled: !currentStatus,
+          attendanceEnabled: newStatus,
           lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
         });
-        showNotification('Attendance setting updated!', 'success');
+        
+        showNotification(`Attendance ${newStatus ? 'enabled' : 'disabled'} for ${username}`, 'success');
+        
+        // Force refresh all listeners by updating a timestamp field
+        await db.collection("users").doc(userId).update({
+          lastSync: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
       } catch (error) {
         console.error("Error updating attendance:", error);
         showNotification('Error updating attendance', 'error');
@@ -832,7 +840,7 @@
           <td>
             <label class="attendance-toggle">
               <input type="checkbox" ${user.attendanceEnabled ? 'checked' : ''} 
-                     onchange="toggleAttendance('${doc.id}', ${user.attendanceEnabled})">
+                     onchange="toggleAttendance('${doc.id}', ${user.attendanceEnabled}, '${user.username}')">
               <span class="toggle-slider"></span>
             </label>
           </td>
