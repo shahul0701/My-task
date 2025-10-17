@@ -170,28 +170,36 @@
       box-shadow: 0 8px 25px rgba(0,0,0,0.08);
       overflow: hidden;
       margin-bottom: 30px;
+      overflow-x: auto;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
       background: #fff;
+      min-width: 1000px; /* Ensure table doesn't get too narrow */
     }
 
     table th {
       background: linear-gradient(135deg, #667eea, #764ba2);
       color: white;
       font-weight: 600;
-      padding: 18px 20px;
+      padding: 15px 12px;
       text-align: left;
-      font-size: 14px;
+      font-size: 13px;
       border: none;
+      white-space: nowrap;
     }
 
     table td {
-      padding: 16px 20px;
+      padding: 12px;
       border-bottom: 1px solid #f1f3f4;
       transition: background 0.3s ease;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 150px;
     }
 
     table tbody tr {
@@ -205,7 +213,7 @@
 
     /* Checkbox styling */
     input[type="checkbox"] {
-      transform: scale(1.3);
+      transform: scale(1.2);
       cursor: pointer;
       accent-color: #667eea;
     }
@@ -216,6 +224,7 @@
       cursor: text;
       border-radius: 6px;
       transition: all 0.3s ease;
+      max-width: 120px;
     }
 
     td.editable[contenteditable="true"] {
@@ -228,8 +237,8 @@
     .attendance-toggle {
       position: relative;
       display: inline-block;
-      width: 50px;
-      height: 26px;
+      width: 45px;
+      height: 22px;
     }
 
     .attendance-toggle input {
@@ -253,10 +262,10 @@
     .toggle-slider:before {
       position: absolute;
       content: "";
-      height: 18px;
-      width: 18px;
-      left: 4px;
-      bottom: 4px;
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
       background-color: white;
       transition: .4s;
       border-radius: 50%;
@@ -267,22 +276,22 @@
     }
 
     input:checked + .toggle-slider:before {
-      transform: translateX(24px);
+      transform: translateX(23px);
     }
 
     /* Action buttons */
     .action-btn {
-      padding: 8px 16px;
+      padding: 6px 10px;
       border: none;
-      border-radius: 8px;
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 11px;
       transition: all 0.3s ease;
       font-weight: 600;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      margin: 2px;
+      gap: 4px;
+      white-space: nowrap;
     }
 
     .btn-edit {
@@ -301,27 +310,27 @@
     }
 
     .action-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
 
     /* Status indicators */
     .status-online {
       display: inline-block;
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       background: #27ae60;
       border-radius: 50%;
-      margin-right: 8px;
+      margin-right: 6px;
     }
 
     .status-offline {
       display: inline-block;
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       background: #95a5a6;
       border-radius: 50%;
-      margin-right: 8px;
+      margin-right: 6px;
     }
 
     /* Floating Add button */
@@ -516,7 +525,31 @@
       gap: 10px;
     }
 
+    /* Table responsive adjustments */
+    .table-wrapper {
+      position: relative;
+    }
+
+    .table-scroll-indicator {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      background: rgba(102, 126, 234, 0.8);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      display: none;
+    }
+
     /* Responsive Design */
+    @media (max-width: 1200px) {
+      .table-scroll-indicator {
+        display: block;
+      }
+    }
+
     @media (max-width: 768px) {
       .topbar {
         padding: 0 15px;
@@ -543,12 +576,41 @@
       }
       
       .table-container {
-        overflow-x: auto;
+        border-radius: 10px;
       }
       
       .form-popup {
         width: calc(100vw - 60px);
         right: 15px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+      }
+
+      .stat-card {
+        padding: 20px;
+      }
+
+      .stat-number {
+        font-size: 1.5rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .controls {
+        flex-direction: column;
+        width: 100%;
+      }
+      
+      .controls .btn {
+        width: 100%;
+        text-align: center;
       }
     }
   </style>
@@ -604,31 +666,34 @@
     </div>
 
     <!-- Users Table -->
-    <div class="table-container">
-      <table id="userTable" spellcheck="false">
-        <thead>
-          <tr>
-            <th width="60">Edit</th>
-            <th width="100">Emp ID</th>
-            <th>Username</th>
-            <th>Password</th>
-            <th>Email</th>
-            <th width="120">Role</th>
-            <th width="100">Passcode</th>
-            <th width="120">Attendance</th>
-            <th width="100">Status</th>
-            <th width="150">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="usersTableBody">
-          <tr>
-            <td colspan="10" class="loading">
-              <div class="loading-spinner"></div>
-              Loading users...
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="table-wrapper">
+      <div class="table-scroll-indicator">← Scroll →</div>
+      <div class="table-container">
+        <table id="userTable" spellcheck="false">
+          <thead>
+            <tr>
+              <th width="50">Edit</th>
+              <th width="80">Emp ID</th>
+              <th width="120">Username</th>
+              <th width="120">Password</th>
+              <th width="180">Email</th>
+              <th width="100">Role</th>
+              <th width="80">Passcode</th>
+              <th width="100">Attendance</th>
+              <th width="80">Status</th>
+              <th width="120">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr>
+              <td colspan="10" class="loading">
+                <div class="loading-spinner"></div>
+                Loading users...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </main>
 
@@ -960,9 +1025,9 @@
                    onchange="enableEditing('${doc.id}', this.checked)">
           </td>
           <td>${user.empId || 'N/A'}</td>
-          <td class="editable" data-field="username">${user.username || 'N/A'}</td>
-          <td class="editable" data-field="password">${user.password || 'N/A'}</td>
-          <td class="editable" data-field="email">${user.email || 'N/A'}</td>
+          <td class="editable" data-field="username" title="${user.username || 'N/A'}">${user.username || 'N/A'}</td>
+          <td class="editable" data-field="password" title="${user.password || 'N/A'}">${'*'.repeat(user.password?.length || 0)}</td>
+          <td class="editable" data-field="email" title="${user.email || 'N/A'}">${user.email || 'N/A'}</td>
           <td class="editable" data-field="role">${user.role || 'User'}</td>
           <td>${user.passcode || 'N/A'}</td>
           <td>
@@ -999,13 +1064,35 @@
         cell.contentEditable = enabled;
         if (enabled) {
           cell.style.background = '#e3f2fd';
+          // Show actual password when editing
+          if (cell.getAttribute('data-field') === 'password') {
+            const currentText = cell.textContent;
+            if (currentText === '*'.repeat(currentText.length)) {
+              // Find the original password from usersData
+              const user = usersData.find(u => u.id === userId);
+              if (user && user.password) {
+                cell.textContent = user.password;
+              }
+            }
+          }
           cell.addEventListener('blur', () => {
             const field = cell.getAttribute('data-field');
-            const value = cell.textContent;
+            let value = cell.textContent;
+            // Mask password display after editing
+            if (field === 'password' && value !== '*'.repeat(value.length)) {
+              cell.textContent = '*'.repeat(value.length);
+            }
             updateUser(userId, field, value);
           });
         } else {
           cell.style.background = '';
+          // Mask password when not editing
+          if (cell.getAttribute('data-field') === 'password') {
+            const currentText = cell.textContent;
+            if (currentText !== '*'.repeat(currentText.length)) {
+              cell.textContent = '*'.repeat(currentText.length);
+            }
+          }
         }
       });
     }
