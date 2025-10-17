@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Management System - Admin Dashboard</title>
+    <!-- Embedded CSS -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-height: 80vh;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        h1, h2 {
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        h1 { font-size: 2em; margin-bottom: 10px; }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button.active, .tab-btn.active {
+            background-color: #27ae60;
+        }
+
+        .tab-btn {
+            margin-right: 10px;
+            padding: 10px 20px;
+        }
+
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        input, select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+
+        .report-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .report-buttons button {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #34495e;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .error, #addMsg, #editMsg, #deleteMsg, #attMsg {
+            text-align: center;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .error {
+            color: #e74c3c;
+            background-color: #fdf2f2;
+            border: 1px solid #e74c3c;
+        }
+
+        .success {
+            color: #27ae60;
+            background-color: #f0fff0;
+            border: 1px solid #27ae60;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+                margin: 10px;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .report-buttons {
+                flex-direction: column;
+            }
+        }
+
+        /* Login Section */
+        #loginSection {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Section -->
+    <div id="loginSection">
+        <h1>Attendance Management System</h1>
+        <form id="loginForm">
+            <h2>Admin Login</h2>
+            <label for="email">Email:</label>
+            <input type="email" id="email" required>
+            <label for="password">Password:</label>
+            <input type="password" id="password" required>
+            <button type="submit">Login</button>
+            <p id="loginError" class="error"></p>
+        </form>
+    </div>
+
+    <!-- Admin Dashboard (Hidden until login) -->
+    <div class="container" id="adminContainer" style="display: none;">
+        <header>
+            <h1>Admin Dashboard</h1>
+            <button id="logoutBtn">Logout</button>
+        </header>
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="addEmployee">Add Employee</button>
+            <button class="tab-btn" data-tab="editEmployee">Edit Employee</button>
+            <button class="tab-btn" data-tab="deleteEmployee">Delete Employee</button>
+            <button class="tab-btn" data-tab="searchEmployee">Search Employees</button>
+            <button class="tab-btn" data-tab="markAttendance">Mark Attendance</button>
+            <button class="tab-btn" data-tab="reports">Reports</button>
+        </nav>
+
+        <!-- Add Employee Tab -->
+        <div id="addEmployee" class="tab-content active">
+            <h2>Add Employee</h2>
+            <form id="addEmployeeForm">
+                <label for="addName">Name:</label>
+                <input type="text" id="addName" required>
+                <label for="addEmpId">Employee ID:</label>
+                <input type="text" id="addEmpId" required>
+                <label for="addDept">Department:</label>
+                <input type="text" id="addDept">
+                <label for="addJoinDate">Join Date:</label>
+                <input type="date" id="addJoinDate" required>
+                <button type="submit">Add Employee</button>
+            </form>
+            <p id="addMsg"></p>
+        </div>
+
+        <!-- Edit Employee Tab -->
+        <div id="editEmployee" class="tab-content">
+            <h2>Edit Employee</h2>
+            <form id="editSearchForm">
+                <label for="editEmpId">Employee ID:</label>
+                <input type="text" id="editEmpId" required>
+                <button type="button" id="fetchEditBtn">Search</button>
+            </form>
+            <form id="editEmployeeForm" style="display: none;">
+                <input type="hidden" id="editDocId">
+                <label for="editName">Name:</label>
+                <input type="text" id="editName" required>
+                <label for="editDept">Department:</label>
+                <input type="text" id="editDept">
+                <label for="editJoinDate">Join Date:</label>
+                <input type="date" id="editJoinDate" required>
+                <button type="submit">Update Employee</button>
+            </form>
+            <p id="editMsg"></p>
+        </div>
+
+        <!-- Delete Employee Tab -->
+        <div id="deleteEmployee" class="tab-content">
+            <h2>Delete Employee</h2>
+            <form id="deleteEmployeeForm">
+                <label for="deleteEmpId">Employee ID:</label>
+                <input type="text" id="deleteEmpId" required>
+                <button type="submit">Delete Employee</button>
+            </form>
+            <p id="deleteMsg"></p>
+        </div>
+
+        <!-- Search Employees Tab -->
+        <div id="searchEmployee" class="tab-content">
+            <h2>Search Employees</h2>
+            <form id="searchForm">
+                <label for="searchQuery">Search Query (Name/ID/Dept):</label>
+                <input type="text" id="searchQuery" required>
+                <button type="button" id="searchBtn">Search</button>
+            </form>
+            <div id="searchResults"></div>
+        </div>
+
+        <!-- Mark Attendance Tab -->
+        <div id="markAttendance" class="tab-content">
+            <h2>Mark Attendance</h2>
+            <form id="attendanceForm">
+                <label for="attEmpId">Employee ID:</label>
+                <input type="text" id="attEmpId" required>
+                <label for="attAction">Action:</label>
+                <select id="attAction">
+                    <option value="check_in">Check-in</option>
+                    <option value="check_out">Check-out</option>
+                    <option value="absent">Mark Absent</option>
+                </select>
+                <label for="attDate">Date (default today):</label>
+                <input type="date" id="attDate">
+                <button type="submit">Mark</button>
+            </form>
+            <p id="attMsg"></p>
+        </div>
+
+        <!-- Reports Tab -->
+        <div id="reports" class="tab-content">
+            <h2>Reports</h2>
+            <div class="report-buttons">
+                <button onclick="showReport('daily')">Daily Attendance</button>
+                <button onclick="showReport('monthly')">Monthly Attendance</button>
+                <button onclick="showReport('individual')">Individual Attendance</button>
+                <button onclick="showReport('summary')">Summary Report</button>
+            </div>
+            <form id="reportForm" style="display: none;">
+                <label id="reportLabel"></label>
+                <input type="text" id="reportInput" style="display: none;">
+                <button type="button" onclick="generateReport()">Generate Report</button>
+                <button type="button" onclick="exportReport()">Export to CSV</button>
+            </form>
+            <div id="reportResults"></div>
+        </div>
+    </div>
+
+    <!-- Embedded JavaScript -->
+    <script type="module">
+        // Firebase SDK Imports
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, query, where, getDocs, orderBy, limit, doc } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+
+        // Firebase Configuration - Replace with your own
+        const firebaseConfig = {
+            // YOUR_FIREBASE_CONFIG HERE
+            // apiKey: "your-api-key",
+            // authDomain: "your-project.firebaseapp.com",
+            // projectId: "your-project-id",
+            // storageBucket: "your-project.appspot.com",
+            // messagingSenderId: "123456789",
+            // appId: "your-app-id"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Global variables
+        let currentUser = null;
+        let reportType = null;
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('loginError');
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                currentUser = userCredential.user;
+                
+                // Check role
+                const userQ = query(collection(db, 'users'), where('uid', '==', currentUser.uid));
+                const userSnap = await getDocs(userQ);
+                if (userSnap.empty || userSnap.docs[0].data().role !== 'admin') {
+                    throw new Error('Access denied: Admin only');
+                }
+                
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('adminContainer').style.display = 'block';
+            } catch (error) {
+                errorEl.textContent = error.message;
+            }
+        });
+
+        // Auth State Listener
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                const userQ = query(collection(db, 'users'), where('uid', '==', user.uid));
+                const userSnap = await getDocs(userQ);
+                if (!userSnap.empty && userSnap.docs[0].data().role === 'admin') {
+                    document.getElementById('loginSection').style.display = 'none';
+                    document.getElementById('adminContainer').style.display = 'block';
+                }
+            } else {
+                document.getElementById('loginSection').style.display = 'block';
+                document.getElementById('adminContainer').style.display = 'none';
+            }
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await signOut(auth);
+        });
+
+        // Tab Navigation
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                e.target.classList.add('active');
+                document.getElementById(e.target.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Add Employee
+        document.getElementById('addEmployeeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('addName').value,
+                employeeId: document.getElementById('addEmpId').value,
+                department: document.getElementById('addDept').value,
+                joinDate: document.getElementById('addJoinDate').value
+            };
+            const msgEl = document.getElementById('addMsg');
+
+            try {
+                const q = query(collection(db, 'employees'), where('employeeId', '==', data.employeeId));
+                const existing = await getDocs(q);
+                if (!existing.empty) throw new Error('Employee ID already exists');
+
+                await addDoc(collection(db, 'employees'), data);
+                msgEl.textContent = 'Employee added successfully!';
+                msgEl.className = 'success';
+                e.target.reset();
+            } catch (error) {
+                msgEl.textContent = error.message;
+                msgEl.className = 'error';
+            }
+        });
+
+        // Edit Employee
+        document.getElementById('fetchEditBtn').addEventListener('click', async () => {
+            const empId = document.getElementById('editEmpId').value;
+            const form = document.getElementById('editEmployeeForm');
+            const msgEl = document.getElementById('editMsg');
+
+            try {
+                const q = query(collection(db, 'employees'), where('employeeId', '==', empId));
+                const snap = await getDocs(q);
+                if (snap.empty) throw new Error('Employee not found');
+
+                const docData = snap.docs[0];
+                document.getElementById('editDocId').value = docData.id;
+                document.getElementById('editName').value = docData.data().name;
+                document.getElementById('editDept').value = docData.data().department || '';
+                document.getElementById('editJoinDate').value = docData.data().joinDate;
+                form.style.display = 'block';
+                msgEl.textContent = 'Employee loaded!';
+                msgEl.className = 'success';
+            } catch (error) {
+                msgEl.textContent = error.message;
+                msgEl.className = 'error';
+            }
+        });
+
+        document.getElementById('editEmployeeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const docId = document.getElementById('editDocId').value;
+            const data = {
+                name: document.getElementById('editName').value,
+                department: document.getElementById('editDept').value,
+                joinDate: document.getElementById('editJoinDate').value
+            };
+            const msgEl = document.getElementById('editMsg');
+
+            try {
+                await updateDoc(doc(db, 'employees', docId), data);
+                msgEl.textContent = 'Employee updated!';
+                msgEl.className = 'success';
+                document.getElementById('editEmployeeForm').style.display = 'none';
+            } catch (error) {
+                msgEl.textContent = error.message;
+                msgEl.className = 'error';
+            }
+        });
+
+        // Delete Employee
+        document.getElementById('deleteEmployeeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const empId = document.getElementById('deleteEmpId').value;
+            const msgEl = document.getElementById('deleteMsg');
+
+            try {
+                // Delete attendance
+                const attQ = query(collection(db, 'attendance'), where('employeeId', '==', empId));
+                const attSnap = await getDocs(attQ);
+                for (const attDoc of attSnap.docs) {
+                    await deleteDoc(doc(db, 'attendance', attDoc.id));
+                }
+
+                // Delete employee
+                const empQ = query(collection(db, 'employees'), where('employeeId', '==', empId));
+                const empSnap = await getDocs(empQ);
+                if (empSnap.empty) throw new Error('Employee not found');
+                await deleteDoc(doc(db, 'employees', empSnap.docs[0].id));
+
+                msgEl.textContent = 'Employee deleted!';
+                msgEl.className = 'success';
+                e.target.reset();
+            } catch (error) {
+                msgEl.textContent = error.message;
+                msgEl.className = 'error';
+            }
+        });
+
+        // Search Employees
+        document.getElementById('searchBtn').addEventListener('click', async () => {
+            const queryStr = document.getElementById('searchQuery').value.toLowerCase();
+            const resultsEl = document.getElementById('searchResults');
+
+            try {
+                const q = query(collection(db, 'employees'), orderBy('name'));
+                const snap = await getDocs(q);
+                const matches = snap.docs.filter(doc => {
+                    const data = doc.data();
+                    return data.name.toLowerCase().includes(queryStr) ||
+                           data.employeeId.toLowerCase().includes(queryStr) ||
+                           (data.department && data.department.toLowerCase().includes(queryStr));
+                });
+
+                if (matches.length === 0) {
+                    resultsEl.innerHTML = '<p>No employees found.</p>';
+                    return;
+                }
+
+                let table = '<table><tr><th>Name</th><th>ID</th><th>Department</th><th>Join Date</th></tr>';
+                matches.forEach(doc => {
+                    const data = doc.data();
+                    table += `<tr><td>${data.name}</td><td>${data.employeeId}</td><td>${data.department || 'N/A'}</td><td>${data.joinDate}</td></tr>`;
+                });
+                table += '</table>';
+                resultsEl.innerHTML = table;
+            } catch (error) {
+                resultsEl.innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        });
+
+        // Mark Attendance
+        document.getElementById('attendanceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const employeeId = document.getElementById('attEmpId').value;
+            const action = document.getElementById('attAction').value;
+            const date = document.getElementById('attDate').value || new Date().toISOString().split('T')[0];
+            const time = new Date().toTimeString().split(' ')[0];
+            const msgEl = document.getElementById('attMsg');
+
+            try {
+                const attQ = query(collection(db, 'attendance'), where('employeeId', '==', employeeId), where('date', '==', date));
+                const attSnap = await getDocs(attQ);
+
+                if (action === 'check_in') {
+                    if (!attSnap.empty) throw new Error('Already checked in today');
+                    await addDoc(collection(db, 'attendance'), { employeeId, date, checkIn: time, status: 'Present' });
+                } else if (action === 'check_out') {
+                    if (attSnap.empty) throw new Error('No check-in found');
+                    await updateDoc(doc(db, 'attendance', attSnap.docs[0].id), { checkOut: time });
+                } else if (action === 'absent') {
+                    if (!attSnap.empty) {
+                        await updateDoc(doc(db, 'attendance', attSnap.docs[0].id), { status: 'Absent', checkIn: null, checkOut: null });
+                    } else {
+                        await addDoc(collection(db, 'attendance'), { employeeId, date, status: 'Absent' });
+                    }
+                }
+
+                msgEl.textContent = `${action.replace('_', ' ')} recorded!`;
+                msgEl.className = 'success';
+                e.target.reset();
+            } catch (error) {
+                msgEl.textContent = error.message;
+                msgEl.className = 'error';
+            }
+        });
+
+        // Reports
+        window.showReport = function(type) {
+            reportType = type;
+            const form = document.getElementById('reportForm');
+            const label = document.getElementById('reportLabel');
+            const input = document.getElementById('reportInput');
+            const resultsEl = document.getElementById('reportResults');
+
+            form.style.display = 'block';
+            input.style.display = 'none';
+            resultsEl.innerHTML = '';
+
+            if (type === 'daily') {
+                label.textContent = 'Date (YYYY-MM-DD):';
+                input.type = 'date';
+                input.style.display = 'block';
+            } else if (type === 'monthly') {
+                label.textContent = 'Month (YYYY-MM):';
+                input.type = 'month';
+                input.style.display = 'block';
+            } else if (type === 'individual') {
+                label.textContent = 'Employee ID:';
+                input.type = 'text';
+                input.style.display = 'block';
+            } else if (type === 'summary') {
+                label.textContent = '';
+                window.generateReport();
+            }
+        }
+
+        window.generateReport = async function() {
+            const inputVal = document.getElementById('reportInput').value;
+            const resultsEl = document.getElementById('reportResults');
+
+            try {
+                let q, snap;
+                if (reportType === 'daily') {
+                    q = query(collection(db, 'attendance'), where('date', '==', inputVal));
+                    snap = await getDocs(q);
+                    const empQ = query(collection(db, 'employees'));
+                    const empSnap = await getDocs(empQ);
+                    const emps = {};
+                    empSnap.forEach(d => emps[d.data().employeeId] = d.data());
+                    let table = '<table><tr><th>Name</th><th>ID</th><th>Check-in</th><th>Check-out</th><th>Status</th></tr>';
+                    Object.keys(emps).forEach(id => {
+                        const att = snap.docs.find(d => d.data().employeeId === id);
+                        const data = att ? att.data() : { status: 'Absent' };
+                        table += `<tr><td>${emps[id].name}</td><td>${id}</td><td>${data.checkIn || 'N/A'}</td><td>${data.checkOut || 'N/A'}</td><td>${data.status || 'Absent'}</td></tr>`;
+                    });
+                    table += '</table>';
+                    resultsEl.innerHTML = table;
+                } else if (reportType === 'monthly') {
+                    const [year, month] = inputVal.split('-');
+                    const startDate = `${year}-${month}-01`;
+                    const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+                    q = query(collection(db, 'attendance'), where('date', '>=', startDate), where('date', '<=', endDate), where('status', '==', 'Present'));
+                    snap = await getDocs(q);
+                    const presentMap = {};
+                    snap.forEach(d => presentMap[d.data().employeeId] = (presentMap[d.data().employeeId] || 0) + 1);
+                    const empQ = query(collection(db, 'employees'));
+                    const empSnap = await getDocs(empQ);
+                    const totalDays = new Date(endDate) - new Date(startDate) / (1000 * 60 * 60 * 24) + 1;
+                    let table = '<table><tr><th>Name</th><th>ID</th><th>Present Days</th><th>Absent Days</th></tr>';
+                    empSnap.forEach(doc => {
+                        const data = doc.data();
+                        const present = presentMap[data.employeeId] || 0;
+                        table += `<tr><td>${data.name}</td><td>${data.employeeId}</td><td>${present}</td><td>${totalDays - present}</td></tr>`;
+                    });
+                    table += '</table>';
+                    resultsEl.innerHTML = table;
+                } else if (reportType === 'individual') {
+                    q = query(collection(db, 'attendance'), where('employeeId', '==', inputVal), orderBy('date', 'desc'), limit(30));
+                    snap = await getDocs(q);
+                    let table = '<table><tr><th>Date</th><th>Check-in</th><th>Check-out</th><th>Status</th></tr>';
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        table += `<tr><td>${data.date}</td><td>${data.checkIn || 'N/A'}</td><td>${data.checkOut || 'N/A'}</td><td>${data.status || 'Absent'}</td></tr>`;
+                    });
+                    table += '</table>';
+                    resultsEl.innerHTML = table;
+                } else if (reportType === 'summary') {
+                    const today = new Date().toISOString().split('T')[0];
+                    const todayQ = query(collection(db, 'attendance'), where('date', '==', today));
+                    const todaySnap = await getDocs(todayQ);
+                    const empQ = query(collection(db, 'employees'));
+                    const empSnap = await getDocs(empQ);
+                    const present = todaySnap.docs.filter(d => d.data().status === 'Present').length;
+                    let totalHours = 0;
+                    let count = 0;
+                    todaySnap.docs.forEach(d => {
+                        if (d.data().checkOut && d.data().checkIn) {
+                            const inTime = new Date(`2000-01-01T${d.data().checkIn}`).getTime();
+                            const outTime = new Date(`2000-01-01T${d.data().checkOut}`).getTime();
+                            totalHours += (outTime - inTime) / (1000 * 60 * 60);
+                            count++;
+                        }
+                    });
+                    const avgHours = count > 0 ? (totalHours / count).toFixed(2) : 0;
+                    resultsEl.innerHTML = `<p><strong>Total Employees:</strong> ${empSnap.size}<br><strong>Present Today:</strong> ${present}<br><strong>Average Working Hours Today:</strong> ${avgHours}</p>`;
+                }
+            } catch (error) {
+                resultsEl.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+
+        window.exportReport = function() {
+            const inputVal = document.getElementById('reportInput').value;
+            let csvContent = '';
+            if (reportType === 'daily' || reportType === 'monthly' || reportType === 'individual') {
+                const table = document.getElementById('reportResults').querySelector('table');
+                if (table) {
+                    csvContent = [...table.rows].map(row => [...row.cells].map(cell => cell.textContent)).map(row => row.join(',')).join('\n');
+                }
+            } else if (reportType === 'summary') {
+                csvContent = `Total Employees,Present Today,Avg Hours\n${document.getElementById('reportResults').innerText.replace(/\n/g, ',')}`;
+            }
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `attendance_report_${reportType}_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

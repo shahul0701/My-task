@@ -1,0 +1,2390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elegant CRM Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        :root {
+            --primary: #4a6cf7;
+            --primary-dark: #3b5be3;
+            --primary-light: #eef2ff;
+            --secondary: #6c757d;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 80px;
+            --header-height: 70px;
+            --border-radius: 12px;
+            --transition: all 0.3s ease;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --card-bg: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: #f1f5f9;
+            color: var(--dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--dark);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            transition: var(--transition);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+
+        .logo {
+            padding: 1.5rem 1.25rem;
+            display: flex;
+            align-items: center;
+            height: var(--header-height);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo img {
+            width: 36px;
+            height: 36px;
+            margin-right: 12px;
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .logo p {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        .logo .collapse-btn {
+            margin-left: auto;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: var(--transition);
+        }
+
+        .logo .collapse-btn:hover {
+            opacity: 1;
+        }
+
+        .sidebar.collapsed .logo-text,
+        .sidebar.collapsed .nav-text {
+            display: none;
+        }
+
+        .nav-menu {
+            padding: 1rem 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.85rem 1.25rem;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-item.active:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: var(--primary);
+        }
+
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 1.1rem;
+        }
+
+        .nav-text {
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--primary);
+            color: white;
+            padding: 0.15rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .nav-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 1rem 0;
+        }
+
+        .nav-title {
+            padding: 0.5rem 1.25rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.7;
+            margin-top: 1rem;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            transition: var(--transition);
+        }
+
+        .main-content.expanded {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+
+        .header {
+            height: var(--header-height);
+            background: var(--card-bg);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: var(--light);
+            border-radius: 30px;
+            padding: 0.6rem 1.25rem;
+            width: 400px;
+        }
+
+        .search-bar input {
+            border: none;
+            background: transparent;
+            padding: 0 0.75rem;
+            width: 100%;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .search-bar i {
+            color: var(--secondary);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .header-action {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--light);
+            color: var(--dark);
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .header-action:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .user-role {
+            font-size: 0.8rem;
+            color: var(--secondary);
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .page-description {
+            color: var(--secondary);
+            margin-bottom: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 1rem;
+        }
+
+        .stat-icon.blue {
+            background: rgba(74, 108, 247, 0.1);
+            color: var(--primary);
+        }
+
+        .stat-icon.green {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .stat-icon.orange {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .stat-icon.red {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .stat-content h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-content p {
+            color: var(--secondary);
+            font-size: 0.9rem;
+        }
+
+        .filters {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 1.25rem 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--secondary);
+        }
+
+        .filters input, .filters select {
+            padding: 0.75rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            outline: none;
+            font-size: 0.9rem;
+            min-width: 200px;
+            transition: var(--transition);
+        }
+
+        .filters input:focus, .filters select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.1);
+        }
+
+        .filter-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #e2e8f0;
+            color: var(--secondary);
+        }
+
+        .btn-outline:hover {
+            background: var(--light);
+        }
+
+        .company-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .company-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .company-header {
+            padding: 1.25rem 1.5rem;
+            background: var(--primary-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border-left: 4px solid var(--primary);
+        }
+
+        .company-header h3 {
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .company-header-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .company-tasks-count {
+            background: var(--primary);
+            color: white;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .company-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .company-action {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.5);
+            color: var(--primary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .company-action:hover {
+            background: white;
+        }
+
+        .tasks-container {
+            display: none;
+            padding: 0;
+        }
+
+        .task-item {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 1rem;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .task-item:hover {
+            background: #fafafa;
+        }
+
+        .task-item:last-child {
+            border-bottom: none;
+        }
+
+        .task-info h4 {
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .task-info p {
+            color: var(--secondary);
+            font-size: 0.85rem;
+        }
+
+        .task-assignee, .task-assigned-by {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .assignee-img, .assigned-by-img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .assignee-details, .assigned-by-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .assignee-name, .assigned-by-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .assignee-role, .assigned-by-role {
+            font-size: 0.75rem;
+            color: var(--secondary);
+        }
+
+        .task-status {
+            padding: 0.5rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-not-started {
+            background: #fff5eb;
+            color: var(--warning);
+        }
+
+        .status-in-progress {
+            background: #ebf5ff;
+            color: var(--primary);
+        }
+
+        .status-complete {
+            background: #ecfdf5;
+            color: var(--success);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .close-modal {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--secondary);
+            background: none;
+            border: none;
+            transition: var(--transition);
+        }
+
+        .close-modal:hover {
+            color: var(--dark);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .task-detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .detail-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-section h4 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-weight: 600;
+            font-size: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .detail-item {
+            display: flex;
+            margin-bottom: 1rem;
+        }
+
+        .detail-label {
+            width: 140px;
+            color: var(--secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .timeline {
+            grid-column: 1 / -1;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .timeline-date {
+            min-width: 180px;
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 0.9rem;
+        }
+
+        .timeline-content {
+            padding-left: 1.5rem;
+            position: relative;
+            flex: 1;
+        }
+
+        .timeline-content:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary);
+        }
+
+        .timeline-item:not(:last-child) .timeline-content:after {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 18px;
+            bottom: -1.5rem;
+            width: 2px;
+            background: #e2e8f0;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .team-member-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .member-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .member-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .member-info {
+            flex: 1;
+        }
+
+        .member-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .member-role {
+            color: var(--secondary);
+            font-size: 0.9rem;
+        }
+
+        .member-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-box {
+            background: var(--light);
+            border-radius: 8px;
+            padding: 0.75rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--secondary);
+        }
+
+        .work-type-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .work-type-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
+        }
+
+        .work-type-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .work-type-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+
+        .work-type-count {
+            background: var(--primary);
+            color: white;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .work-type-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .calendar-container {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .calendar-switches {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            align-items: center;
+        }
+
+        .switch-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: var(--transition);
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: var(--transition);
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        canvas {
+            max-width: 100%;
+        }
+
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: var(--sidebar-collapsed-width);
+            }
+            
+            .sidebar .logo-text,
+            .sidebar .nav-text {
+                display: none;
+            }
+            
+            .main-content {
+                margin-left: var(--sidebar-collapsed-width);
+            }
+            
+            .search-bar {
+                width: 300px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .search-bar {
+                width: 200px;
+            }
+            
+            .task-item {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .task-assignee, .task-assigned-by {
+                justify-content: flex-start;
+            }
+            
+            .task-detail-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .team-grid, .work-type-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 0 1rem;
+            }
+            
+            .search-bar {
+                display: none;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filters {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .filter-actions {
+                margin-left: 0;
+                width: 100%;
+                justify-content: flex-end;
+            }
+            
+            .user-info {
+                display: none;
+            }
+            
+            .calendar-switches {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <img src="https://cdn-icons-png.flaticon.com/512/5968/5968885.png" alt="Logo">
+                <div class="logo-text">
+                    <h1>TaskForce</h1>
+                    <p>CRM DASHBOARD</p>
+                </div>
+                <div class="collapse-btn">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+
+            <div class="nav-menu">
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <div class="nav-icon">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                
+                <a href="#" class="nav-item" data-view="companies">
+                    <div class="nav-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <span class="nav-text">Companies</span>
+                    <span class="nav-badge" id="companies-count">24</span>
+                </a>
+                
+                <a href="#" class="nav-item" data-view="tasks">
+                    <div class="nav-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <span class="nav-text">Tasks</span>
+                    <span class="nav-badge" id="tasks-count">142</span>
+                </a>
+                
+                <a href="#" class="nav-item" data-view="team">
+                    <div class="nav-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <span class="nav-text">Team</span>
+                </a>
+                
+                <a href="#" class="nav-item" data-view="work-types">
+                    <div class="nav-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <span class="nav-text">Work Types</span>
+                </a>
+                
+                <a href="#" class="nav-item" data-view="calendar">
+                    <div class="nav-icon">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+                    <span class="nav-text">Calendar</span>
+                </a>
+                
+                <div class="nav-divider"></div>
+                
+                <div class="nav-title">Reports</div>
+                
+                <a href="#" class="nav-item" data-view="analytics">
+                    <div class="nav-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <span class="nav-text">Analytics</span>
+                </a>
+                
+                <a href="#" class="nav-item" data-view="reports">
+                    <div class="nav-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <span class="nav-text">Reports</span>
+                </a>
+                
+                <div class="nav-divider"></div>
+                
+                <div class="nav-title">Settings</div>
+                
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <span class="nav-text">Settings</span>
+                </a>
+                
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <span class="nav-text">Help & Support</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="globalSearch" placeholder="Search tasks, companies, or users...">
+                </div>
+                
+                <div class="header-actions">
+                    <div class="header-action">
+                        <i class="far fa-bell"></i>
+                        <span class="notification-badge">5</span>
+                    </div>
+                    
+                    <div class="header-action">
+                        <i class="far fa-envelope"></i>
+                        <span class="notification-badge">3</span>
+                    </div>
+                    
+                    <div class="user-profile">
+                        <div class="user-avatar">JD</div>
+                        <div class="user-info">
+                            <div class="user-name">John Doe</div>
+                            <div class="user-role">Administrator</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content">
+                <!-- Dashboard View -->
+                <div id="dashboard-view" class="view-content">
+                    <h1 class="page-title">Company Task Dashboard</h1>
+                    <p class="page-description">Manage all company tasks and track progress in one place</p>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon blue">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalCompanies">0</h3>
+                                <p>Total Companies</p>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon green">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalTasks">0</h3>
+                                <p>Total Tasks</p>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon orange">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="completedTasks">0</h3>
+                                <p>Completed Tasks</p>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon red">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="pendingTasks">0</h3>
+                                <p>Pending Tasks</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label>Search Company</label>
+                            <input type="search" id="searchCompany" placeholder="Company name...">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Search Owner</label>
+                            <input type="search" id="searchOwner" placeholder="Owner name...">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Status Filter</label>
+                            <select id="statusFilter">
+                                <option value="">All Statuses</option>
+                                <option value="Not Started">Not Started</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Complete">Complete</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-actions">
+                            <button class="btn btn-outline" id="clearFiltersBtn">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
+                            <button class="btn btn-primary" id="refreshBtn">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="company-cards" id="companyCards"></div>
+                </div>
+
+                <!-- Companies View -->
+                <div id="companies-view" class="view-content" style="display: none;">
+                    <h1 class="page-title">Companies</h1>
+                    <p class="page-description">View all companies and their tasks</p>
+                    
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label>Search Company</label>
+                            <input type="search" id="companiesSearch" placeholder="Company name...">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Work Type</label>
+                            <select id="workTypeFilter">
+                                <option value="">All Work Types</option>
+                                <option value="Data Entry">Data Entry</option>
+                                <option value="Analysis">Analysis</option>
+                                <option value="Reporting">Reporting</option>
+                                <option value="Review">Review</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-actions">
+                            <button class="btn btn-primary" id="refreshCompaniesBtn">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="companiesList"></div>
+                </div>
+
+                <!-- Tasks View -->
+                <div id="tasks-view" class="view-content" style="display: none;">
+                    <h1 class="page-title">All Tasks</h1>
+                    <p class="page-description">View and manage all tasks across companies</p>
+                    
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label>Search Task</label>
+                            <input type="search" id="tasksSearch" placeholder="Task name...">
+                        </div>
+                        <div class="filter-group">
+                            <label>Search Company</label>
+                            <input type="search" id="tasksCompanySearch" placeholder="Company name...">
+                        </div>
+                        <div class="filter-group">
+                            <label>Search Owner</label>
+                            <input type="search" id="tasksOwnerSearch" placeholder="Owner name...">
+                        </div>
+                        <div class="filter-group">
+                            <label>Status Filter</label>
+                            <select id="tasksStatusFilter">
+                                <option value="">All Statuses</option>
+                                <option value="Not Started">Not Started</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Complete">Complete</option>
+                            </select>
+                        </div>
+                        <div class="filter-actions">
+                            <button class="btn btn-outline" id="clearTasksFiltersBtn">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
+                            <button class="btn btn-primary" id="refreshTasksBtn">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="company-cards" id="tasksList"></div>
+                </div>
+
+                <!-- Team View -->
+                <div id="team-view" class="view-content" style="display: none;">
+                    <h1 class="page-title">Team Members</h1>
+                    <p class="page-description">View team performance and task assignments</p>
+                    
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label>Search Member</label>
+                            <input type="search" id="teamSearch" placeholder="Member name...">
+                        </div>
+                        
+                        <div class="filter-actions">
+                            <button class="btn btn-primary" id="refreshTeamBtn">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="team-grid" id="teamGrid"></div>
+                </div>
+
+                <!-- Work Types View -->
+                <div id="work-types-view" class="view-content" style="display: none;">
+                    <h1 class="page-title">Work Types</h1>
+                    <p class="page-description">View tasks by work type</p>
+                    
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label>Work Type</label>
+                            <select id="workTypeViewFilter">
+                                <option value="">All Work Types</option>
+                                <option value="Data Entry">Data Entry</option>
+                                <option value="Analysis">Analysis</option>
+                                <option value="Reporting">Reporting</option>
+                                <option value="Review">Review</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-actions">
+                            <button class="btn btn-primary" id="refreshWorkTypesBtn">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="work-type-grid" id="workTypeGrid"></div>
+                </div>
+
+                <!-- Calendar View -->
+                <div id="calendar-view" class="view-content" style="display: none;">
+                    <h1 class="page-title">Calendar</h1>
+                    <p class="page-description">View tasks by due date or start to completion</p>
+                    
+                    <div class="calendar-container">
+                        <div class="calendar-switches">
+                            <div class="switch-group">
+                                <label>Task Due Date</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="dueDateSwitch" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="switch-group">
+                                <label>Task Start to Complete</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="startCompleteSwitch">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <input type="text" id="calendarPicker" placeholder="Select date...">
+                    </div>
+                    
+                    <div class="company-cards" id="calendarTasks"></div>
+                </div>
+
+                <!-- Analytics View -->
+                <div id="analytics-view" class="view-content" style="display: none;">
+                    <h1 class="page-title">Analytics</h1>
+                    <p class="page-description">View percentage distribution of company work by team members</p>
+                    
+                    <div class="chart-container">
+                        <canvas id="companyWorkChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Reports View -->
+                <div id="reports-view" class="view-content" style="display: none;">
+                    <h1 class="page-title">Reports</h1>
+                    <p class="page-description">View company work distribution by work type</p>
+                    
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label>Search Company</label>
+                            <input type="search" id="reportsCompanySearch" placeholder="Company name...">
+                        </div>
+                        <div class="filter-actions">
+                            <button class="btn btn-primary" id="refreshReportsBtn">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="companyWorkTypeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Detail Modal -->
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTaskTitle">Task Details</h3>
+                <button class="close-modal" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body" id="modalTaskBody"></div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD9ymWqihHWbVb4IRop1lXT-huLjBvS50w",
+            authDomain: "task-manager-602da.firebaseapp.com",
+            projectId: "task-manager-602da",
+            storageBucket: "task-manager-602da.appspot.com",
+            messagingSenderId: "438978699329",
+            appId: "1:438978699329:web:9f475d04352bbdaa5ce6c0"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // DOM Elements
+        const companyCards = document.getElementById('companyCards');
+        const searchCompany = document.getElementById('searchCompany');
+        const searchOwner = document.getElementById('searchOwner');
+        const statusFilter = document.getElementById('statusFilter');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+        const taskModal = document.getElementById('taskModal');
+        const closeModal = document.getElementById('closeModal');
+        const modalTaskTitle = document.getElementById('modalTaskTitle');
+        const modalTaskBody = document.getElementById('modalTaskBody');
+        
+        const totalCompaniesEl = document.getElementById('totalCompanies');
+        const totalTasksEl = document.getElementById('totalTasks');
+        const completedTasksEl = document.getElementById('completedTasks');
+        const pendingTasksEl = document.getElementById('pendingTasks');
+        
+        // View elements
+        const viewContents = document.querySelectorAll('.view-content');
+        const navItems = document.querySelectorAll('.nav-item[data-view]');
+        
+        // Companies view elements
+        const companiesView = document.getElementById('companies-view');
+        const companiesList = document.getElementById('companiesList');
+        const companiesSearch = document.getElementById('companiesSearch');
+        const workTypeFilter = document.getElementById('workTypeFilter');
+        const refreshCompaniesBtn = document.getElementById('refreshCompaniesBtn');
+        
+        // Tasks view elements
+        const tasksView = document.getElementById('tasks-view');
+        const tasksList = document.getElementById('tasksList');
+        const tasksSearch = document.getElementById('tasksSearch');
+        const tasksCompanySearch = document.getElementById('tasksCompanySearch');
+        const tasksOwnerSearch = document.getElementById('tasksOwnerSearch');
+        const tasksStatusFilter = document.getElementById('tasksStatusFilter');
+        const clearTasksFiltersBtn = document.getElementById('clearTasksFiltersBtn');
+        const refreshTasksBtn = document.getElementById('refreshTasksBtn');
+        
+        // Team view elements
+        const teamView = document.getElementById('team-view');
+        const teamGrid = document.getElementById('teamGrid');
+        const teamSearch = document.getElementById('teamSearch');
+        const refreshTeamBtn = document.getElementById('refreshTeamBtn');
+        
+        // Work types view elements
+        const workTypesView = document.getElementById('work-types-view');
+        const workTypeGrid = document.getElementById('workTypeGrid');
+        const workTypeViewFilter = document.getElementById('workTypeViewFilter');
+        const refreshWorkTypesBtn = document.getElementById('refreshWorkTypesBtn');
+        
+        // Calendar view elements
+        const calendarView = document.getElementById('calendar-view');
+        const calendarPicker = document.getElementById('calendarPicker');
+        const dueDateSwitch = document.getElementById('dueDateSwitch');
+        const startCompleteSwitch = document.getElementById('startCompleteSwitch');
+        const calendarTasks = document.getElementById('calendarTasks');
+        
+        // Analytics view elements
+        const analyticsView = document.getElementById('analytics-view');
+        const companyWorkChartCanvas = document.getElementById('companyWorkChart');
+        
+        // Reports view elements
+        const reportsView = document.getElementById('reports-view');
+        const reportsCompanySearch = document.getElementById('reportsCompanySearch');
+        const refreshReportsBtn = document.getElementById('refreshReportsBtn');
+        const companyWorkTypeChartCanvas = document.getElementById('companyWorkTypeChart');
+        
+        // Global search
+        const globalSearch = document.getElementById('globalSearch');
+
+        let allTasks = [];
+        let filteredTasks = [];
+        let companies = {};
+        let teamMembers = {};
+        let workTypes = {};
+        let companyWorkChart = null;
+        let companyWorkTypeChart = null;
+
+        // Initialize Flatpickr
+        flatpickr(calendarPicker, {
+            inline: true,
+            dateFormat: "Y-m-d",
+            onChange: loadCalendarView
+        });
+
+        // Navigation handling
+        navItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const viewName = this.getAttribute('data-view');
+                
+                navItems.forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+                
+                viewContents.forEach(view => view.style.display = 'none');
+                document.getElementById(`${viewName}-view`).style.display = 'block';
+                
+                if (viewName === 'team') {
+                    loadTeamView();
+                } else if (viewName === 'work-types') {
+                    loadWorkTypesView();
+                } else if (viewName === 'companies') {
+                    loadCompaniesView();
+                } else if (viewName === 'tasks') {
+                    loadTasksView();
+                } else if (viewName === 'calendar') {
+                    loadCalendarView();
+                } else if (viewName === 'analytics') {
+                    loadAnalyticsView();
+                } else if (viewName === 'reports') {
+                    loadReportsView();
+                }
+            });
+        });
+
+        async function loadTasks() {
+            try {
+                const snapshot = await db.collection('tasks').get();
+                allTasks = [];
+                companies = {};
+                teamMembers = {};
+                workTypes = {};
+                
+                snapshot.forEach(doc => {
+                    const taskData = { id: doc.id, ...doc.data() };
+                    allTasks.push(taskData);
+                    
+                    const companyName = taskData['Existing Company Name'] || 'Unknown Company';
+                    if (!companies[companyName]) {
+                        companies[companyName] = [];
+                    }
+                    companies[companyName].push(taskData);
+                    
+                    const ownerName = taskData.Owner || 'Unassigned';
+                    if (!teamMembers[ownerName]) {
+                        teamMembers[ownerName] = {
+                            tasks: [],
+                            completed: 0,
+                            inProgress: 0,
+                            notStarted: 0,
+                            totalHours: 0,
+                            pauseHours: 0
+                        };
+                    }
+                    teamMembers[ownerName].tasks.push(taskData);
+                    
+                    if (taskData.Status === 'Complete') teamMembers[ownerName].completed++;
+                    else if (taskData.Status === 'In Progress') teamMembers[ownerName].inProgress++;
+                    else teamMembers[ownerName].notStarted++;
+                    
+                    teamMembers[ownerName].totalHours += parseFloat(taskData.TotalWorkHours || 0);
+                    teamMembers[ownerName].pauseHours += parseFloat(taskData.TotalPauseHours || 0);
+                    
+                    const workType = taskData['TYPE OF WORK'] || 'Other';
+                    if (!workTypes[workType]) {
+                        workTypes[workType] = {
+                            tasks: [],
+                            completed: 0,
+                            inProgress: 0,
+                            notStarted: 0
+                        };
+                    }
+                    workTypes[workType].tasks.push(taskData);
+                    
+                    if (taskData.Status === 'Complete') workTypes[workType].completed++;
+                    else if (taskData.Status === 'In Progress') workTypes[workType].inProgress++;
+                    else workTypes[workType].notStarted++;
+                });
+
+                updateStats();
+                applyFilters();
+            } catch (error) {
+                console.error("Error loading tasks:", error);
+            }
+        }
+
+        function updateStats() {
+            const companyCount = Object.keys(companies).length;
+            const taskCount = allTasks.length;
+            const completedCount = allTasks.filter(task => task.Status === 'Complete').length;
+            const pendingCount = taskCount - completedCount;
+            
+            totalCompaniesEl.textContent = companyCount;
+            totalTasksEl.textContent = taskCount;
+            completedTasksEl.textContent = completedCount;
+            pendingTasksEl.textContent = pendingCount;
+            
+            document.getElementById('companies-count').textContent = companyCount;
+            document.getElementById('tasks-count').textContent = taskCount;
+        }
+
+        function renderCompanyCards(tasksByCompany, container = companyCards) {
+            container.innerHTML = '';
+            
+            Object.keys(tasksByCompany).sort().forEach(companyName => {
+                const tasks = tasksByCompany[companyName];
+                
+                const companyCard = document.createElement('div');
+                companyCard.classList.add('company-card');
+                
+                const companyHeader = document.createElement('div');
+                companyHeader.classList.add('company-header');
+                companyHeader.innerHTML = `
+                    <div class="company-header-info">
+                        <h3>${companyName}</h3>
+                        <span class="company-tasks-count">${tasks.length} tasks</span>
+                    </div>
+                    <div class="company-header-actions">
+                        <div class="company-action">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="company-action">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                `;
+                
+                const tasksContainer = document.createElement('div');
+                tasksContainer.classList.add('tasks-container');
+                tasksContainer.id = `tasks-${companyName.replace(/\s+/g, '-')}`;
+                
+                tasks.forEach(task => {
+                    const taskItem = document.createElement('div');
+                    taskItem.classList.add('task-item');
+                    
+                    const assigneeInitials = getInitials(task.Owner || '');
+                    const assignedByInitials = getInitials(task['Assigned By'] || '');
+                    
+                    let statusClass = 'status-not-started';
+                    if (task.Status === 'In Progress') statusClass = 'status-in-progress';
+                    if (task.Status === 'Complete') statusClass = 'status-complete';
+                    
+                    taskItem.innerHTML = `
+                        <div class="task-info">
+                            <h4>${task.Task || ''} (${task['TYPE OF WORK'] || ''})</h4>
+                            <p>Due: ${task['Due date'] || 'No due date'}</p>
+                        </div>
+                        <div class="task-status ${statusClass}">${task.Status || 'Not Started'}</div>
+                        <div class="task-assignee">
+                            <div class="assignee-img">${assigneeInitials}</div>
+                            <div class="assignee-details">
+                                <div class="assignee-name">${task.Owner || 'Unassigned'}</div>
+                                <div class="assignee-role">Assignee</div>
+                            </div>
+                        </div>
+                        <div class="task-assigned-by">
+                            <div class="assigned-by-img">${assignedByInitials}</div>
+                            <div class="assigned-by-details">
+                                <div class="assigned-by-name">${task['Assigned By'] || 'Unknown'}</div>
+                                <div class="assigned-by-role">Assigned By</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    taskItem.addEventListener('click', () => {
+                        showTaskDetails(task);
+                    });
+                    
+                    tasksContainer.appendChild(taskItem);
+                });
+                
+                companyHeader.addEventListener('click', () => {
+                    if (tasksContainer.style.display === 'block') {
+                        tasksContainer.style.display = 'none';
+                        companyHeader.querySelector('.fa-chevron-down').className = 'fas fa-chevron-down';
+                    } else {
+                        tasksContainer.style.display = 'block';
+                        companyHeader.querySelector('.fa-chevron-down').className = 'fas fa-chevron-up';
+                    }
+                });
+                
+                companyCard.appendChild(companyHeader);
+                companyCard.appendChild(tasksContainer);
+                container.appendChild(companyCard);
+            });
+        }
+
+        function loadCompaniesView() {
+            const searchTerm = companiesSearch.value.toLowerCase();
+            const workType = workTypeFilter.value;
+            
+            companiesList.innerHTML = '';
+            
+            Object.keys(companies).sort().forEach(companyName => {
+                if (searchTerm && !companyName.toLowerCase().includes(searchTerm)) return;
+                
+                const tasks = companies[companyName];
+                const filteredTasks = workType ? 
+                    tasks.filter(task => task['TYPE OF WORK'] === workType) : 
+                    tasks;
+                
+                if (filteredTasks.length === 0) return;
+                
+                const companyCard = document.createElement('div');
+                companyCard.classList.add('company-card');
+                
+                const completedCount = filteredTasks.filter(task => task.Status === 'Complete').length;
+                const inProgressCount = filteredTasks.filter(task => task.Status === 'In Progress').length;
+                const notStartedCount = filteredTasks.filter(task => !task.Status || task.Status === 'Not Started').length;
+                
+                const workTypes = [...new Set(filteredTasks.map(task => task['TYPE OF WORK'] || 'Other'))];
+                
+                companyCard.innerHTML = `
+                    <div class="company-header">
+                        <div class="company-header-info">
+                            <h3>${companyName}</h3>
+                            <span class="company-tasks-count">${filteredTasks.length} tasks</span>
+                        </div>
+                        <div class="company-header-actions">
+                            <div class="company-action">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tasks-container">
+                        <div style="padding: 1rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <div style="text-align: center; padding: 1rem; background: #ecfdf5; border-radius: 8px;">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">${completedCount}</div>
+                                <div style="font-size: 0.8rem; color: #64748b;">Completed</div>
+                            </div>
+                            <div style="text-align: center; padding: 1rem; background: #ebf5ff; border-radius: 8px;">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #3b82f6;">${inProgressCount}</div>
+                                <div style="font-size: 0.8rem; color: #64748b;">In Progress</div>
+                            </div>
+                            <div style="text-align: center; padding: 1rem; background: #fff5eb; border-radius: 8px;">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #f59e0b;">${notStartedCount}</div>
+                                <div style="font-size: 0.8rem; color: #64748b;">Not Started</div>
+                            </div>
+                        </div>
+                        <div style="padding: 0 1rem 1rem;">
+                            <h4 style="margin-bottom: 0.5rem;">Work Types:</h4>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                ${workTypes.map(type => `<span style="background: #eef2ff; color: #4a6cf7; padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.8rem;">${type}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                companyCard.querySelector('.company-header').addEventListener('click', function() {
+                    const tasksContainer = this.nextElementSibling;
+                    if (tasksContainer.style.display === 'block') {
+                        tasksContainer.style.display = 'none';
+                        this.querySelector('.fa-chevron-down').className = 'fas fa-chevron-down';
+                    } else {
+                        tasksContainer.style.display = 'block';
+                        this.querySelector('.fa-chevron-down').className = 'fas fa-chevron-up';
+                    }
+                });
+                
+                companiesList.appendChild(companyCard);
+            });
+        }
+
+        function loadTasksView() {
+            const taskSearchTerm = tasksSearch.value.toLowerCase();
+            const companySearchTerm = tasksCompanySearch.value.toLowerCase();
+            const ownerSearchTerm = tasksOwnerSearch.value.toLowerCase();
+            const statusFilterValue = tasksStatusFilter.value;
+
+            const filteredTasks = allTasks.filter(task => {
+                const matchTask = task.Task?.toLowerCase().includes(taskSearchTerm);
+                const matchCompany = task['Existing Company Name']?.toLowerCase().includes(companySearchTerm);
+                const matchOwner = task.Owner?.toLowerCase().includes(ownerSearchTerm);
+                const matchStatus = !statusFilterValue || task.Status === statusFilterValue;
+                return matchTask && matchCompany && matchOwner && matchStatus;
+            });
+
+            tasksList.innerHTML = '';
+
+            const taskCard = document.createElement('div');
+            taskCard.classList.add('company-card');
+
+            const tasksContainer = document.createElement('div');
+            tasksContainer.classList.add('tasks-container');
+            tasksContainer.style.display = 'block';
+
+            filteredTasks.forEach(task => {
+                const taskItem = document.createElement('div');
+                taskItem.classList.add('task-item');
+
+                const assigneeInitials = getInitials(task.Owner || '');
+                const assignedByInitials = getInitials(task['Assigned By'] || '');
+
+                let statusClass = 'status-not-started';
+                if (task.Status === 'In Progress') statusClass = 'status-in-progress';
+                if (task.Status === 'Complete') statusClass = 'status-complete';
+
+                taskItem.innerHTML = `
+                    <div class="task-info">
+                        <h4>${task.Task || ''} (${task['TYPE OF WORK'] || ''})</h4>
+                        <p>Company: ${task['Existing Company Name'] || 'Unknown Company'} | Due: ${task['Due date'] || 'No due date'}</p>
+                    </div>
+                    <div class="task-status ${statusClass}">${task.Status || 'Not Started'}</div>
+                    <div class="task-assignee">
+                        <div class="assignee-img">${assigneeInitials}</div>
+                        <div class="assignee-details">
+                            <div class="assignee-name">${task.Owner || 'Unassigned'}</div>
+                            <div class="assignee-role">Assignee</div>
+                        </div>
+                    </div>
+                    <div class="task-assigned-by">
+                        <div class="assigned-by-img">${assignedByInitials}</div>
+                        <div class="assigned-by-details">
+                            <div class="assigned-by-name">${task['Assigned By'] || 'Unknown'}</div>
+                            <div class="assigned-by-role">Assigned By</div>
+                        </div>
+                    </div>
+                `;
+
+                taskItem.addEventListener('click', () => {
+                    showTaskDetails(task);
+                });
+
+                tasksContainer.appendChild(taskItem);
+            });
+
+            taskCard.appendChild(tasksContainer);
+            tasksList.appendChild(taskCard);
+        }
+
+        function loadCalendarView() {
+            const selectedDate = calendarPicker.value;
+            const showDueDate = dueDateSwitch.checked;
+            const showStartComplete = startCompleteSwitch.checked;
+            
+            if (!selectedDate || (!showDueDate && !showStartComplete)) {
+                calendarTasks.innerHTML = '<p>Please select a date and at least one filter option.</p>';
+                return;
+            }
+
+            const filteredTasks = allTasks.filter(task => {
+                if (showDueDate && task['Due date'] === selectedDate) {
+                    return true;
+                }
+                if (showStartComplete && task.taskStart && task.taskEnd) {
+                    const startDate = formatTimestamp(task.taskStart).split(',')[0];
+                    const endDate = formatTimestamp(task.taskEnd).split(',')[0];
+                    return selectedDate >= startDate && selectedDate <= endDate;
+                }
+                return false;
+            });
+
+            const tasksByCompany = {};
+            filteredTasks.forEach(task => {
+                const companyName = task['Existing Company Name'] || 'Unknown Company';
+                if (!tasksByCompany[companyName]) {
+                    tasksByCompany[companyName] = [];
+                }
+                tasksByCompany[companyName].push(task);
+            });
+
+            renderCompanyCards(tasksByCompany, calendarTasks);
+        }
+
+        function loadAnalyticsView() {
+            const memberTaskCounts = {};
+            Object.values(teamMembers).forEach(member => {
+                memberTaskCounts[member.tasks[0]?.Owner || 'Unassigned'] = member.tasks.length;
+            });
+
+            const labels = Object.keys(memberTaskCounts);
+            const data = Object.values(memberTaskCounts);
+            const total = data.reduce((sum, count) => sum + count, 0);
+            const percentages = data.map(count => ((count / total) * 100).toFixed(1));
+
+            if (companyWorkChart) {
+                companyWorkChart.destroy();
+            }
+
+            companyWorkChart = new Chart(companyWorkChartCanvas, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: percentages,
+                        backgroundColor: [
+                            '#4a6cf7',
+                            '#10b981',
+                            '#f59e0b',
+                            '#ef4444',
+                            '#8b5cf6',
+                            '#ec4899'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Work Distribution by Team Member (%)'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: context => `${context.label}: ${context.raw}%`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function loadReportsView() {
+            const searchTerm = reportsCompanySearch.value.toLowerCase();
+            
+            const filteredCompanies = Object.keys(companies).filter(company => 
+                searchTerm ? company.toLowerCase().includes(searchTerm) : true
+            );
+
+            const workTypeCounts = {};
+            filteredCompanies.forEach(companyName => {
+                const tasks = companies[companyName];
+                tasks.forEach(task => {
+                    const workType = task['TYPE OF WORK'] || 'Other';
+                    if (!workTypeCounts[workType]) {
+                        workTypeCounts[workType] = 0;
+                    }
+                    workTypeCounts[workType]++;
+                });
+            });
+
+            const labels = Object.keys(workTypeCounts);
+            const data = Object.values(workTypeCounts);
+
+            if (companyWorkTypeChart) {
+                companyWorkTypeChart.destroy();
+            }
+
+            companyWorkTypeChart = new Chart(companyWorkTypeChartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Tasks by Work Type',
+                        data: data,
+                        backgroundColor: '#4a6cf7'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Company Work Distribution by Work Type'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Tasks'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function showTaskDetails(task) {
+            modalTaskTitle.textContent = `${task.Task || 'Task'} - ${task['Existing Company Name'] || ''}`;
+            
+            const assigneeInitials = getInitials(task.Owner || '');
+            const assignedByInitials = getInitials(task['Assigned By'] || '');
+            
+            let statusClass = 'status-not-started';
+            if (task.Status === 'In Progress') statusClass = 'status-in-progress';
+            if (task.Status === 'Complete') statusClass = 'status-complete';
+            
+            let timelineHTML = '';
+            if (task.workSessions && task.workSessions.length > 0) {
+                timelineHTML = `<div class="timeline">
+                    <h4>Work Sessions Timeline</h4>`;
+                
+                task.workSessions.forEach(session => {
+                    timelineHTML += `
+                        <div class="timeline-item">
+                            <div class="timeline-date">${formatTimestamp(session.start)}</div>
+                            <div class="timeline-content">
+                                <strong>Session Started</strong>
+                                <p>Work began on this task</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    if (session.end) {
+                        timelineHTML += `
+                            <div class="timeline-item">
+                                <div class="timeline-date">${formatTimestamp(session.end)}</div>
+                                <div class="timeline-content">
+                                    <strong>Session Ended</strong>
+                                    <p>Work paused or completed</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                timelineHTML += `</div>`;
+            }
+            
+            modalTaskBody.innerHTML = `
+                <div class="task-detail-grid">
+                    <div class="detail-section">
+                        <h4>Task Information</h4>
+                        <div class="detail-item">
+                            <div class="detail-label">Type of Work:</div>
+                            <div class="detail-value">${task['TYPE OF WORK'] || ''}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Status:</div>
+                            <div class="detail-value"><span class="task-status ${statusClass}">${task.Status || 'Not Started'}</span></div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Due Date:</div>
+                            <div class="detail-value">${task['Due date'] || 'No due date'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Period:</div>
+                            <div class="detail-value">${task.PERIOD || ''}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Work For:</div>
+                            <div class="detail-value">${task['WORK FOR'] || ''}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4>Assignment</h4>
+                        <div class="detail-item">
+                            <div class="detail-label">Assigned To:</div>
+                            <div class="detail-value">
+                                <div class="task-assignee">
+                                    <div class="assignee-img">${assigneeInitials}</div>
+                                    <div>${task.Owner || 'Unassigned'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Assigned By:</div>
+                            <div class="detail-value">
+                                <div class="task-assigned-by">
+                                    <div class="assigned-by-img">${assignedByInitials}</div>
+                                    <div>${task['Assigned By'] || 'Unknown'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Account Type:</div>
+                            <div class="detail-value">${task['ACCOUNT TYPE'] || ''}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Accounts/Cards:</div>
+                            <div class="detail-value">${task['Accounts / Cards'] || ''}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4>Time Tracking</h4>
+                        <div class="detail-item">
+                            <div class="detail-label">Time Started:</div>
+                            <div class="detail-value">${formatTimestamp(task.taskStart)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Time Ended:</div>
+                            <div class="detail-value">${formatTimestamp(task.taskEnd)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Total Work Hours:</div>
+                            <div class="detail-value">${task.TotalWorkHours || ''}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Total Pause Hours:</div>
+                            <div class="detail-value">${task.TotalPauseHours || ''}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h4>Additional Information</h4>
+                        <div class="detail-item">
+                            <div class="detail-label">Notes:</div>
+                            <div class="detail-value">${task.Notes || ''}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Remarks:</div>
+                            <div class="detail-value">${task.Remarks || ''}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">SINO:</div>
+                            <div class="detail-value">${task.SINO || ''}</div>
+                        </div>
+                    </div>
+                </div>
+                ${timelineHTML}
+            `;
+            
+            taskModal.style.display = 'flex';
+        }
+
+        function getInitials(name) {
+            return name.split(' ')
+                .map(part => part.charAt(0))
+                .join('')
+                .toUpperCase()
+                .substring(0, 2);
+        }
+
+        function formatTimestamp(ts) {
+            if (!ts) return 'Not specified';
+            if (typeof ts.toDate === 'function') {
+                return ts.toDate().toLocaleString().split(',')[0];
+            }
+            if (ts instanceof Date) {
+                return ts.toLocaleString().split(',')[0];
+            }
+            return ts;
+        }
+
+        function applyFilters() {
+            const companyFilter = searchCompany.value.toLowerCase();
+            const ownerFilter = searchOwner.value.toLowerCase();
+            const status = statusFilter.value;
+
+            filteredTasks = allTasks.filter(task => {
+                const matchCompany = task['Existing Company Name']?.toLowerCase().includes(companyFilter);
+                const matchOwner = task.Owner?.toLowerCase().includes(ownerFilter);
+                const matchStatus = !status || task.Status === status;
+                return matchCompany && matchOwner && matchStatus;
+            });
+
+            const filteredCompanies = {};
+            filteredTasks.forEach(task => {
+                const companyName = task['Existing Company Name'] || 'Unknown Company';
+                if (!filteredCompanies[companyName]) {
+                    filteredCompanies[companyName] = [];
+                }
+                filteredCompanies[companyName].push(task);
+            });
+
+            renderCompanyCards(filteredCompanies);
+        }
+
+        // Event listeners
+        [searchCompany, searchOwner, statusFilter].forEach(el =>
+            el.addEventListener('input', applyFilters)
+        );
+        
+        clearFiltersBtn.addEventListener('click', () => {
+            searchCompany.value = '';
+            searchOwner.value = '';
+            statusFilter.value = '';
+            applyFilters();
+        });
+        
+        refreshBtn.addEventListener('click', loadTasks);
+        
+        companiesSearch.addEventListener('input', loadCompaniesView);
+        workTypeFilter.addEventListener('change', loadCompaniesView);
+        refreshCompaniesBtn.addEventListener('click', loadTasks);
+        
+        [tasksSearch, tasksCompanySearch, tasksOwnerSearch, tasksStatusFilter].forEach(el =>
+            el.addEventListener('input', loadTasksView)
+        );
+
+        clearTasksFiltersBtn.addEventListener('click', () => {
+            tasksSearch.value = '';
+            tasksCompanySearch.value = '';
+            tasksOwnerSearch.value = '';
+            tasksStatusFilter.value = '';
+            loadTasksView();
+        });
+
+        refreshTasksBtn.addEventListener('click', loadTasks);
+        
+        teamSearch.addEventListener('input', loadTeamView);
+        refreshTeamBtn.addEventListener('click', loadTasks);
+        
+        workTypeViewFilter.addEventListener('change', loadWorkTypesView);
+        refreshWorkTypesBtn.addEventListener('click', loadTasks);
+        
+        dueDateSwitch.addEventListener('change', loadCalendarView);
+        startCompleteSwitch.addEventListener('change', loadCalendarView);
+        
+        reportsCompanySearch.addEventListener('input', loadReportsView);
+        refreshReportsBtn.addEventListener('click', loadTasks);
+        
+        globalSearch.addEventListener('input', () => {
+            const searchTerm = globalSearch.value.toLowerCase();
+            if (!searchTerm) {
+                applyFilters();
+                return;
+            }
+            
+            const searchFilteredTasks = allTasks.filter(task => {
+                return (
+                    task.Task?.toLowerCase().includes(searchTerm) ||
+                    task['Existing Company Name']?.toLowerCase().includes(searchTerm) ||
+                    task.Owner?.toLowerCase().includes(searchTerm) ||
+                    task['Assigned By']?.toLowerCase().includes(searchTerm) ||
+                    task['TYPE OF WORK']?.toLowerCase().includes(searchTerm)
+                );
+            });
+            
+            const searchFilteredCompanies = {};
+            searchFilteredTasks.forEach(task => {
+                const companyName = task['Existing Company Name'] || 'Unknown Company';
+                if (!searchFilteredCompanies[companyName]) {
+                    searchFilteredCompanies[companyName] = [];
+                }
+                searchFilteredCompanies[companyName].push(task);
+            });
+
+            renderCompanyCards(searchFilteredCompanies);
+        });
+        
+        closeModal.addEventListener('click', () => {
+            taskModal.style.display = 'none';
+        });
+        
+        window.addEventListener('click', (event) => {
+            if (event.target === taskModal) {
+                taskModal.style.display = 'none';
+            }
+        });
+
+        const collapseBtn = document.querySelector('.collapse-btn');
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
+
+        // Sidebar collapse/expand functionality
+        collapseBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+        });
+
+        // Load Team View
+        function loadTeamView() {
+            const searchTerm = teamSearch.value.toLowerCase();
+            teamGrid.innerHTML = '';
+
+            Object.keys(teamMembers).sort().forEach(memberName => {
+                if (searchTerm && !memberName.toLowerCase().includes(searchTerm)) return;
+
+                const member = teamMembers[memberName];
+                const memberInitials = getInitials(memberName);
+
+                const memberCard = document.createElement('div');
+                memberCard.classList.add('team-member-card');
+
+                memberCard.innerHTML = `
+                    <div class="member-header">
+                        <div class="member-avatar">${memberInitials}</div>
+                        <div class="member-info">
+                            <div class="member-name">${memberName}</div>
+                            <div class="member-role">Team Member</div>
+                        </div>
+                    </div>
+                    <div class="member-stats">
+                        <div class="stat-box">
+                            <div class="stat-value">${member.tasks.length}</div>
+                            <div class="stat-label">Total Tasks</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">${member.completed}</div>
+                            <div class="stat-label">Completed</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">${member.inProgress}</div>
+                            <div class="stat-label">In Progress</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">${member.notStarted}</div>
+                            <div class="stat-label">Not Started</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">${member.totalHours.toFixed(1)}</div>
+                            <div class="stat-label">Work Hours</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">${member.pauseHours.toFixed(1)}</div>
+                            <div class="stat-label">Pause Hours</div>
+                        </div>
+                    </div>
+                `;
+
+                teamGrid.appendChild(memberCard);
+            });
+        }
+
+        // Load Work Types View
+        function loadWorkTypesView() {
+            const selectedWorkType = workTypeViewFilter.value;
+            workTypeGrid.innerHTML = '';
+
+            Object.keys(workTypes).sort().forEach(workType => {
+                if (selectedWorkType && workType !== selectedWorkType) return;
+
+                const typeData = workTypes[workType];
+
+                const workTypeCard = document.createElement('div');
+                workTypeCard.classList.add('work-type-card');
+
+                workTypeCard.innerHTML = `
+                    <div class="work-type-header">
+                        <div class="work-type-title">${workType}</div>
+                        <div class="work-type-count">${typeData.tasks.length} tasks</div>
+                    </div>
+                    <div class="work-type-stats">
+                        <div class="stat-box">
+                            <div class="stat-value">${typeData.completed}</div>
+                            <div class="stat-label">Completed</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">${typeData.inProgress}</div>
+                            <div class="stat-label">In Progress</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">${typeData.notStarted}</div>
+                            <div class="stat-label">Not Started</div>
+                        </div>
+                    </div>
+                `;
+
+                workTypeGrid.appendChild(workTypeCard);
+            });
+        }
+
+        // Initialize the dashboard
+        async function initialize() {
+            await loadTasks();
+            applyFilters();
+            // Set default view to dashboard
+            document.getElementById('dashboard-view').style.display = 'block';
+        }
+
+        // Call initialize when the page loads
+        document.addEventListener('DOMContentLoaded', initialize);
+    </script>
+</body>
+</html>

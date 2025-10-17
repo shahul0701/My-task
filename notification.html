@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Task Manager - Assigned Tasks by Date</title>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
+    }
+
+    header {
+      background: #004080;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1em 2em;
+    }
+
+    h1 {
+      margin: 0;
+    }
+
+    #todayAssignedTasks {
+      max-width: 600px;
+      margin: 30px auto;
+      background: #fff;
+      padding: 1.5em 2em;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    #todayAssignedTasks h2 {
+      color: #004080;
+      margin-bottom: 1em;
+      font-weight: 600;
+      border-bottom: 2px solid #004080;
+      padding-bottom: 0.3em;
+    }
+
+    .date-selector {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 1.5em;
+      gap: 10px;
+    }
+
+    .date-selector button {
+      padding: 6px 12px;
+      background-color: #004080;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1em;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+
+    .date-selector button:hover {
+      background-color: #003060;
+    }
+
+    .date-selector input[type="date"] {
+      padding: 6px 10px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      user-select: none;
+    }
+
+    .notification-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .notification-list li {
+      padding: 10px 15px;
+      border-bottom: 1px solid #eee;
+      font-size: 1em;
+      color: #222;
+    }
+
+    .notification-list li:last-child {
+      border-bottom: none;
+    }
+
+    .notification-list li.empty-message {
+      font-style: italic;
+      color: #666;
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Task Manager</h1>
+  </header>
+
+  <section id="todayAssignedTasks" aria-live="polite" aria-atomic="true">
+    <h2>Assigned Tasks by Date</h2>
+
+    <div class="date-selector" role="group" aria-label="Select date to view tasks">
+      <button id="prevDateBtn" aria-label="Previous Day">&larr; Prev</button>
+      <input type="date" id="datePicker" />
+      <button id="nextDateBtn" aria-label="Next Day">Next &rarr;</button>
+    </div>
+
+    <ul id="taskNotificationList" class="notification-list">
+      <li class="empty-message">Loading tasks...</li>
+    </ul>
+  </section>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD9ymWqihHWbVb4IRop1lXT-huLjBvS50w",
+      authDomain: "task-manager-602da.firebaseapp.com",
+      projectId: "task-manager-602da",
+      storageBucket: "task-manager-602da.appspot.com",
+      messagingSenderId: "438978699329",
+      appId: "1:438978699329:web:9f475d04352bbdaa5ce6c0"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    const taskNotificationList = document.getElementById('taskNotificationList');
+    const datePicker = document.getElementById('datePicker');
+    const prevDateBtn = document.getElementById('prevDateBtn');
+    const nextDateBtn = document.getElementById('nextDateBtn');
+
+    let currentUserId = null;
+    let currentUserName = null;
+
+    const userCache = {};
+
+    // Fetch user's display name from Firestore
+    async function getUserNameById(userId) {
+      if (userCache[userId]) return userCache[userId];
+
+      try {
+        const doc = await db.collection('users').doc(userId).get();
+        if (doc.exists) {
+          const user = doc.data();
+          const name = user.name || user.displayName || user.email || userId;
+          userCache[userId] = name;
+          return name;
+        }
+      } catch (err) {
+        console.error("Error fetching user info:", err);
+      }
+
+      return userId; // If no name found, return the user ID
+    }
+
+    function formatDateToInput(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function addDays(date, days) {
+      const result = new Date(date);
+      result.setDate(result.getDate() + days);
+      return result;
+    }
+
+    const today = new Date();
+    datePicker.value = formatDateToInput(today);
+
+    // Load tasks assigned to the user for a given date
+    function loadTasksForDate(date) {
+      taskNotificationList.innerHTML = '<li class="empty-message">Loading tasks...</li>';
+
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+
+      const startTS = firebase.firestore.Timestamp.fromDate(start);
+      const endTS = firebase.firestore.Timestamp.fromDate(end);
+
+      db.collection('assignedTasks')
+        .where('assignTo', '==', currentUserId)  // Use currentUserId instead of currentUserName
+        .where('assignedAt', '>=', startTS)
+        .where('assignedAt', '<=', endTS)
+        .orderBy('assignedAt', 'desc')
+        .onSnapshot(async (snapshot) => {
+          taskNotificationList.innerHTML = '';
+
+          if (snapshot.empty) {
+            taskNotificationList.innerHTML = '<li class="empty-message">No tasks assigned on this date.</li>';
+            return;
+          }
+
+          const promises = snapshot.docs.map(async (doc) => {
+            const task = doc.data();
+            const li = document.createElement('li');
+            const time = task.assignedAt?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || 'Unknown time';
+            li.textContent = `[${time}] Task: ${task.description || 'No description'} (Assigned to: You)`;
+            return li;
+          });
+
+          const listItems = await Promise.all(promises);
+          listItems.forEach(item => taskNotificationList.appendChild(item));
+        }, (error) => {
+          console.error('Error loading tasks:', error);
+          taskNotificationList.innerHTML = '<li class="empty-message">Error loading tasks.</li>';
+        });
+    }
+
+    // Auto sign-in anonymously for testing
+    auth.signInAnonymously().catch((error) => {
+      console.error("Anonymous sign-in failed:", error);
+    });
+
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        currentUserId = user.uid;
+        currentUserName = await getUserNameById(currentUserId);
+
+        console.log(`User logged in: ${currentUserName} (ID: ${currentUserId})`);
+
+        if (currentUserName) {
+          loadTasksForDate(new Date(datePicker.value));  // Load tasks for the current date
+        } else {
+          console.log('Username not found');
+          taskNotificationList.innerHTML = '<li class="empty-message">Error: Username not found.</li>';
+        }
+      } else {
+        currentUserId = null;
+        currentUserName = null;
+        taskNotificationList.innerHTML = '<li class="empty-message">Please log in to see assigned tasks.</li>';
+      }
+    });
+
+    datePicker.addEventListener('change', () => {
+      if (!currentUserId) return;
+      const selectedDate = new Date(datePicker.value);
+      loadTasksForDate(selectedDate);
+    });
+
+    prevDateBtn.addEventListener('click', () => {
+      if (!currentUserId) return;
+      const currentDate = new Date(datePicker.value);
+      const prev = addDays(currentDate, -1);
+      datePicker.value = formatDateToInput(prev);
+      loadTasksForDate(prev);
+    });
+
+    nextDateBtn.addEventListener('click', () => {
+      if (!currentUserId) return;
+      const currentDate = new Date(datePicker.value);
+      const next = addDays(currentDate, 1);
+      datePicker.value = formatDateToInput(next);
+      loadTasksForDate(next);
+    });
+  </script>
+</body>
+</html>

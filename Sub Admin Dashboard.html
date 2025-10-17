@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>User Dashboard – Task Manager</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f7f9;
+      margin: 0;
+      padding: 0 20px 40px;
+      max-width: 1100px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    header {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 2px solid #16a085;
+      font-weight: 600;
+      color: #16a085;
+      user-select: none;
+    }
+
+    .left-label {
+      font-size: 1.2rem;
+    }
+
+    .center-datetime {
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .profile-container {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .profile-name {
+      color: #16a085;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: #d1f0eb;
+      transition: background 0.3s;
+    }
+
+    .profile-name:hover {
+      background: #b0e4d8;
+    }
+
+    .dropdown {
+      display: none;
+      position: absolute;
+      top: 110%;
+      right: 0;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 8px 16px rgba(22, 160, 133, 0.25);
+      width: 120px;
+      z-index: 10;
+    }
+
+    .dropdown.show {
+      display: block;
+    }
+
+    .dropdown button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      background: none;
+      font-weight: 600;
+      color: #16a085;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .dropdown button:hover {
+      background: #1abc9c;
+      color: white;
+    }
+
+    main {
+      display: flex;
+      gap: 24px;
+      margin-top: 20px;
+    }
+
+    .sidebar {
+      width: 180px;
+      background-color: #ffffff;
+      border-radius: 15px;
+      box-shadow: 0 8px 16px rgba(22, 160, 133, 0.15);
+      padding: 20px;
+      font-weight: 600;
+      color: #16a085;
+      user-select: none;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .sidebar .menu-item {
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .sidebar .menu-item:hover,
+    .sidebar .menu-item.active {
+      background-color: #1abc9c;
+      color: white;
+    }
+
+    .main-content {
+      display: flex;
+      gap: 24px;
+      flex-grow: 1;
+    }
+
+    .left-panel {
+      flex: 1;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 8px 16px rgba(22, 160, 133, 0.15);
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .right-panel {
+      flex: 1;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 8px 16px rgba(22, 160, 133, 0.15);
+      padding: 20px;
+      min-height: 400px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .todo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .todo-header button {
+      background: #16a085;
+      border: none;
+      color: white;
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+
+    .todo-header button:hover {
+      background: #1abc9c;
+    }
+
+    ul.todo-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+      overflow-y: auto;
+      flex-grow: 1;
+      max-height: 340px;
+    }
+
+    ul.todo-list li {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      font-size: 1rem;
+    }
+
+    ul.todo-list li label {
+      margin-left: 8px;
+      cursor: pointer;
+      flex-grow: 1;
+      user-select: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    ul.todo-list li.completed label {
+      text-decoration: line-through;
+      color: #999;
+    }
+
+    .add-task-container {
+      margin-bottom: 12px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .add-task-container input {
+      flex-grow: 1;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    .add-task-container button {
+      background: #16a085;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+
+    .add-task-container button:hover {
+      background: #1abc9c;
+    }
+
+    /* Delete button style for tasks */
+    ul.todo-list li button.delete-btn {
+      margin-left: 8px;
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 2px 6px;
+      font-size: 0.9rem;
+      transition: background-color 0.3s;
+    }
+
+    ul.todo-list li button.delete-btn:hover {
+      background-color: #c0392b;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="left-label">Tasks</div>
+    <div class="center-datetime" id="dateTimeDisplay">Loading...</div>
+    <div class="profile-container" id="profileContainer" tabindex="0" aria-haspopup="true" aria-expanded="false">
+      <div class="profile-name" id="profileName">User</div>
+<div class="dropdown" id="profileDropdown">
+  <button id="settingsBtn">Settings</button>
+  <button id="logoutBtn">Logout</button>
+</div>
+
+    </div>
+  </header>
+
+  <main>
+    <nav class="sidebar">
+      <ul>
+<li class="menu-item active" data-section="tasks" id="tasksMenuItem">Tasks</li>
+
+<li class="menu-item active" data-section="Chart" id="ChartMenuItem">Chart</li>
+      </ul>
+    </nav>
+
+    <div class="main-content">
+      <section class="left-panel">
+        <h2>Left panel</h2>
+        <p>This will show user tasks or summaries later.</p>
+      </section>
+
+      <section class="right-panel">
+        <div class="todo-header">
+          <button id="prevDayBtn">&lt; Prev</button>
+          <div id="todoDateLabel">Day 1</div>
+          <button id="nextDayBtn">Next &gt;</button>
+        </div>
+
+        <div class="add-task-container">
+          <input type="text" id="newTaskInput" placeholder="Add a new task..." />
+          <button id="addTaskBtn">Add Task</button>
+        </div>
+
+        <ul class="todo-list" id="todoList"></ul>
+      </section>
+    </div>
+  </main>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD9ymWqihHWbVb4IRop1lXT-huLjBvS50w",
+      authDomain: "task-manager-602da.firebaseapp.com",
+      projectId: "task-manager-602da",
+      storageBucket: "task-manager-602da.appspot.com",
+      messagingSenderId: "438978699329",
+      appId: "1:438978699329:web:9f475d04352bbdaa5ce6c0"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const username = sessionStorage.getItem("username");
+    const fullName = sessionStorage.getItem("fullName");
+
+    if (!username) {
+      window.location.href = "index.html";
+    } else {
+      document.getElementById("profileName").textContent = fullName || username;
+    }
+
+    const profileContainer = document.getElementById("profileContainer");
+    const dropdown = document.getElementById("profileDropdown");
+
+    profileContainer.addEventListener("click", () => {
+      const isShown = dropdown.classList.contains("show");
+      dropdown.classList.toggle("show", !isShown);
+      profileContainer.setAttribute("aria-expanded", !isShown);
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!profileContainer.contains(e.target)) {
+        dropdown.classList.remove("show");
+        profileContainer.setAttribute("aria-expanded", false);
+      }
+    });
+
+document.getElementById("settingsBtn").addEventListener("click", () => {
+  window.location.href = "Change Password.html";
+});
+
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  sessionStorage.clear();
+  window.location.href = "index.html";
+});
+
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        dropdown.classList.remove("show");
+        profileContainer.setAttribute("aria-expanded", false);
+        profileContainer.focus();
+      }
+    });
+
+    const dateTimeDisplay = document.getElementById("dateTimeDisplay");
+    function updateDateTime() {
+      const now = new Date();
+      const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+      const dateStr = now.toLocaleDateString(undefined, options);
+      const timeStr = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+      dateTimeDisplay.textContent = `${dateStr} ${timeStr}`;
+    }
+    updateDateTime();
+    setInterval(updateDateTime, 60000);
+
+    const todoListEl = document.getElementById("todoList");
+    const todoDateLabel = document.getElementById("todoDateLabel");
+    const prevDayBtn = document.getElementById("prevDayBtn");
+    const nextDayBtn = document.getElementById("nextDayBtn");
+    const newTaskInput = document.getElementById("newTaskInput");
+    const addTaskBtn = document.getElementById("addTaskBtn");
+
+    let currentDate = new Date();
+    let currentTasks = [];
+
+    function getFormattedDate(date) {
+      return date.toISOString().split("T")[0];
+    }
+
+    function getReadableDate(date) {
+      return date.toLocaleDateString(undefined, {
+        year: 'numeric', month: 'short', day: 'numeric'
+      });
+    }
+
+    async function loadTasks(dateObj) {
+      const dateKey = getFormattedDate(dateObj);
+      todoDateLabel.textContent = getReadableDate(dateObj);
+      todoListEl.innerHTML = "Loading...";
+
+      try {
+        const docRef = db.collection("userTasks").doc(username);
+        const docSnap = await docRef.get();
+        let tasks = [];
+
+        if (docSnap.exists) {
+          const data = docSnap.data();
+          if (data?.tasks?.[dateKey]) {
+            tasks = data.tasks[dateKey];
+          }
+        }
+
+        currentTasks = tasks;
+        renderTasks(tasks);
+      } catch (error) {
+        console.error("Error loading tasks:", error);
+        todoListEl.innerHTML = "<li>Error loading tasks.</li>";
+      }
+    }
+
+    function renderTasks(tasks) {
+      if (!tasks || tasks.length === 0) {
+        todoListEl.innerHTML = "<li>No tasks for this date.</li>";
+        return;
+      }
+
+      todoListEl.innerHTML = "";
+      tasks.forEach((task, i) => {
+        const li = document.createElement("li");
+        if (task.completed) li.classList.add("completed");
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = task.completed || false;
+
+        // Unique ID for checkbox and label for accessibility
+        const taskId = `task-${i}-${task.text.replace(/\s+/g, '-')}`;
+        checkbox.id = taskId;
+
+        const label = document.createElement("label");
+        label.htmlFor = taskId;
+        label.textContent = task.text;
+
+        checkbox.addEventListener("change", () => {
+          task.completed = checkbox.checked;
+          li.classList.toggle("completed", checkbox.checked);
+          saveTasks(currentDate, currentTasks);
+        });
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "Delete";
+        deleteBtn.className = "delete-btn";
+        deleteBtn.title = "Delete this task";
+
+        deleteBtn.addEventListener("click", () => {
+          if (confirm("Are you sure you want to delete this task?")) {
+            currentTasks.splice(i, 1);
+            saveTasks(currentDate, currentTasks).then(() => {
+              renderTasks(currentTasks);
+            });
+          }
+        });
+
+        li.appendChild(checkbox);
+        li.appendChild(label);
+        li.appendChild(deleteBtn);
+
+        todoListEl.appendChild(li);
+      });
+    }
+
+    async function saveTasks(dateObj, tasks) {
+      const dateKey = getFormattedDate(dateObj);
+      try {
+        const docRef = db.collection("userTasks").doc(username);
+        // Use merge:true to avoid overwriting other data
+        await docRef.set({
+          tasks: {
+            [dateKey]: tasks
+          }
+        }, { merge: true });
+      } catch (error) {
+        console.error("Error saving tasks:", error);
+      }
+    }
+
+    prevDayBtn.addEventListener("click", () => {
+      currentDate.setDate(currentDate.getDate() - 1);
+      loadTasks(currentDate);
+    });
+
+    nextDayBtn.addEventListener("click", () => {
+      currentDate.setDate(currentDate.getDate() + 1);
+      loadTasks(currentDate);
+    });
+
+    addTaskBtn.addEventListener("click", () => {
+      const text = newTaskInput.value.trim();
+      if (!text) return;
+      currentTasks.push({ text, completed: false });
+      saveTasks(currentDate, currentTasks).then(() => {
+        renderTasks(currentTasks);
+        newTaskInput.value = "";
+        newTaskInput.focus();
+      });
+    });
+
+    newTaskInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        addTaskBtn.click();
+      }
+    });
+
+document.getElementById("tasksMenuItem").addEventListener("click", () => {
+  window.location.href = "SubAdminTasks.html";
+});
+document.getElementById("ChartMenuItem").addEventListener("click", () => {
+  window.location.href = "SubAdminChart.html";
+});
+
+    loadTasks(currentDate);
+  </script>
+</body>
+</html>

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>User Task Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+  body { font-family:'Segoe UI',sans-serif; margin:0; padding:20px; background:#f8f9fa; }
+  h2 { margin-bottom:10px; }
+  .filters { margin:20px 0; }
+  .filters button, .filters input { margin:4px 6px; padding:6px 12px; border:none; border-radius:4px; font-weight:bold; cursor:pointer; }
+  .btn-primary { background:#007bff; color:#fff; }
+  .btn-success { background:#28a745; color:#fff; }
+  .btn-warning { background:#ffc107; color:#000; }
+  .btn-danger { background:#dc3545; color:#fff; }
+  .btn-home { background:#343a40; color:#fff; float:right; margin-top:-40px; }
+  .chart-container { display:flex; flex-wrap:wrap; justify-content:space-between; }
+  .chart-box { width:48%; margin-bottom:30px; }
+  canvas { background:#fff; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
+  .chart-box h4 { text-align:center; margin:0 0 10px; color:#333; }
+</style>
+</head>
+<body>
+  <h2>User Task Dashboard</h2>
+  <button class="btn-home" onclick="window.location.href='userdashboard.html'">🏠 Home</button>
+
+  <div class="filters">
+    <button class="btn-primary" onclick="applyThisMonth()">This Month</button>
+    <button class="btn-warning" onclick="applyPrevMonth()">Previous Month</button>
+    <input type="date" id="startDate" />
+    <input type="date" id="endDate" />
+    <button class="btn-success" onclick="applyCustomRange()">Apply</button>
+    <button class="btn-danger" onclick="resetFilter()">Show All</button>
+  </div>
+
+  <div class="chart-container">
+    <div class="chart-box"><h4>Status Breakdown</h4><canvas id="statusChart"></canvas></div>
+    <div class="chart-box"><h4>Work Hours by Task Type</h4><canvas id="workHoursChart"></canvas></div>
+    <div class="chart-box"><h4>Task Completion Status</h4><canvas id="completeChart"></canvas></div>
+    <div class="chart-box"><h4>Time Spent Per Task</h4><canvas id="timeSpentChart"></canvas></div>
+    <div class="chart-box"><h4>Monthly Work Distribution</h4><canvas id="monthlyWorkChart"></canvas></div>
+    <div class="chart-box"><h4>Last 14 Days Timeline</h4><canvas id="timelineChart"></canvas></div>
+    <div class="chart-box"><h4>Avg Work vs Pause Hours</h4><canvas id="avgWorkPauseChart"></canvas></div>
+    <div class="chart-box"><h4>Work Hours by Company</h4><canvas id="companyHoursChart"></canvas></div>
+    <div class="chart-box"><h4>Tasks Assigned By</h4><canvas id="assignedByChart"></canvas></div>
+    <div class="chart-box"><h4>Top 5 Longest Tasks</h4><canvas id="topTasksChart"></canvas></div>
+    <div class="chart-box"><h4>Work Type Distribution</h4><canvas id="typeDistributionChart"></canvas></div>
+    <div class="chart-box"><h4>Work by Weekday</h4><canvas id="weekdayWorkChart"></canvas></div>
+  </div>
+
+<script>
+  // Initialize Firebase
+  firebase.initializeApp({
+    apiKey:"AIzaSyD9ymWqihHWbVb4IRop1lXT-huLjBvS50w",
+    authDomain:"task-manager-602da.firebaseapp.com",
+    projectId:"task-manager-602da",
+    storageBucket:"task-manager-602da.appspot.com",
+    messagingSenderId:"438978699329",
+    appId:"1:438978699329:web:9f475d04352bbdaa5ce6c0"
+  });
+  const db = firebase.firestore();
+
+  let allTasks = [], filteredTasks = [];
+  const ctxs = {
+    status: document.getElementById("statusChart").getContext("2d"),
+    work: document.getElementById("workHoursChart").getContext("2d"),
+    complete: document.getElementById("completeChart").getContext("2d"),
+    timeSpent: document.getElementById("timeSpentChart").getContext("2d"),
+    monthly: document.getElementById("monthlyWorkChart").getContext("2d"),
+    timeline: document.getElementById("timelineChart").getContext("2d"),
+    avg: document.getElementById("avgWorkPauseChart").getContext("2d"),
+    companyHours: document.getElementById("companyHoursChart").getContext("2d"),
+    assignedBy: document.getElementById("assignedByChart").getContext("2d"),
+    topTasks: document.getElementById("topTasksChart").getContext("2d"),
+    typeDistribution: document.getElementById("typeDistributionChart").getContext("2d"),
+    weekdayWork: document.getElementById("weekdayWorkChart").getContext("2d")
+  };
+  const charts = {};
+
+  // Filter Functions
+  function applyThisMonth() {
+    const now = new Date(),
+          s = new Date(now.getFullYear(), now.getMonth(), 1),
+          e = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    applyFilter(s, e);
+  }
+
+  function applyPrevMonth() {
+    const now = new Date(),
+          s = new Date(now.getFullYear(), now.getMonth() - 1, 1),
+          e = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    applyFilter(s, e);
+  }
+
+  function applyCustomRange() {
+    const startDateInput = document.getElementById("startDate"),
+          endDateInput = document.getElementById("endDate");
+    if (!startDateInput.value || !endDateInput.value) {
+      alert("Please select both start and end dates.");
+      return;
+    }
+    const s = new Date(startDateInput.value),
+          e = new Date(endDateInput.value);
+    if (s <= e) {
+      e.setHours(23, 59, 59);
+      applyFilter(s, e);
+    } else {
+      alert("Invalid date range. Start date must be before or equal to end date.");
+    }
+  }
+
+  function resetFilter() {
+    filteredTasks = allTasks;
+    renderAll(filteredTasks);
+  }
+
+  function applyFilter(start, end) {
+    filteredTasks = allTasks.filter(t => {
+      const d = t["Due date"] instanceof Date ? t["Due date"] : null;
+      return d && d >= start && d <= end;
+    });
+    renderAll(filteredTasks);
+  }
+
+  // Load tasks from Firestore
+  async function loadTasks() {
+    const user = sessionStorage.getItem("username");
+    if (!user) {
+      alert("No user session found");
+      return;
+    }
+
+    try {
+      const snap = await db.collection("tasks").where("Owner", "==", user).get();
+      allTasks = snap.docs.map(d => {
+        const data = d.data();
+        let dt = null;
+        const due = data["Due date"];
+        if (due?.seconds) dt = new Date(due.seconds * 1000);
+        else if (typeof due === "string") dt = new Date(due);
+        return { id: d.id, ...data, "Due date": dt };
+      });
+
+      filteredTasks = allTasks;
+      renderAll(filteredTasks);
+    } catch (error) {
+      console.error("Error loading tasks:", error);
+    }
+  }
+
+  // Helper to parse work hours
+  function getWorkHours(t) {
+    const v = t["Total Work Hours"] || t["TotalWorkHours"];
+    return parseFloat(v) || 0;
+  }
+
+  // Render all charts
+  function renderAll(tasks) {
+    renderStatus(tasks);
+    renderWorkHours(tasks);
+    renderCompletion(tasks);
+    renderTimeSpent(tasks);
+    renderMonthly(tasks);
+    renderTimeline(tasks);
+    renderAvgWorkPause(tasks);
+    renderCompanyHours(tasks);
+    renderAssignedBy(tasks);
+    renderTopTasks(tasks);
+    renderTypeDistribution(tasks);
+    renderWeekdayWork(tasks);
+  }
+
+  // Chart renderers
+  const renderStatus = tasks => {
+    const counts = {"Not Started":0,"In Progress":0,"Pending":0,"Complete":0};
+    tasks.forEach(x => { counts[x.Status] = (counts[x.Status]||0) + 1; });
+    updateChart('status', 'pie', Object.keys(counts), Object.values(counts), ['#7f8c8d','#3498db','#f39c12','#2ecc71']);
+  };
+
+  const renderWorkHours = tasks => {
+    // Aggregate work hours by task type
+    const map = {};
+    tasks.forEach(t => {
+      const type = t["TYPE OF WORK"] || "Other";
+      map[type] = (map[type] || 0) + getWorkHours(t);
+    });
+    updateChart('work', 'bar', Object.keys(map), Object.values(map), ['#2980b9']);
+  };
+
+  const renderCompletion = tasks => {
+    const done = tasks.filter(x => x.Status === 'Complete').length;
+    const rem = tasks.length - done;
+    updateChart('complete', 'doughnut', ['Completed','Remaining'], [done, rem], ['#27ae60','#e74c3c']);
+  };
+
+  const renderTimeSpent = tasks => {
+    // Aggregate time spent per task type for line chart
+    const map = {};
+    tasks.forEach(t => {
+      const type = t["TYPE OF WORK"] || "Other";
+      map[type] = (map[type] || 0) + getWorkHours(t);
+    });
+    updateChart('timeSpent', 'line', Object.keys(map), Object.values(map), ['#9b59b6']);
+  };
+
+  const renderMonthly = tasks => {
+    const m = Array(12).fill(0);
+    tasks.forEach(t => {
+      const d = t["Due date"];
+      if (d) m[d.getMonth()] += getWorkHours(t);
+    });
+    updateChart('monthly', 'radar', ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], m, ['rgba(52,152,219,0.4)']);
+  };
+
+  const renderTimeline = tasks => {
+    const map = {};
+    for(let i=13; i>=0; i--){
+      const d = new Date();
+      d.setDate(d.getDate()-i);
+      map[d.toISOString().slice(0,10)] = 0;
+    }
+    tasks.forEach(t => {
+      const d = t["Due date"]?.toISOString().slice(0,10);
+      if (d in map) map[d] += getWorkHours(t);
+    });
+    updateChart('timeline', 'line', Object.keys(map), Object.values(map), ['#1abc9c']);
+  };
+
+  const renderAvgWorkPause = tasks => {
+    const work = [], pause = [];
+    tasks.forEach(t => {
+      (t.workSessions || []).forEach((s, i, arr) => {
+        const start = s.start?.toDate?.() || new Date(s.start);
+        const end = s.end?.toDate?.() || new Date(s.end);
+        if (start && end) {
+          work.push((end - start) / 3600000);
+          if (i < arr.length - 1) {
+            const nextStart = arr[i+1].start?.toDate?.() || new Date(arr[i+1].start);
+            pause.push(Math.max((nextStart - end) / 3600000, 0));
+          }
+        }
+      });
+    });
+    const avg = arr => arr.length ? arr.reduce((a,b) => a+b) / arr.length : 0;
+    updateChart('avg', 'bar', ['Avg Work','Avg Pause'], [avg(work), avg(pause)], ['#2ecc71','#e67e22']);
+  };
+
+  const renderCompanyHours = tasks => {
+    const map = {};
+    tasks.forEach(t => {
+      const c = t["Existing Company Name"] || "Unknown";
+      map[c] = (map[c] || 0) + getWorkHours(t);
+    });
+    updateChart('companyHours', 'bar', Object.keys(map), Object.values(map), ['#17a2b8']);
+  };
+
+  const renderAssignedBy = tasks => {
+    const map = {};
+    tasks.forEach(t => {
+      const a = t["Assigned By"] || "Unknown";
+      map[a] = (map[a] || 0) + 1;
+    });
+    updateChart('assignedBy', 'bar', Object.keys(map), Object.values(map), ['#ffc107']);
+  };
+
+  const renderTopTasks = tasks => {
+    const arr = tasks.map(t => ({
+      label: t["TYPE OF WORK"] || t.id,
+      hours: getWorkHours(t)
+    })).sort((a,b) => b.hours - a.hours).slice(0,5);
+    updateChart('topTasks', 'bar', arr.map(x => x.label), arr.map(x => x.hours), ['#d35400']);
+  };
+
+  const renderTypeDistribution = tasks => {
+    const map = {};
+    tasks.forEach(t => {
+      const ty = t["TYPE OF WORK"] || "Unknown";
+      map[ty] = (map[ty] || 0) + 1;
+    });
+    const colors = ['#1abc9c','#2ecc71','#3498db','#9b59b6','#f39c12','#e67e22','#d35400','#c0392b'];
+    updateChart('typeDistribution', 'pie', Object.keys(map), Object.values(map), colors);
+  };
+
+  const renderWeekdayWork = tasks => {
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const map = Array(7).fill(0);
+    tasks.forEach(t => {
+      (t.workSessions || []).forEach(s => {
+        const start = s.start?.toDate?.() || new Date(s.start);
+        const end = s.end?.toDate?.() || new Date(s.end);
+        if (start && end) map[start.getDay()] += (end - start) / 3600000;
+      });
+    });
+    updateChart('weekdayWork', 'line', days, map, ['#8e44ad']);
+  };
+
+  // Chart update helper
+  function updateChart(key, type, labels, data, colors) {
+    if (charts[key]) charts[key].destroy();
+    charts[key] = new Chart(ctxs[key], {
+      type,
+      data: {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: colors,
+          borderColor: colors,
+          borderWidth: 1,
+          fill: type === 'line' ? false : true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position:'top' } },
+        scales: (type === 'bar' || type === 'line' || type === 'radar') ? {
+          y: { beginAtZero:true }
+        } : {}
+      }
+    });
+  }
+
+  window.onload = loadTasks;
+</script>
+</body>
+</html>

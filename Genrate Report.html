@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Generate Report</title>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <!-- jsPDF and AutoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+    }
+    h1 {
+      color: #16648d;
+    }
+    button {
+      margin: 10px 10px 10px 0;
+      padding: 10px 20px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .filters {
+      margin-bottom: 20px;
+    }
+    .filters label {
+      margin-right: 10px;
+    }
+    .hidden {
+      display: none;
+    }
+    #loading {
+      margin-top: 20px;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Generate Report</h1>
+
+  <div class="filters">
+    <label>
+      Date Filter:
+      <select id="dateFilter">
+        <option value="all">All</option>
+        <option value="thisMonth">This Month</option>
+        <option value="lastMonth">Previous Month</option>
+        <option value="custom">Custom Range</option>
+      </select>
+    </label>
+
+    <span id="customDateInputs" class="hidden">
+      <label>From: <input type="date" id="fromDate" /></label>
+      <label>To: <input type="date" id="toDate" /></label>
+    </span>
+
+    <label>
+      Owner:
+      <select id="ownerSelect">
+        <option value="all">All</option>
+      </select>
+    </label>
+  </div>
+<button onclick="window.location.href='Home.html'">Home</button>
+  <button id="downloadCsvBtn" disabled>Download CSV</button>
+  <button id="downloadPdfBtn" disabled>Download PDF</button>
+
+  <div id="loading">Loading tasks from Firestore...</div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD9ymWqihHWbVb4IRop1lXT-huLjBvS50w",
+      authDomain: "task-manager-602da.firebaseapp.com",
+      projectId: "task-manager-602da",
+      storageBucket: "task-manager-602da.appspot.com",
+      messagingSenderId: "438978699329",
+      appId: "1:438978699329:web:9f475d04352bbdaa5ce6c0"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+const headers = [
+  "SINO",
+  "Existing Company Name",
+  "TYPE OF WORK",
+  "ACCOUNT TYPE",
+  "Accounts / Cards",
+  "Task",
+  "Status",
+  "Owner",
+  "Due date",
+  "Assigned By",
+
+  // Combined time fields
+  "Time Started",
+  "Time End",
+  "Total Pause Hours",
+  "Total Work Hours",
+  "Remarks"
+];
+
+
+
+    let allTasks = [];
+
+    async function loadTasks() {
+      try {
+        const snapshot = await db.collection('tasks').get();
+        const owners = new Set();
+        allTasks = [];
+
+        snapshot.forEach(doc => {
+          const data = { id: doc.id, ...doc.data() };
+
+          if (data["Due date"]?.seconds) {
+            data["Due date"] = new Date(data["Due date"].seconds * 1000);
+          } else if (typeof data["Due date"] === "string") {
+            data["Due date"] = new Date(data["Due date"]);
+          }
+
+          allTasks.push(data);
+          if (data.Owner) owners.add(data.Owner);
+        });
+
+        populateOwnerDropdown(Array.from(owners));
+        document.getElementById('loading').textContent = `Loaded ${allTasks.length} tasks.`;
+        document.getElementById('downloadCsvBtn').disabled = false;
+        document.getElementById('downloadPdfBtn').disabled = false;
+      } catch (err) {
+        console.error(err);
+        document.getElementById('loading').textContent = 'Error loading tasks.';
+      }
+    }
+
+    function populateOwnerDropdown(owners) {
+      const select = document.getElementById('ownerSelect');
+      owners.forEach(owner => {
+        const option = document.createElement('option');
+        option.value = owner;
+        option.textContent = owner;
+        select.appendChild(option);
+      });
+    }
+
+    function isWithinRange(date, start, end) {
+      return date instanceof Date && !isNaN(date) && date >= start && date <= end;
+    }
+
+    function applyFilters() {
+      const filter = document.getElementById('dateFilter').value;
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+      const owner = document.getElementById('ownerSelect').value;
+
+      let filtered = [...allTasks];
+      const now = new Date();
+
+      if (filter === 'thisMonth') {
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        filtered = filtered.filter(task => isWithinRange(task["Due date"], start, end));
+      } else if (filter === 'lastMonth') {
+        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const end = new Date(now.getFullYear(), now.getMonth(), 0);
+        filtered = filtered.filter(task => isWithinRange(task["Due date"], start, end));
+      } else if (filter === 'custom' && fromDate && toDate) {
+        const start = new Date(fromDate);
+        const end = new Date(toDate);
+        filtered = filtered.filter(task => isWithinRange(task["Due date"], start, end));
+      }
+
+      if (owner !== "all") {
+        filtered = filtered.filter(task => task.Owner === owner);
+      }
+
+      return filtered;
+    }
+
+    function escapeCSV(value) {
+      if (!value) return "";
+      const val = String(value);
+      if (val.includes(",") || val.includes('"') || val.includes("\n")) {
+        return `"${val.replace(/"/g, '""')}"`;
+      }
+      return val;
+    }
+
+    function formatDate(date) {
+      if (!date) return "";
+      if (typeof date === "string") return date;
+      if (date instanceof Date) return date.toISOString().split("T")[0];
+      return "";
+    }
+
+function downloadCSV(tasks) {
+  if (tasks.length === 0) return alert("No tasks to export.");
+
+  const csvRows = [headers.join(",")];
+
+  tasks.forEach((task, i) => {
+    const row = [
+      i + 1,
+      escapeCSV(task["Existing Company Name"]),
+      escapeCSV(task["TYPE OF WORK"]),
+      escapeCSV(task["ACCOUNT TYPE"]),
+      escapeCSV(task["Accounts / Cards"]),
+      escapeCSV(task["Task"]),
+      escapeCSV(task["Status"]),
+      escapeCSV(task["Owner"]),
+      formatDate(task["Due date"]),
+      escapeCSV(task["Assigned By"]),
+
+      // Old fields
+      escapeCSV(task["TimeStarted"]),
+      escapeCSV(task["TimeEnd"]),
+      escapeCSV(task["TotalPauseHours"]),
+      escapeCSV(task["TotalWorkHours"]),
+      escapeCSV(task["Remarks"]),
+
+      // New fields
+      escapeCSV(task["Time Start"]),
+      escapeCSV(task["Time End"]),
+      escapeCSV(task["TOTAL OUT OF HOURS"]),
+      escapeCSV(task["Total Work Hours"]),
+      escapeCSV(task["Remarks (New)"])
+    ];
+    csvRows.push(row.join(","));
+  });
+
+  const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "tasks_filtered_report.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+
+function downloadPDF(tasks) {
+  if (tasks.length === 0) return alert("No tasks to export.");
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: "landscape" });
+
+  // Determine report month text based on filter selection
+  const filter = document.getElementById('dateFilter').value;
+  const fromDateVal = document.getElementById('fromDate').value;
+  const toDateVal = document.getElementById('toDate').value;
+  let reportMonthText = "All Tasks";
+
+  const now = new Date();
+
+  if (filter === "thisMonth") {
+    reportMonthText = now.toLocaleString("default", { month: "long", year: "numeric" });
+  } else if (filter === "lastMonth") {
+    const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    reportMonthText = lastMonthDate.toLocaleString("default", { month: "long", year: "numeric" });
+  } else if (filter === "custom" && fromDateVal && toDateVal) {
+    const fromDateObj = new Date(fromDateVal);
+    const toDateObj = new Date(toDateVal);
+    reportMonthText = `From ${fromDateObj.toLocaleDateString()} To ${toDateObj.toLocaleDateString()}`;
+  }
+
+  // --- Front cover page ---
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const centerX = pageWidth / 2;
+
+  doc.setFontSize(36);
+  doc.setFont("helvetica", "bold");
+  doc.text("Great Report", centerX, 70, { align: "center" });
+
+  doc.setFontSize(20);
+  doc.setFont("helvetica", "normal");
+  doc.text(`For the period: ${reportMonthText}`, centerX, 100, { align: "center" });
+
+  doc.addPage();
+
+  // --- Summary page ---
+  doc.setFontSize(24);
+  doc.setFont("helvetica", "bold");
+  doc.text("Summary", centerX, 40, { align: "center" });
+
+  const totalTasks = tasks.length;
+  const completeTasks = tasks.filter(t => t.Status && t.Status.toLowerCase() === "complete").length;
+  const pendingTasks = totalTasks - completeTasks;
+
+  let totalWorkMinutes = 0;
+  tasks.forEach(t => {
+    const workHours = t.TotalWorkHours || "";
+    const hMatch = workHours.match(/(\d+)\s*h/);
+    const mMatch = workHours.match(/(\d+)\s*m/);
+    const h = hMatch ? parseInt(hMatch[1], 10) : 0;
+    const m = mMatch ? parseInt(mMatch[1], 10) : 0;
+    totalWorkMinutes += h * 60 + m;
+  });
+
+  const hours = Math.floor(totalWorkMinutes / 60);
+  const minutes = totalWorkMinutes % 60;
+
+  // Build summary table data
+  const summaryData = [
+    ["Total tasks assigned", totalTasks],
+    ["Tasks completed", completeTasks],
+    ["Tasks pending", pendingTasks],
+    ["Total work hours", `${hours}h ${minutes}m`]
+  ];
+
+  // Draw summary table centered horizontally
+  const startY = 70;
+  const col1X = centerX - 70;
+  const col2X = centerX + 30;
+  const rowHeight = 15;
+
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  summaryData.forEach((row, i) => {
+    doc.text(row[0] + ":", col1X, startY + i * rowHeight);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(row[1]), col2X, startY + i * rowHeight);
+    doc.setFont("helvetica", "bold");
+  });
+
+  doc.addPage();
+
+  // --- Data table page ---
+const body = tasks.map((task, i) => {
+  // For each field, pick new if present, else old
+  const timeStarted = task["Time Start"] || task["TimeStarted"] || "";
+  const timeEnd = task["Time End"] || task["TimeEnd"] || "";
+  const totalPauseHours = task["TOTAL OUT OF HOURS"] || task["TotalPauseHours"] || "";
+  const totalWorkHours = task["Total Work Hours"] || task["TotalWorkHours"] || "";
+
+  return [
+    i + 1,
+    task["Existing Company Name"] || "",
+    task["TYPE OF WORK"] || "",
+    task["ACCOUNT TYPE"] || "",
+    task["Accounts / Cards"] || "",
+    task["Task"] || "",
+    task["Status"] || "",
+    task["Owner"] || "",
+    formatDate(task["Due date"]),
+    task["Assigned By"] || "",
+
+    // Use fallback logic for time fields:
+    timeStarted,
+    timeEnd,
+    totalPauseHours,
+    totalWorkHours,
+
+    // For Remarks, you can decide to pick new or old or both, here just pick new if present else old:
+    task["Remarks (New)"] || task["Remarks"] || ""
+  ];
+});
+
+
+  doc.autoTable({
+    head: [headers.map(h => h.toUpperCase())],
+    body: body,
+    styles: { fontSize: 7 },
+    headStyles: { fillColor: [22, 160, 133], fontStyle: 'bold' },
+    startY: 20,
+    margin: { left: 10, right: 10 },
+  });
+
+  doc.save("tasks_filtered_report.pdf");
+}
+
+
+    // Event listeners
+    document.getElementById("downloadCsvBtn").addEventListener("click", () => {
+      const filtered = applyFilters();
+      downloadCSV(filtered);
+    });
+
+    document.getElementById("downloadPdfBtn").addEventListener("click", () => {
+      const filtered = applyFilters();
+      downloadPDF(filtered);
+    });
+
+    document.getElementById("dateFilter").addEventListener("change", (e) => {
+      const isCustom = e.target.value === "custom";
+      document.getElementById("customDateInputs").classList.toggle("hidden", !isCustom);
+    });
+
+    window.onload = loadTasks;
+  </script>
+</body>
+</html>

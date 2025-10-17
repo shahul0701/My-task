@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Task Charts</title>
+
+  <!-- External CSS -->
+  <link rel="stylesheet" href="Chart.css" />
+
+  <!-- Firebase & Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+  <h1 style="text-align:center; margin-top: 20px;">
+  <img src="https://cdn-icons-png.flaticon.com/512/3645/3645709.png" style="height: 30px; vertical-align: middle;" />
+  Task Dashboard Charts
+</h1>
+<div style="text-align:center; margin: 10px 0;">
+  <button onclick="window.location.href='Home.html'" 
+          style="padding: 8px 16px; font-size: 16px; cursor: pointer;">
+    Home
+  </button>
+</div>
+
+
+  <!-- Filter Section (This will be injected by JS) -->
+  <!-- DO NOT add <div id="filterSection"> manually -->
+
+  <!-- Chart Grid -->
+<div class="chart-grid">
+  <div class="chart-card"><canvas id="statusChart"></canvas></div>
+  <div class="chart-card"><canvas id="ownerChart"></canvas></div>
+  <div class="chart-card"><canvas id="typeChart"></canvas></div>
+  <div class="chart-card"><canvas id="assignedByChart"></canvas></div>
+  <div class="chart-card"><canvas id="monthlyChart"></canvas></div>
+  <div class="chart-card"><canvas id="avgWorkChart"></canvas></div>
+  <div class="chart-card"><canvas id="avgPauseChart"></canvas></div>
+  <div class="chart-card"><canvas id="completeTimelineChart"></canvas></div>
+  <div class="chart-card"><canvas id="companyChart"></canvas></div>
+  <div class="chart-card"><canvas id="avgDurationChart"></canvas></div>
+  <div class="chart-card"><canvas id="avgDurationOwnerChart"></canvas></div>
+  <div class="chart-card"><canvas id="radarChart"></canvas></div>
+  <div class="chart-card"><canvas id="bubbleChart"></canvas></div>
+</div>
+
+  <!-- JavaScript File -->
+  <script src="chart.js"></script>
+
+</body>
+</html>

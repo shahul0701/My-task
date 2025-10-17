@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login – Task Manager</title>
+  <style>
+    /* Base & styling (reuse your neumorphic inputs etc.) */
+    body {
+      margin: 0; height: 100vh; display: flex;
+      justify-content: center; align-items: center;
+      background: #1abc9c; font-family: 'Segoe UI';
+    }
+    .card {
+      width: 360px; padding: 40px; background: #fff;
+      border-radius: 15px; box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+    }
+    h2 { margin-bottom: 24px; color: #16a085; text-align: center; }
+    .input-group { margin-bottom: 20px; }
+    .input-group label { display: block; margin-bottom: 6px; color: #2c3e50; font-weight: 600; }
+    .input-group input {
+      width: 100%; padding: 12px;
+      font-size: 16px; border: none;
+      border-radius: 10px; background: #f1f1f1;
+      box-shadow: inset 2px 2px 5px #ccc, inset -2px -2px 5px #fff;
+      transition: all 0.3s;
+    }
+    .input-group input:focus {
+      outline: none; background: #eafaf6;
+      box-shadow: inset 1px 1px 4px #aaa, inset -1px -1px 4px #fff;
+    }
+    button {
+      width: 100%; padding: 12px; background: #16a085;
+      color: #fff; border: none; font-size: 16px;
+      font-weight: bold; border-radius: 8px;
+      cursor: pointer; transition: background 0.3s;
+    }
+    button:hover { background: #1abc9c; }
+    .forgot { margin-top: 14px; text-align: right; }
+    .forgot a { color: #16a085; text-decoration: none; font-size: 14px; }
+    .forgot a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Login</h2>
+
+    <div id="login-section">
+      <div class="input-group">
+        <label for="loginUsername">Username</label>
+        <input type="text" id="loginUsername" placeholder="Enter username" />
+      </div>
+      <div class="input-group">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" placeholder="Enter password" />
+      </div>
+      <button onclick="tryLogin()">Login</button>
+      <div class="forgot">
+        <a href="Change Password.html">Forgot password?</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Firebase config (same as before)
+    const firebaseConfig = {
+      apiKey: "AIzaSyD9ymWqihHWbVb4IRop1lXT-huLjBvS50w",
+      authDomain: "task-manager-602da.firebaseapp.com",
+      projectId: "task-manager-602da",
+      storageBucket: "task-manager-602da.appspot.com",
+      messagingSenderId: "438978699329",
+      appId: "1:438978699329:web:9f475d04352bbdaa5ce6c0"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Allow Enter key to submit login
+    document.getElementById("loginUsername").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") tryLogin();
+    });
+    document.getElementById("loginPassword").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") tryLogin();
+    });
+
+    // Try login and save username to sessionStorage
+    function tryLogin() {
+      const u = document.getElementById("loginUsername").value.trim();
+      const p = document.getElementById("loginPassword").value.trim();
+      if (!u || !p) {
+        alert("Please fill both username and password.");
+        return;
+      }
+
+      // Query Firestore for user with matching username and password
+      db.collection("users")
+        .where("username", "==", u)
+        .where("password", "==", p)
+        .get()
+        .then(querySnapshot => {
+          if (querySnapshot.empty) {
+            alert("Invalid username or password.");
+            return;
+          }
+
+          // Get the first matching user document
+          const userDoc = querySnapshot.docs[0];
+          const userData = userDoc.data();
+
+          // Save username to sessionStorage for later use
+          sessionStorage.setItem("username", userData.username);
+          if (userData.fullName) {
+            sessionStorage.setItem("fullName", userData.fullName);
+          }
+
+          // Get the user's role, normalized to lowercase
+          const role = userData.role ? userData.role.trim().toLowerCase() : "";
+
+          // Redirect based on role
+          if (role === "admin") {
+            window.location.href = "Home.html"; // Admin dashboard
+          } else if (role === "sub admin") {
+            window.location.href = "Sub Admin Dashboard.html"; // Sub Admin dashboard
+          } else if (role === "user") {
+            window.location.href = "UserDashboard.html"; // Regular User dashboard
+          } else {
+            alert("User role not recognized: " + userData.role);
+          }
+        })
+        .catch(error => {
+          console.error("Login error:", error);
+          alert("An error occurred during login. Please try again.");
+        });
+    }
+
+    const sessionUser = sessionStorage.getItem("username");
+    if (sessionUser) {
+      console.log("✅ Logged in as:", sessionUser);
+    } else {
+      console.log("❌ No user is logged in.");
+    }
+  </script>
+</body>
+</html>

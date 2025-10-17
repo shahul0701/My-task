@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sub Admin Tasks</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0; padding: 0;
+    background: #f5f7fa;
+    color: #333;
+  }
+  header {
+    background: #0b3d91; /* strong blue */
+    color: white;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    z-index: 100;
+  }
+  header .datetime {
+    font-size: 1.3em;
+    font-weight: 600;
+  }
+  header a.home-btn {
+    background: white;
+    color: #0b3d91;
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(11, 61, 145, 0.4);
+    transition: background 0.3s, color 0.3s;
+  }
+  header a.home-btn:hover {
+    background: #07306b;
+    color: #f0f0f0;
+  }
+
+  #filters {
+    padding: 15px 24px;
+    background: white;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #ddd;
+  }
+
+  #filters input, #filters select {
+    padding: 8px 12px;
+    border: 1.8px solid #0b3d91;
+    border-radius: 6px;
+    font-size: 1em;
+    outline-offset: 2px;
+    transition: border-color 0.3s;
+    min-width: 160px;
+  }
+  #filters input:focus, #filters select:focus {
+    border-color: #074aaf;
+    box-shadow: 0 0 8px rgba(11, 61, 145, 0.4);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 12px;
+    padding: 0 24px;
+  }
+  thead tr {
+    background: transparent;
+  }
+  thead th {
+    padding: 12px 15px;
+    font-weight: 700;
+    font-size: 1.1em;
+    color: #0b3d91;
+    text-align: left;
+  }
+  tbody tr.task-row {
+    background: #e6f0ff;
+    cursor: pointer;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgb(11 61 145 / 0.3);
+    transition: background 0.3s;
+  }
+  tbody tr.task-row:nth-child(odd) {
+    background: #c9d9ff;
+  }
+  tbody tr.task-row:hover {
+    background: #a8bfff;
+  }
+  tbody td {
+    padding: 14px 15px;
+    font-weight: 600;
+    color: #07306b;
+    border: none;
+  }
+  tbody tr.details-row {
+    background: #f0f5ff;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 2px 8px rgb(11 61 145 / 0.2);
+  }
+  tbody tr.details-row td {
+    padding: 12px 24px;
+    font-weight: 400;
+    color: #1a237e;
+  }
+  .details-box {
+    font-size: 0.95em;
+    line-height: 1.5;
+  }
+  .details-box strong {
+    color: #0b3d91;
+  }
+
+  #paginationControls {
+    margin: 20px 24px 40px;
+    text-align: center;
+  }
+  #paginationControls button {
+    margin: 0 6px;
+    padding: 8px 16px;
+    border: 2px solid #0b3d91;
+    background: white;
+    color: #0b3d91;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s;
+  }
+  #paginationControls button:hover:not(:disabled) {
+    background: #0b3d91;
+    color: white;
+  }
+  #paginationControls button:disabled {
+    background: #d4d9e9;
+    color: #8a90b8;
+    border-color: #d4d9e9;
+    cursor: not-allowed;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="datetime" id="dateTimeDisplay">Loading Date & Time...</div>
+  <div style="display: flex; gap: 12px;">
+    <a href="Current Works subadmin.html" class="home-btn">Current Working</a>
+    <a href="Sub Admin Dashboard.html" class="home-btn">Home</a>
+  </div>
+</header>
+
+<div id="filters">
+  <input type="search" id="searchCompany" placeholder="Search Company" />
+  <input type="search" id="searchOwner" placeholder="Search Owner" />
+  <select id="statusFilter">
+    <option value="">All Statuses</option>
+    <option value="Not Started">Not Started</option>
+    <option value="In Progress">In Progress</option>
+    <option value="Complete">Complete</option>
+  </select>
+</div>
+
+<table id="tasksTable" aria-label="Task list">
+  <thead>
+    <tr>
+      <th>SINO</th>
+      <th>Company</th>
+      <th>Type Of Work</th>
+      <th>Status</th>
+      <th>Owner</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<div id="paginationControls" aria-label="Pagination Controls"></div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyD9ymWqihHWbVb4IRop1lXT-huLjBvS50w",
+    authDomain: "task-manager-602da.firebaseapp.com",
+    projectId: "task-manager-602da",
+    storageBucket: "task-manager-602da.appspot.com",
+    messagingSenderId: "438978699329",
+    appId: "1:438978699329:web:9f475d04352bbdaa5ce6c0"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const taskTableBody = document.querySelector('#tasksTable tbody');
+  const paginationDiv = document.getElementById('paginationControls');
+  const searchCompany = document.getElementById('searchCompany');
+  const searchOwner = document.getElementById('searchOwner');
+  const statusFilter = document.getElementById('statusFilter');
+  const dateTimeDisplay = document.getElementById('dateTimeDisplay');
+
+  const rowsPerPage = 10;
+  let currentPage = 1;
+  let allTasks = [];
+  let filteredTasks = [];
+
+  function updateDateTime() {
+    const now = new Date();
+    const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+    const dateStr = now.toLocaleDateString(undefined, options);
+    const timeStr = now.toLocaleTimeString();
+    dateTimeDisplay.textContent = `${dateStr} ${timeStr}`;
+  }
+  setInterval(updateDateTime, 1000);
+  updateDateTime();
+
+  async function loadTasks() {
+    try {
+      const snapshot = await db.collection('tasks').get();
+      allTasks = [];
+      snapshot.forEach(doc => {
+        allTasks.push({ id: doc.id, ...doc.data() });
+      });
+
+      // Sort descending by numeric part of SINO
+      allTasks.sort((a, b) => {
+        const getNumber = sino => {
+          if (!sino) return 0;
+          const match = sino.match(/(\d+)$/);
+          return match ? parseInt(match[1], 10) : 0;
+        };
+        return getNumber(b.SINO) - getNumber(a.SINO);
+      });
+
+      applyFilters();
+    } catch (error) {
+      console.error("Error loading tasks:", error);
+    }
+  }
+
+  function renderTablePage(page, tasks) {
+    taskTableBody.innerHTML = '';
+    const start = (page - 1) * rowsPerPage;
+    const pageTasks = tasks.slice(start, start + rowsPerPage);
+
+    pageTasks.forEach(task => {
+      const tr = document.createElement('tr');
+      tr.classList.add('task-row');
+      tr.innerHTML = `
+        <td>${task.SINO || ''}</td>
+        <td>${task['Existing Company Name'] || ''}</td>
+        <td>${task['TYPE OF WORK'] || ''}</td>
+        <td>${task.Status || ''}</td>
+        <td>${task.Owner || ''}</td>
+      `;
+
+      const detailsTr = document.createElement('tr');
+      detailsTr.classList.add('details-row');
+      detailsTr.style.display = 'none';
+      detailsTr.innerHTML = `
+        <td colspan="5">
+          <div class="details-box">
+            <strong>ACCOUNT TYPE:</strong> ${task['ACCOUNT TYPE'] || ''}<br/>
+            <strong>Accounts / Cards:</strong> ${task['Accounts / Cards'] || ''}<br/>
+            <strong>Task:</strong> ${task.Task || ''}<br/>
+            <strong>WORK FOR:</strong> ${task['WORK FOR'] || ''}<br/>
+            <strong>PERIOD:</strong> ${task.PERIOD || ''}<br/>
+            <strong>Due Date:</strong> ${task['Due date'] || ''}<br/>
+            <strong>Assigned By:</strong> ${task['Assigned By'] || ''}<br/>
+            <strong>Notes:</strong> ${task.Notes || ''}<br/>
+            <strong>Time Started:</strong> ${formatTimestamp(task.taskStart)}<br/>
+            <strong>Time End:</strong> ${formatTimestamp(task.taskEnd)}<br/>
+            <strong>Total Work Hours:</strong> ${task.TotalWorkHours || ''}<br/>
+            <strong>Total Pause Hours:</strong> ${task.TotalPauseHours || ''}<br/>
+            <strong>Remarks:</strong> ${task.Remarks || ''}<br/>
+          </div>
+        </td>
+      `;
+
+      tr.addEventListener('click', () => {
+        detailsTr.style.display = detailsTr.style.display === 'none' ? 'table-row' : 'none';
+      });
+
+      taskTableBody.appendChild(tr);
+      taskTableBody.appendChild(detailsTr);
+    });
+
+    renderPagination(tasks);
+  }
+
+  function formatTimestamp(ts) {
+    if (!ts) return '';
+    if (typeof ts.toDate === 'function') {
+      return ts.toDate().toLocaleString();
+    }
+    if (ts instanceof Date) {
+      return ts.toLocaleString();
+    }
+    return '';
+  }
+
+function renderPagination(tasks) {
+  paginationDiv.innerHTML = '';
+  const totalPages = Math.ceil(tasks.length / rowsPerPage);
+  if (totalPages <= 1) return;
+
+  const prevBtn = createPageButton('Prev', currentPage === 1, () => {
+    if (currentPage > 1) {
+      currentPage--;
+      renderTablePage(currentPage, filteredTasks);
+    }
+  });
+  paginationDiv.appendChild(prevBtn);
+
+  // Show first 3 pages, then ..., then last page
+  const pagesToShow = [];
+  for (let i = 1; i <= totalPages; i++) {
+    if (i <= 3 || i === totalPages) {
+      pagesToShow.push(i);
+    }
+  }
+
+  // Render pages with ... if needed
+  for (let i = 0; i < pagesToShow.length; i++) {
+    if (i > 0 && pagesToShow[i] - pagesToShow[i - 1] > 1) {
+      // gap detected, add "..."
+      const dots = document.createElement('span');
+      dots.textContent = '...';
+      dots.style.margin = '0 6px';
+      paginationDiv.appendChild(dots);
+    }
+    const pageNum = pagesToShow[i];
+    const btn = createPageButton(pageNum, pageNum === currentPage, () => {
+      currentPage = pageNum;
+      renderTablePage(currentPage, filteredTasks);
+    });
+    paginationDiv.appendChild(btn);
+  }
+
+  const nextBtn = createPageButton('Next', currentPage === totalPages, () => {
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderTablePage(currentPage, filteredTasks);
+    }
+  });
+  paginationDiv.appendChild(nextBtn);
+}
+
+
+  function createPageButton(label, disabled, onClick) {
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    btn.disabled = disabled;
+    if (!disabled) btn.addEventListener('click', onClick);
+    return btn;
+  }
+
+  function applyFilters() {
+    const company = searchCompany.value.toLowerCase();
+    const owner = searchOwner.value.toLowerCase();
+    const status = statusFilter.value;
+
+    filteredTasks = allTasks.filter(task => {
+      const matchCompany = task['Existing Company Name']?.toLowerCase().includes(company);
+      const matchOwner = task.Owner?.toLowerCase().includes(owner);
+      const matchStatus = !status || task.Status === status;
+      return matchCompany && matchOwner && matchStatus;
+    });
+
+    currentPage = 1;
+    renderTablePage(currentPage, filteredTasks);
+  }
+
+  [searchCompany, searchOwner, statusFilter].forEach(el =>
+    el.addEventListener('input', applyFilters)
+  );
+
+  window.onload = loadTasks;
+</script>
+
+</body>
+</html>

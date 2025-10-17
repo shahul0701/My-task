@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>User Dashboard – Task Manager</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f7f9;
+      margin: 0;
+      padding: 0 20px 40px;
+      max-width: 1100px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    header {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 2px solid #16a085;
+      font-weight: 600;
+      color: #16a085;
+      user-select: none;
+    }
+
+    .left-label {
+      font-size: 1.2rem;
+    }
+
+    .center-datetime {
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .profile-container {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .profile-name {
+      color: #16a085;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: #d1f0eb;
+      transition: background 0.3s;
+    }
+
+    .profile-name:hover {
+      background: #b0e4d8;
+    }
+
+    .dropdown {
+      display: none;
+      position: absolute;
+      top: 110%;
+      right: 0;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 8px 16px rgba(22, 160, 133, 0.25);
+      width: 120px;
+      z-index: 10;
+    }
+
+    .dropdown.show {
+      display: block;
+    }
+
+    .dropdown button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      background: none;
+      font-weight: 600;
+      color: #16a085;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .dropdown button:hover {
+      background: #1abc9c;
+      color: white;
+    }
+
+    main {
+      display: flex;
+      gap: 24px;
+      margin-top: 20px;
+    }
+
+    .sidebar {
+      width: 180px;
+      background-color: #ffffff;
+      border-radius: 15px;
+      box-shadow: 0 8px 16px rgba(22, 160, 133, 0.15);
+      padding: 20px;
+      font-weight: 600;
+      color: #16a085;
+      user-select: none;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .sidebar .menu-item {
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .sidebar .menu-item:hover,
+    .sidebar .menu-item.active {
+      background-color: #1abc9c;
+      color: white;
+    }
+
+    .main-content {
+      display: flex;
+      gap: 24px;
+      flex-grow: 1;
+    }
+
+    .left-panel {
+      flex: 1;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 8px 16px rgba(22, 160, 133, 0.15);
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .right-panel {
+      flex: 1;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 8px 16px rgba(22, 160, 133, 0.15);
+      padding: 20px;
+      min-height: 400px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .todo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .todo-header button {
+      background: #16a085;
+      border: none;
+      color: white;
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+
+    .todo-header button:hover {
+      background: #1abc9c;
+    }
+
+    ul.todo-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+      overflow-y: auto;
+      flex-grow: 1;
+      max-height: 340px;
+    }
+
+    ul.todo-list li {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      font-size: 1rem;
+      padding: 8px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    ul.todo-list li label {
+      margin-left: 8px;
+      cursor: pointer;
+      flex-grow: 1;
+      user-select: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    ul.todo-list li.completed label {
+      text-decoration: line-through;
+      color: #999;
+    }
+
+    ul.todo-list li.completed {
+      opacity: 0.6;
+    }
+
+    .add-task-container {
+      margin-bottom: 12px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .add-task-container input {
+      flex-grow: 1;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    .add-task-container button {
+      background: #16a085;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+
+    .add-task-container button:hover {
+      background: #1abc9c;
+    }
+
+    /* Delete button styles */
+    .delete-btn {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      margin-left: 8px;
+      transition: background 0.3s;
+    }
+
+    .delete-btn:hover {
+      background: #c0392b;
+    }
+
+    /* New styles for left panel pending tasks */
+    .pending-tasks-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-weight: 600;
+      color: #16a085;
+    }
+
+    .pending-tasks-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+      overflow-y: auto;
+      max-height: 340px;
+    }
+
+    .pending-tasks-list li {
+      margin-bottom: 12px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #ffc107;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .pending-tasks-list li:hover {
+      background: #e9ecef;
+    }
+
+    .pending-tasks-list li.in-progress {
+      border-left-color: #17a2b8;
+    }
+
+    .pending-tasks-list li .task-title {
+      font-weight: 600;
+      color: #333;
+      margin: 0;
+    }
+
+    .pending-tasks-list li .task-status {
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .pending-tasks-list li .next-due {
+      font-size: 0.85rem;
+      color: #e74c3c;
+      font-style: italic;
+    }
+
+    .pending-tasks-list li .company {
+      font-size: 0.9rem;
+      color: #555;
+    }
+
+    .no-pending {
+      text-align: center;
+      color: #999;
+      font-style: italic;
+      padding: 40px 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="left-label">Tasks</div>
+    <div class="center-datetime" id="dateTimeDisplay">Loading...</div>
+    <div class="profile-container" id="profileContainer" tabindex="0" aria-haspopup="true" aria-expanded="false">
+      <div class="profile-name" id="profileName">User</div>
+      <div class="dropdown" id="profileDropdown">
+        <button id="settingBtn">Setting</button>
+        <button id="logoutBtn">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <nav class="sidebar">
+      <ul>
+        <li class="menu-item active" data-section="tasks">Tasks</li>
+        <li class="menu-item" data-section="chart">View in Chart</li>
+        <li class="menu-item" data-section="report">Generate Report</li>
+      </ul>
+    </nav>
+
+    <div class="main-content">
+      <section class="left-panel">
+        <div class="pending-tasks-header">
+          <h2>Pending & In Progress Tasks</h2>
+        </div>
+        <ul class="pending-tasks-list" id="pendingTasksList">
+          <li class="no-pending">Loading pending tasks...</li>
+        </ul>
+      </section>
+
+      <section class="right-panel">
+        <div class="todo-header">
+          <button id="prevDayBtn">&lt; Prev</button>
+          <div id="todoDateLabel">Day 1</div>
+          <button id="nextDayBtn">Next &gt;</button>
+        </div>
+
+        <div class="add-task-container">
+          <input type="text" id="newTaskInput" placeholder="Add a new task..." />
+          <button id="addTaskBtn">Add Task</button>
+        </div>
+
+        <ul class="todo-list" id="todoList"></ul>
+      </section>
+    </div>
+  </main>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD9ymWqihHWbVb4IRop1lXT-huLjBvS50w",
+      authDomain: "task-manager-602da.firebaseapp.com",
+      projectId: "task-manager-602da",
+      storageBucket: "task-manager-602da.appspot.com",
+      messagingSenderId: "438978699329",
+      appId: "1:438978699329:web:9f475d04352bbdaa5ce6c0"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const username = sessionStorage.getItem("username");
+    const fullName = sessionStorage.getItem("fullName");
+
+    if (!username) {
+      window.location.href = "index.html";
+    } else {
+      document.getElementById("profileName").textContent = fullName || username;
+    }
+
+    const profileContainer = document.getElementById("profileContainer");
+    const dropdown = document.getElementById("profileDropdown");
+
+    profileContainer.addEventListener("click", () => {
+      const isShown = dropdown.classList.contains("show");
+      dropdown.classList.toggle("show", !isShown);
+      profileContainer.setAttribute("aria-expanded", !isShown);
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!profileContainer.contains(e.target)) {
+        dropdown.classList.remove("show");
+        profileContainer.setAttribute("aria-expanded", false);
+      }
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      sessionStorage.clear();
+      window.location.href = "index.html";
+    });
+
+    document.getElementById("settingBtn").addEventListener("click", () => {
+      window.location.href = "Change Password.html";
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        dropdown.classList.remove("show");
+        profileContainer.setAttribute("aria-expanded", false);
+        profileContainer.focus();
+      }
+    });
+
+    const dateTimeDisplay = document.getElementById("dateTimeDisplay");
+    function updateDateTime() {
+      const now = new Date();
+      const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+      const dateStr = now.toLocaleDateString(undefined, options);
+      const timeStr = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+      dateTimeDisplay.textContent = `${dateStr} ${timeStr}`;
+    }
+    updateDateTime();
+    setInterval(updateDateTime, 60000);
+
+    const todoListEl = document.getElementById("todoList");
+    const todoDateLabel = document.getElementById("todoDateLabel");
+    const prevDayBtn = document.getElementById("prevDayBtn");
+    const nextDayBtn = document.getElementById("nextDayBtn");
+    const newTaskInput = document.getElementById("newTaskInput");
+    const addTaskBtn = document.getElementById("addTaskBtn");
+    const pendingTasksList = document.getElementById("pendingTasksList");
+
+    let currentDate = new Date();
+    let currentTasks = [];
+
+    function getFormattedDate(date) {
+      return date.toISOString().split("T")[0];
+    }
+
+    function getReadableDate(date) {
+      return date.toLocaleDateString(undefined, {
+        year: 'numeric', month: 'short', day: 'numeric'
+      });
+    }
+
+    function parsePeriod(period) {
+      if (!period) return null;
+      const yearMatch = period.match(/(\d{4})/);
+      return yearMatch ? parseInt(yearMatch[1], 10) : null;
+    }
+
+    function calculateNextDue(createdAt, workFor, dueDate, lastCompleted, period) {
+      if (!workFor) return null;
+
+      let baseDate;
+      if (lastCompleted) {
+        baseDate = new Date(lastCompleted.toDate ? lastCompleted.toDate() : lastCompleted);
+      } else if (dueDate) {
+        baseDate = new Date(dueDate.toDate ? dueDate.toDate() : dueDate);
+      } else {
+        baseDate = new Date(createdAt.toDate ? createdAt.toDate() : createdAt);
+      }
+
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+
+      const taskYear = parsePeriod(period) || baseDate.getFullYear();
+      let candidate = new Date(baseDate);
+      candidate.setHours(0, 0, 0, 0);
+
+      // Adjust base date to match the specified period year
+      if (taskYear > candidate.getFullYear()) {
+        candidate.setFullYear(taskYear);
+      }
+
+      switch (workFor) {
+        case 'Daily':
+          candidate = new Date(now.getTime());
+          if (candidate < now) candidate.setDate(now.getDate() + 1);
+          break;
+        case 'Weekly':
+          const targetWeekday = baseDate.getDay();
+          let daysDiff = (targetWeekday - now.getDay() + 7) % 7;
+          if (daysDiff === 0 && now >= candidate) daysDiff = 7;
+          candidate.setDate(now.getDate() + daysDiff);
+          if (candidate.getFullYear() > taskYear) return null;
+          break;
+        case 'Bi-weekly':
+          let biDiff = (targetWeekday - now.getDay() + 14) % 14;
+          if (biDiff === 0 && now >= candidate) biDiff = 14;
+          candidate.setDate(now.getDate() + biDiff);
+          if (candidate.getFullYear() > taskYear) return null;
+          break;
+        case 'Monthly':
+          candidate = new Date(taskYear, now.getMonth(), baseDate.getDate());
+          const lastDay = new Date(taskYear, candidate.getMonth() + 1, 0).getDate();
+          if (baseDate.getDate() > lastDay) candidate.setDate(lastDay);
+          if (candidate < now) {
+            candidate.setMonth(candidate.getMonth() + 1);
+            const nextLastDay = new Date(taskYear, candidate.getMonth() + 1, 0).getDate();
+            if (baseDate.getDate() > nextLastDay) candidate.setDate(nextLastDay);
+          }
+          if (candidate.getFullYear() > taskYear) return null;
+          break;
+        case 'Quarterly':
+          candidate = new Date(taskYear, now.getMonth(), baseDate.getDate());
+          const qtrMonth = Math.floor(now.getMonth() / 3) * 3 + 3;
+          candidate.setMonth(qtrMonth);
+          const qLastDay = new Date(taskYear, candidate.getMonth() + 1, 0).getDate();
+          if (baseDate.getDate() > qLastDay) candidate.setDate(qLastDay);
+          if (candidate < now) {
+            candidate.setMonth(candidate.getMonth() + 3);
+            const nextLastDay = new Date(taskYear, candidate.getMonth() + 1, 0).getDate();
+            if (baseDate.getDate() > nextLastDay) candidate.setDate(nextLastDay);
+          }
+          if (candidate.getFullYear() > taskYear) return null;
+          break;
+        case 'Yearly':
+          candidate = new Date(taskYear, baseDate.getMonth(), baseDate.getDate());
+          if (candidate < now) {
+            candidate.setFullYear(taskYear + 1);
+          }
+          if (candidate.getFullYear() > taskYear) return null;
+          break;
+        case 'Custom':
+          candidate = new Date(taskYear, now.getMonth(), baseDate.getDate());
+          if (candidate < now) {
+            candidate.setMonth(candidate.getMonth() + 1);
+            const cLastDay = new Date(taskYear, candidate.getMonth() + 1, 0).getDate();
+            if (baseDate.getDate() > cLastDay) candidate.setDate(cLastDay);
+          }
+          if (candidate.getFullYear() > taskYear) return null;
+          break;
+        default:
+          return null;
+      }
+
+      return candidate;
+    }
+
+    async function loadPendingTasks() {
+      pendingTasksList.innerHTML = '<li class="no-pending">Loading pending tasks...</li>';
+      try {
+        const snapshot = await db.collection('tasks').where('Owner', '==', username).get();
+        let pendingTasks = [];
+
+        const now = new Date();
+        snapshot.forEach(doc => {
+          const task = { id: doc.id, ...doc.data() };
+          if (task.Status === 'Not Started' || task.Status === 'In Progress') {
+            const nextDue = calculateNextDue(task.createdAt, task['WORK FOR'], task['Due date'], task.lastCompleted, task['Period']);
+            task.nextDue = nextDue;
+            pendingTasks.push(task);
+          }
+        });
+
+        pendingTasks.sort((a, b) => (a.nextDue || new Date()) - (b.nextDue || new Date()));
+        renderPendingTasks(pendingTasks);
+      } catch (error) {
+        console.error("Error loading pending tasks:", error);
+        pendingTasksList.innerHTML = '<li class="no-pending">Error loading pending tasks.</li>';
+      }
+    }
+
+    function renderPendingTasks(tasks) {
+      if (tasks.length === 0) {
+        pendingTasksList.innerHTML = '<li class="no-pending">No pending or in-progress tasks.</li>';
+        return;
+      }
+
+      pendingTasksList.innerHTML = '';
+      tasks.forEach(task => {
+        const li = document.createElement('li');
+        li.className = task.Status === 'In Progress' ? 'in-progress' : '';
+        li.innerHTML = `
+          <div class="task-title">${task['Task'] || task['TYPE OF WORK'] || 'Untitled Task'}</div>
+          <div class="company">${task['Existing Company Name'] || 'N/A'}</div>
+          <div class="task-status">${task.Status}</div>
+          ${task.nextDue ? `<div class="next-due">Next Reminder: ${getReadableDate(task.nextDue)}</div>` : ''}
+        `;
+        li.addEventListener('click', () => {
+          window.location.href = `User task.html?id=${task.id}`;
+        });
+        pendingTasksList.appendChild(li);
+      });
+    }
+
+    async function loadTasks(dateObj) {
+      const dateKey = getFormattedDate(dateObj);
+      todoDateLabel.textContent = getReadableDate(dateObj);
+      const selectedDate = new Date(dateObj);
+      selectedDate.setHours(0, 0, 0, 0);
+
+      let manualTasks = [];
+      try {
+        const docRef = db.collection("userTasks").doc(username);
+        const docSnap = await docRef.get();
+        if (docSnap.exists) {
+          const data = docSnap.data();
+          manualTasks = data?.tasks?.[dateKey] || [];
+        }
+        currentTasks = manualTasks.map(t => ({ ...t }));
+      } catch (error) {
+        console.error("Error loading manual tasks:", error);
+      }
+
+      try {
+        const snapshot = await db.collection('tasks').where('Owner', '==', username).where('Status', 'in', ['Not Started', 'In Progress']).get();
+        const reminders = [];
+        snapshot.forEach(doc => {
+          const task = { id: doc.id, ...doc.data() };
+          const nextDue = calculateNextDue(task.createdAt, task['WORK FOR'], task['Due date'], task.lastCompleted, task['Period']);
+          if (nextDue && getFormattedDate(nextDue) === dateKey) {
+            const existing = currentTasks.find(ct => ct.isReminder && ct.taskId === task.id && ct.completed);
+            if (!existing) {
+              reminders.push({
+                text: `🔄 Reminder: ${task.SINO ? `${task.SINO} - ` : ''}${task['Task'] || task['TYPE OF WORK'] || 'Task'} (${task['Existing Company Name'] || ''})`,
+                completed: false,
+                isReminder: true,
+                taskId: task.id,
+                sino: task.SINO
+              });
+            }
+          }
+        });
+
+        currentTasks.push(...reminders);
+        currentTasks.sort((a, b) => a.text.localeCompare(b.text));
+        renderTasks(currentTasks);
+      } catch (error) {
+        console.error("Error loading reminders:", error);
+        todoListEl.innerHTML = "<li>Error loading tasks.</li>";
+      }
+    }
+
+    function renderTasks(tasks) {
+      if (!tasks || tasks.length === 0) {
+        todoListEl.innerHTML = "<li>No tasks for this date.</li>";
+        return;
+      }
+
+      todoListEl.innerHTML = "";
+      tasks.forEach((task, index) => {
+        const li = document.createElement("li");
+        if (task.completed) li.classList.add("completed");
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = task.completed || false;
+        checkbox.id = `task-${index}`;
+
+        const label = document.createElement("label");
+        label.htmlFor = checkbox.id;
+        label.textContent = task.text;
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete-btn";
+        deleteBtn.textContent = "🗑️";
+
+        li.appendChild(checkbox);
+        li.appendChild(label);
+        li.appendChild(deleteBtn);
+        todoListEl.appendChild(li);
+      });
+    }
+
+    todoListEl.addEventListener('change', (e) => {
+      if (e.target.type === 'checkbox') {
+        const li = e.target.closest('li');
+        const index = Array.from(todoListEl.children).indexOf(li);
+        const task = currentTasks[index];
+        if (task) {
+          task.completed = e.target.checked;
+          li.classList.toggle("completed", e.target.checked);
+          if (e.target.checked && task.isReminder) {
+            db.collection('tasks').doc(task.taskId).update({
+              lastCompleted: firebase.firestore.FieldValue.serverTimestamp()
+            }).catch(console.error);
+          }
+          if (!task.isReminder) {
+            saveTasks(currentDate, currentTasks.filter(t => !t.isReminder));
+          }
+        }
+      }
+    });
+
+    todoListEl.addEventListener('click', (e) => {
+      if (e.target.classList.contains('delete-btn')) {
+        e.stopPropagation();
+        const li = e.target.closest('li');
+        const index = Array.from(todoListEl.children).indexOf(li);
+        const task = currentTasks[index];
+        if (task) {
+          if (task.isReminder) {
+            db.collection('tasks').doc(task.taskId).update({
+              lastCompleted: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+              currentTasks.splice(index, 1);
+              renderTasks(currentTasks);
+            }).catch(err => {
+              console.error('Error completing reminder:', err);
+              alert('Error completing reminder');
+            });
+          } else {
+            currentTasks.splice(index, 1);
+            renderTasks(currentTasks);
+            saveTasks(currentDate, currentTasks.filter(t => !t.isReminder));
+          }
+        }
+      }
+    });
+
+    async function saveTasks(dateObj, tasks) {
+      const dateKey = getFormattedDate(dateObj);
+      try {
+        const docRef = db.collection("userTasks").doc(username);
+        const docSnap = await docRef.get();
+        let allTasks = {};
+        if (docSnap.exists) {
+          allTasks = docSnap.data().tasks || {};
+        }
+        allTasks[dateKey] = tasks;
+        await docRef.set({ tasks: allTasks });
+      } catch (error) {
+        console.error("Error saving tasks:", error);
+      }
+    }
+
+    addTaskBtn.addEventListener("click", () => {
+      const taskText = newTaskInput.value.trim();
+      if (!taskText) return alert("Please enter a task.");
+
+      currentTasks.push({ text: taskText, completed: false });
+      saveTasks(currentDate, currentTasks.filter(t => !t.isReminder))
+        .then(() => {
+          renderTasks(currentTasks);
+          newTaskInput.value = "";
+          newTaskInput.focus();
+        })
+        .catch(() => {
+          alert("Failed to save task, please try again.");
+        });
+    });
+
+    newTaskInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        addTaskBtn.click();
+      }
+    });
+
+    prevDayBtn.addEventListener("click", () => {
+      currentDate.setDate(currentDate.getDate() - 1);
+      loadTasks(currentDate);
+    });
+
+    nextDayBtn.addEventListener("click", () => {
+      currentDate.setDate(currentDate.getDate() + 1);
+      loadTasks(currentDate);
+    });
+
+    document.querySelectorAll(".menu-item").forEach(item => {
+      item.addEventListener("click", () => {
+        document.querySelectorAll(".menu-item").forEach(el => el.classList.remove("active"));
+        item.classList.add("active");
+        const section = item.getAttribute("data-section");
+        switch (section) {
+          case "tasks":
+            window.location.href = "User task.html";
+            break;
+          case "chart":
+            window.location.href = "UserChart.html";
+            break;
+          case "report":
+            window.location.href = "User Generate Report.Html";
+            break;
+        }
+      });
+    });
+
+    loadTasks(currentDate);
+    loadPendingTasks();
+    setInterval(loadPendingTasks, 300000);
+  </script>
+</body>
+</html>

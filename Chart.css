@@ -1,0 +1,139 @@
+/* Chart.css */
+
+/* Reset some default styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f0f4f8;
+  margin: 20px;
+  color: #333;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #2c3e50;
+}
+
+/* Filter Section */
+#filterSection {
+  max-width: 900px;
+  margin: 0 auto 40px auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  align-items: center;
+  background: #ffffff;
+  padding: 15px 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
+}
+
+#filterSection button {
+  background-color: #3498db;
+  border: none;
+  color: white;
+  padding: 10px 18px;
+  font-size: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#filterSection button:hover {
+  background-color: #2980b9;
+}
+
+#filterSection label {
+  font-weight: 600;
+  margin-right: 5px;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+#filterSection input[type="date"] {
+  padding: 8px 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 columns, each 1 fraction of space */
+  gap: 30px 40px; /* vertical and horizontal spacing */
+  max-width: 100%; /* Allow full screen width */
+  margin: 0 auto;
+  padding: 0 20px; /* some side padding */
+  width: 100%; /* full width */
+}
+
+.chart-card {
+  background: white;
+  padding: 25px 20px 30px 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  min-height: 420px;
+  /* Remove flex centering to let canvas fill the space */
+}
+
+canvas {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 3px 12px rgb(0 0 0 / 0.12);
+  padding: 20px;
+  max-height: 420px;  /* Increase height */
+  width: 100% !important; /* Fill full width of chart card */
+  display: block; /* Remove inline spacing */
+}
+
+
+/* Responsive tweaks for smaller screens */
+@media (max-width: 768px) {
+  .chart-card {
+    min-height: 350px;
+  }
+
+  canvas {
+    max-height: 350px;
+  }
+}
+
+
+.btn {
+  background-color: #3498db;
+  border: none;
+  padding: 8px 14px;
+  margin: 0 6px 10px 0;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.btn:hover {
+  background-color: #2980b9;
+}
+
+/* Home button styles */
+#homeButton {
+  display: inline-block;
+  padding: 8px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  background-color: #2980b9;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  text-align: center;
+  margin: 10px auto;
+  user-select: none;
+}
+
+#homeButton:hover {
+  background-color: #1c5980;
+}

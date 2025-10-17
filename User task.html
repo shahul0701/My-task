@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>User Task Manager</title>
+  <style>
+    #topNav {
+      display: flex;
+      justify-content: flex-start;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    #topNav button {
+      background-color: #264653;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #topNav button:hover {
+      background-color: #1b2e34;
+    }
+
+    /* Basic styling */
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 20px; 
+      background: #f0f4f8;
+      color: #333;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    /* Profile badge */
+    #profileBadge {
+      background-color: #2a9d8f;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    #profileBadge .avatar {
+      background: #264653;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 18px;
+      color: #fff;
+      user-select: none;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: 0;
+      color: #264653;
+    }
+
+    /* Button styles */
+    #createTaskBtn {
+      background-color: #e76f51;
+      border: none;
+      color: white;
+      padding: 10px 18px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 2px 6px rgba(231, 111, 81, 0.5);
+    }
+    #createTaskBtn:hover {
+      background-color: #d35438;
+    }
+
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      margin-top: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      background: white;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    th, td { 
+      border: 1px solid #ccc; 
+      padding: 10px 12px; 
+      text-align: left; 
+    }
+
+    /* Header colors */
+    th {
+      background-color: #264653;
+      color: white;
+      font-weight: 600;
+      user-select: none;
+    }
+
+    /* Status colors */
+    td:nth-child(4) {
+      font-weight: bold;
+    }
+    td:nth-child(4):contains('Not Started') {
+      color: #e76f51;
+    }
+    td:nth-child(4):contains('In Progress') {
+      color: #f4a261;
+    }
+    td:nth-child(4):contains('Complete') {
+      color: #2a9d8f;
+    }
+
+    .edit-btn, .delete-btn {
+      padding: 5px 10px;
+      margin-right: 5px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+    }
+    .edit-btn {
+      background-color: #2a9d8f;
+      color: white;
+    }
+    .edit-btn:hover {
+      background-color: #1f5f66;
+    }
+    .delete-btn {
+      background-color: #e63946;
+      color: white;
+    }
+    .delete-btn:hover {
+      background-color: #a62b32;
+    }
+
+    /* Modal styles */
+    #taskModal { 
+      display: none; 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 100%; 
+      height: 100%; 
+      background: rgba(0,0,0,0.5); 
+      justify-content: center; 
+      align-items: center; 
+      z-index: 100;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    #taskModal form {
+      background: white; 
+      padding: 20px; 
+      border-radius: 8px; 
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      overflow-y: auto;
+      max-height: 90vh;
+    }
+
+    #paginationControls {
+      margin-top: 15px;
+      text-align: center;
+    }
+    #paginationControls button {
+      margin: 0 3px;
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: 1px solid #264653;
+      background: white;
+      color: #264653;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    #paginationControls button:hover:not(:disabled) {
+      background-color: #264653;
+      color: white;
+    }
+    #paginationControls button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .detail-row td {
+      border-top: none;
+      font-style: italic;
+      background-color: #f9f9f9;
+    }
+    .task-row:hover {
+      cursor: pointer;
+      background-color: #e0f2f1;
+    }
+
+    #taskForm {
+      background: linear-gradient(to bottom right, #f3f4ff, #dde6ff);
+      border: none;
+      border-radius: 16px;
+      padding: 30px 25px;
+      width: 400px;
+      margin: 30px auto;
+      color: #264653;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    #taskForm h3 {
+      color: #2a9d8f;
+      text-align: center;
+      margin-bottom: 22px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* Label styling */
+    #taskForm label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #1f3a3a;
+      font-size: 14px;
+    }
+
+    /* Universal input styling */
+    #taskForm input[type="text"],
+    #taskForm input[type="date"],
+    #taskForm select,
+    #taskForm textarea {
+      width: 100%;
+      padding: 12px 15px;
+      border-radius: 12px;
+      margin-top: 5px;
+      margin-bottom: 20px;
+      font-size: 15px;
+      font-weight: 500;
+      box-sizing: border-box;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+      transition: all 0.3s ease;
+    }
+
+    /* Hover & focus */
+    #taskForm input:not([readonly]):hover,
+    #taskForm select:hover,
+    #taskForm textarea:hover {
+      background-color: #f0faff;
+      border-color: #2a9d8f;
+    }
+
+    #taskForm input:not([readonly]):focus,
+    #taskForm select:focus,
+    #taskForm textarea:focus {
+      outline: none;
+      border-color: #2a9d8f;
+      box-shadow: 0 0 5px rgba(42, 157, 143, 0.3);
+    }
+
+    /* Read-only fields (SINO, Task, Owner) */
+    #taskForm input[readonly] {
+      background-color: #e3f3f5;
+      color: #657e83;
+      border: 1px dashed #b4d7db;
+      cursor: not-allowed;
+      font-style: italic;
+      box-shadow: none;
+    }
+
+    /* Dropdown select */
+    #taskForm select {
+      cursor: pointer;
+      background-color: #fff;
+    }
+
+    /* Textarea */
+    #taskForm textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    /* Buttons */
+    #taskForm button[type="submit"],
+    #taskForm button[type="button"] {
+      width: 48%;
+      margin: 10px 1%;
+      padding: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    #taskForm button[type="submit"] {
+      background-color: #2a9d8f;
+      color: white;
+    }
+
+    #taskForm button[type="submit"]:hover {
+      background-color: #21877b;
+      transform: scale(1.02);
+    }
+
+    #taskForm button[type="button"] {
+      background-color: #e76f51;
+      color: white;
+    }
+
+    #taskForm button[type="button"]:hover {
+      background-color: #c94f38;
+      transform: scale(1.02);
+    }
+
+    #taskForm button[type="button"]:focus {
+      background-color: #c94f38;
+      box-shadow: 0 6px 18px rgba(201, 79, 56, 0.6);
+      transform: translateY(-2px);
+      outline: none;
+    }
+
+    /* Toast notification */
+    #toast {
+      visibility: hidden;
+      min-width: 300px;
+      background-color: #e76f51;
+      color: white;
+      text-align: center;
+      border-radius: 8px;
+      padding: 16px;
+      position: fixed;
+      z-index: 1000;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      font-weight: 600;
+    }
+
+    #toast.show {
+      visibility: visible;
+      animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    }
+
+    @keyframes fadein {
+      from {bottom: 0; opacity: 0;}
+      to {bottom: 30px; opacity: 1;}
+    }
+
+    @keyframes fadeout {
+      from {bottom: 30px; opacity: 1;}
+      to {bottom: 0; opacity: 0;}
+    }
+
+    /* Loading overlay */
+    #loadingOverlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 24px;
+    }
+
+    .spinner {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #2a9d8f;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 420px) {
+      #taskForm {
+        width: 90%;
+        padding: 20px;
+      }
+      #taskForm button[type="submit"],
+      #taskForm button[type="button"] {
+        width: 100%;
+        margin: 10px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Toast notification -->
+  <div id="toast"></div>
+
+  <!-- Loading overlay -->
+  <div id="loadingOverlay">
+    <div style="text-align: center;">
+      <div style="margin-bottom: 20px;">Processing, please wait...</div>
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <nav id="topNav">
+    <button onclick="location.href='UserDashboard.html'">🏠 Home</button>
+    <button onclick="location.href='CurrentTask.html'">🛠️ Current Working</button>
+  </nav>
+
+  <header>
+    <h2>User Task Manager</h2>
+    <div id="profileBadge" title="Logged in user">
+      <div class="avatar" id="userAvatar">U</div>
+      <div id="welcomeMsg">Welcome, User</div>
+    </div>
+  </header>
+
+  <button id="createTaskBtn">+ Create Task</button>
+
+  <label for="searchInput">Search Tasks:</label>
+  <input type="text" id="searchInput" placeholder="Search by company or any word..." aria-label="Search tasks">
+  <br/><br/>
+  <table id="tasksTable" aria-label="Tasks table">
+    <thead>
+      <tr>
+        <th>SINO</th>
+        <th>Company</th>
+        <th>Type of Work</th>
+        <th>Status</th>
+        <th>Owner</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div id="paginationControls" aria-label="Pagination controls"></div>
+
+  <!-- Task creation modal -->
+<div id="taskModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <form id="taskForm">
+    <h3 id="modalTitle">Create / Edit Task</h3>
+
+    <!-- SINO (auto-generated) -->
+    <label>SINO:<br/>
+      <input type="text" name="SINO" id="SINO" readonly>
+    </label><br/><br/>
+
+    <!-- Company Name with autocomplete - FIXED -->
+    <label>Company Name:<br/>
+      <input list="companyList" name="Existing Company Name" id="companyName" required>
+      <datalist id="companyList"></datalist>
+    </label><br/><br/>
+
+    <!-- TYPE OF WORK (dynamic dropdown) -->
+    <label>TYPE OF WORK:<br/>
+      <input list="workTypeList" name="TYPE OF WORK" id="typeOfWork" required>
+      <datalist id="workTypeList"></datalist>
+    </label><br/><br/>
+
+    <!-- ACCOUNT TYPE -->
+    <label>Account Type:<br/>
+      <select name="ACCOUNT TYPE" id="accountType">
+        <option value="">--Select--</option>
+        <option>Credit Card</option>
+        <option>Chequing Acc</option>
+        <option>Savings Acc</option>
+        <option>Loan Acc</option>
+        <option>Other</option>
+      </select>
+    </label><br/><br/>
+
+    <!-- Account # autofill from existing -->
+    <label>Account # / Cards:<br/>
+      <input list="accountsCardsList" name="Accounts / Cards" id="accountsCards">
+      <datalist id="accountsCardsList"></datalist>
+    </label><br/><br/>
+
+    <!-- Task (auto default to 'Daily Task' but editable) -->
+    <label>Task:<br/>
+      <input type="text" name="Task" id="Task">
+    </label><br/><br/>
+
+    <!-- Owner (preset to username but editable) -->
+    <label>Owner:<br/>
+      <input type="text" name="Owner" id="Owner" required>
+    </label><br/><br/>
+
+    <!-- Status field with default value "Not Started" -->
+    <label>Status:<br/>
+      <select name="Status" id="status">
+        <option value="Not Started" selected>Not Started</option>
+             </select>
+    </label><br/><br/>
+
+
+<!-- WORK FOR with period logic - ALWAYS VISIBLE -->
+<label for="workFor">WORK FOR:</label>
+<select name="WORK FOR" id="workFor">
+  <option value="">--Choose--</option>
+  <option value="Yearly">Yearly</option>
+  <option value="Monthly">Monthly</option>
+  <option value="Quarterly">Quarterly</option>
+  <option value="Bi-weekly">Bi-weekly</option>
+  <option value="Weekly">Weekly</option>
+  <option value="Custom">Custom</option>
+</select>
+
+<label for="period">Period/Year:</label>
+<input type="text" name="Period" id="period" placeholder="Enter period (e.g., 2023, Q1 2023, Jan-Mar 2023)">
+<br/><br/>
+
+    <!-- Due Date - FIXED field name -->
+    <label>Due Date:<br/>
+      <input type="date" name="Due date" id="dueDate" required>
+    </label><br/><br/>
+
+    <!-- Assigned By -->
+    <label>Assigned By:<br/>
+      <input list="assignedByList" name="Assigned By" id="AssignedBy">
+      <datalist id="assignedByList"></datalist>
+          </label><br/><br/>
+
+    <!-- Notes -->
+    <label>Notes:<br/>
+      <textarea name="Notes" id="Notes"></textarea>
+    </label><br/><br/>
+
+    <button type="submit" id="submitTaskBtn">Save Task</button>
+    <button type="button" id="cancelBtn">Cancel</button>
+  </form>
+</div>
+  
+  <!-- Edit Task Modal -->
+  <div id="editTaskModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100;">
+    <form id="editTaskForm" style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);">
+      <h3 id="editModalTitle" style="text-align: center; color: #2a9d8f; margin-bottom: 25px;">Edit Task</h3>
+      
+      <input type="hidden" id="editTaskId">
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div>
+          <label style="font-weight: 600; color: #1f3a3a; font-size: 14px;">Company Name:</label>
+          <input type="text" id="editCompanyName" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-top: 5px;">
+        </div>
+        
+        <div>
+          <label style="font-weight: 600; color: #1f3a3a; font-size: 14px;">Type of Work:</label>
+          <input type="text" id="editTypeOfWork" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-top: 5px;">
+        </div>
+        
+        <div>
+          <label style="font-weight: 600; color: #1f3a3a; font-size: 14px;">Status:</label>
+          <select id="editStatus" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-top: 5px;">
+            <option value="Not Started">Not Started</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Complete">Complete</option>
+          </select>
+        </div>
+        
+        <div>
+          <label style="font-weight: 600; color: #1f3a3a; font-size: 14px;">Owner:</label>
+          <input type="text" id="editOwner" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid 'ccc; margin-top: 5px;">
+        </div>
+        
+        <div>
+          <label style="font-weight: 600; color: #1f3a3a; font-size: 14px;">Due Date:</label>
+          <input type="date" id="editDueDate" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-top: 5px;">
+        </div>
+      </div>
+      
+      <div style="margin-top: 15px;">
+        <label style="font-weight: 600; color: #1f3a3a; font-size: 14px;">Notes:</label>
+        <textarea id="editNotes" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-top: 5px; min-height: 80px;"></textarea>
+      </div>
+      
+      <div style="margin-top: 15px;">
+        <label style="font-weight: 600; color: #1f3a3a; font-size: 14px;">Remarks:</label>
+        <textarea id="editRemarks" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-top: 5px; min-height: 80px;"></textarea>
+      </div>
+      
+      <div style="margin-top: 20px; display: flex; justify-content: space-between;">
+        <button type="submit" id="submitEditBtn" style="background-color: #2a9d8f; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600;">Update Task</button>
+        <button type="button" id="editCancelBtn" style="background-color: #e76f51; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600;">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyD9ymWqihHWbVb4IRop1lXT-huLjBvS50w",
+      authDomain: "task-manager-602da.firebaseapp.com",
+      projectId: "task-manager-602da",
+      storageBucket: "task-manager-602da.appspot.com",
+      messagingSenderId: "438978699329",
+      appId: "1:438978699329:web:9f475d04352bbdaa5ce6c0"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // User session
+    const username = sessionStorage.getItem('username');
+    if (!username) {
+      alert("No active session found. Redirecting to login.");
+      window.location.href = 'index.html';
+    }
+
+    // Update profile badge with username and avatar (initial)
+    const welcomeMsgEl = document.getElementById('welcomeMsg');
+    const userAvatarEl = document.getElementById('userAvatar');
+    welcomeMsgEl.textContent = `Welcome, ${username}`;
+    userAvatarEl.textContent = username.charAt(0).toUpperCase();
+
+    // DOM elements
+    const taskTableBody = document.querySelector('#tasksTable tbody');
+    const paginationDiv = document.getElementById('paginationControls');
+    const createTaskBtn = document.getElementById('createTaskBtn');
+    const taskModal = document.getElementById('taskModal');
+    const taskForm = document.getElementById('taskForm');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const editTaskModal = document.getElementById('editTaskModal');
+    const editTaskForm = document.getElementById('editTaskForm');
+    const editCancelBtn = document.getElementById('editCancelBtn');
+    const toast = document.getElementById('toast');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+    const rowsPerPage = 5;
+    let currentPage = 1;
+    let allTasks = [];
+    let filteredTasks = [];
+
+    // Show/hide loading overlay
+    function showLoading() {
+      loadingOverlay.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function hideLoading() {
+      loadingOverlay.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    // Show toast notification
+    function showToast(message) {
+      toast.textContent = message;
+      toast.className = 'show';
+      setTimeout(() => { toast.className = toast.className.replace('show', ''); }, 3000);
+    }
+
+    // Check if user has pending tasks
+    function hasPendingTasks() {
+      return allTasks.some(task => 
+        task.Owner === username && 
+        (task.Status !== 'Complete' && task.Status !== 'Completed')
+      );
+    }
+
+    // Load tasks for current user (Owner)
+    async function loadTasks() {
+      try {
+        console.log("Loading tasks for user:", username);
+        const snapshot = await db.collection('tasks').where('Owner', '==', username).get();
+        allTasks = [];
+        snapshot.forEach(doc => {
+          const taskData = { id: doc.id, ...doc.data() };
+          console.log("Task loaded:", taskData);
+          allTasks.push(taskData);
+        });
+
+        // Sort tasks by SINO number ascending
+        allTasks.sort((a, b) => {
+          const getNumber = sino => {
+            if (!sino) return 0;
+            const match = sino.match(/(\d+)$/);
+            return match ? parseInt(match[1], 10) : 0;
+          };
+          return getNumber(a.SINO) - getNumber(b.SINO);
+        });
+
+        console.log("Total tasks loaded:", allTasks.length);
+        filteredTasks = allTasks;
+        currentPage = 1;
+        renderTablePage(currentPage, filteredTasks);
+        renderPagination(filteredTasks);
+      } catch (err) {
+        console.error("Error loading tasks:", err);
+        alert('Failed to load tasks');
+      }
+    }
+
+    // ✅ Async global SINO generator using Firestore
+    async function generateSINO() {
+      const snapshot = await db.collection('tasks').get();
+
+      let maxNumber = 0;
+
+      snapshot.forEach(doc => {
+        const task = doc.data();
+        const sino = task.SINO;
+        if (sino) {
+          const match = sino.match(/(\d+)$/); // match numbers at the end
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (num > maxNumber) {
+              maxNumber = num;
+            }
+          }
+        }
+      });
+
+      const nextNumber = maxNumber + 1;
+      return String(nextNumber).padStart(3, '0');
+    }
+
+    function pickField(task, ...fields) {
+      for (const field of fields) {
+        // Also check for field names with spaces and different capitalization
+        const fieldVariations = [
+          field,
+          field.replace(/\s+/g, ' '), // Normalize spaces
+          field.toLowerCase(),
+          field.toUpperCase()
+        ];
+        
+        for (const variation of fieldVariations) {
+          if (task[variation] !== undefined && task[variation] !== null && task[variation].toString().trim() !== '') {
+            return task[variation];
+          }
+        }
+      }
+      return ''; // fallback if none found
+    }
+
+    function renderTablePage(page, tasks) {
+      console.log("Rendering page:", page, "with tasks:", tasks.length);
+      taskTableBody.innerHTML = '';
+      
+      if (tasks.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="6" style="text-align: center; padding: 20px;">No tasks found</td>`;
+        taskTableBody.appendChild(tr);
+        return;
+      }
+      
+      const start = (page - 1) * rowsPerPage;
+      const pageTasks = tasks.slice(start, start + rowsPerPage);
+
+      pageTasks.forEach((task, index) => {
+        const tr = document.createElement('tr');
+        tr.classList.add('task-row');
+        tr.setAttribute('tabindex', '0'); // for keyboard focus
+        tr.dataset.taskId = task.id;
+
+        const statusColorMap = {
+          'Not Started': '#e76f51',
+          'In Progress': '#f4a261',
+          'Complete': '#2a9d8f',
+          'Completed': '#2a9d8f' // For backward compatibility
+        };
+        const statusColor = statusColorMap[task.Status] || '#333';
+
+        tr.innerHTML = `
+          <td>${task.SINO || ''}</td>
+          <td>${task['Existing Company Name'] || ''}</td>
+          <td>${task['TYPE OF WORK'] || ''}</td>
+          <td style="color: ${statusColor}; font-weight: 700;">${task.Status || ''}</td>
+          <td>${task.Owner || ''}</td>
+          <td>
+            <button class="edit-btn" data-id="${task.id}" aria-label="Edit task ${task.SINO || ''}">Edit</button>
+            <button class="delete-btn" data-id="${task.id}" aria-label="Delete task ${task.SINO || ''}">Delete</button>
+          </td>
+        `;
+        taskTableBody.appendChild(tr);
+
+        // Create hidden detail row for this task
+        const detailRow = document.createElement('tr');
+        detailRow.classList.add('detail-row');
+        detailRow.style.display = 'none'; // hidden by default
+        
+        // Check if task has attachments
+        const hasAttachments = task.Attachments && task.Attachments.length > 0;
+        let attachmentsHtml = 'None';
+        
+        if (hasAttachments) {
+          attachmentsHtml = '';
+          task.Attachments.forEach((att, idx) => {
+            attachmentsHtml += `<a href="${att.url}" target="_blank" style="display: block; margin: 5px 0; color: #2a9d8f;">Attachment ${idx + 1}</a>`;
+          });
+        }
+        
+        detailRow.innerHTML = `
+          <td colspan="6" style="background: #f9f9f9; padding: 12px; font-size: 14px; color: '555;">
+            <strong>SINO:</strong> ${pickField(task, "SINO") || 'N/A'}<br/>
+            <strong>Company Name:</strong> ${pickField(task, "Existing Company Name", "Company Name") || 'N/A'}<br/>
+            <strong>Type of Work:</strong> ${pickField(task, "TYPE OF WORK", "Type of Work") || 'N/A'}<br/>
+            <strong>Account Type:</strong> ${pickField(task, "ACCOUNT TYPE", "Account Type") || 'N/A'}<br/>
+            <strong>Accounts / Cards:</strong> ${pickField(task, "Accounts / Cards", "AccountsCards") || 'N/A'}<br/>
+            <strong>Task:</strong> ${pickField(task, "Task") || 'N/A'}<br/>
+            <strong>Status:</strong> ${pickField(task, "Status") || 'N/A'}<br/>
+            <strong>Owner:</strong> ${pickField(task, "Owner") || 'N/A'}<br/>
+            <strong>Due Date:</strong> ${pickField(task, "Due date", "Due Date") || 'N/A'}<br/>
+            <strong>Assigned By:</strong> ${pickField(task, "Assigned By", "AssignedBy") || 'N/A'}<br/>
+            <strong>Time Started:</strong> ${pickField(task, "TimeStarted", "Time Start", "taskStart") || 'N/A'}<br/>
+            <strong>Time End:</strong> ${pickField(task, "TimeEnd", "Time End", "taskEnd") || 'N/A'}<br/>
+            <strong>Total Pause Hours:</strong> ${pickField(task, "TotalPauseHours", "TOTAL OUT OF HOURS") || 'N/A'}<br/>
+            <strong>Total Work Hours:</strong> ${pickField(task, "TotalWorkHours", "Total Work Hours") || 'N/A'}<br/>
+            <strong>Attachments:</strong> ${attachmentsHtml}<br/>
+            <strong>Notes:</strong> ${pickField(task, "Notes") ? pickField(task, "Notes").replace(/\n/g, '<br/>') : 'None'}<br/>
+            <strong>Remarks:</strong> ${pickField(task, "Remarks", "Remarks (New)") ? pickField(task, "Remarks", "Remarks (New)").replace(/\n/g, '<br/>') : 'None'}<br/>
+            <strong>Created By:</strong> ${pickField(task, "CreatedBy") || 'N/A'}
+          </td>
+        `;
+
+        taskTableBody.appendChild(detailRow);
+
+        // Toggle detail row on click of main row
+        tr.addEventListener('click', () => {
+          const isVisible = detailRow.style.display === 'table-row';
+          // Hide all other detail rows first (optional)
+          document.querySelectorAll('.detail-row').forEach(r => r.style.display = 'none');
+          if (!isVisible) {
+            detailRow.style.display = 'table-row';
+          } else {
+            detailRow.style.display = 'none';
+          }
+        });
+      });
+
+      attachRowEventListeners();
+    }
+
+    function renderPagination(tasks) {
+      paginationDiv.innerHTML = '';
+      const totalPages = Math.ceil(tasks.length / rowsPerPage);
+      if (totalPages <= 1) return;
+
+      // Create Prev button
+      const prevBtn = document.createElement('button');
+      prevBtn.textContent = 'Prev';
+      prevBtn.disabled = currentPage === 1;
+      prevBtn.onclick = () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderTablePage(currentPage, filteredTasks);
+          renderPagination(filteredTasks);
+        }
+      };
+      paginationDiv.appendChild(prevBtn);
+
+      const addPageButton = (page) => {
+        const btn = document.createElement('button');
+        btn.textContent = page;
+        btn.disabled = page === currentPage;
+        btn.onclick = () => {
+          currentPage = page;
+          renderTablePage(currentPage, filteredTasks);
+          renderPagination(filteredTasks);
+        };
+        paginationDiv.appendChild(btn);
+      };
+
+      // Always show first page
+      addPageButton(1);
+
+      if (currentPage > 3) {
+        const dot = document.createElement('span');
+        dot.textContent = '...';
+        paginationDiv.appendChild(dot);
+      }
+
+      // Middle pages
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) {
+        addPageButton(i);
+      }
+
+      if (currentPage < totalPages - 2) {
+        const dot = document.createElement('span');
+        dot.textContent = '...';
+        paginationDiv.appendChild(dot);
+      }
+
+      // Always show last page if more than one
+      if (totalPages > 1) {
+        addPageButton(totalPages);
+      }
+
+      // Create Next button
+      const nextBtn = document.createElement('button');
+      nextBtn.textContent = 'Next';
+      nextBtn.disabled = currentPage === totalPages;
+      nextBtn.onclick = () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderTablePage(currentPage, filteredTasks);
+          renderPagination(filteredTasks);
+        }
+      };
+      paginationDiv.appendChild(nextBtn);
+    }
+
+    function attachRowEventListeners() {
+      // Edit button event listeners
+      document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation(); // Prevent triggering the row click
+          const taskId = btn.getAttribute('data-id');
+          openEditModal(taskId);
+        });
+      });
+
+      // Delete button event listeners
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation(); // Prevent triggering the row click
+          const taskId = btn.getAttribute('data-id');
+          deleteTask(taskId);
+        });
+      });
+    }
+
+    async function openEditModal(taskId) {
+      try {
+        showLoading();
+        const taskDoc = await db.collection('tasks').doc(taskId).get();
+        
+        if (!taskDoc.exists) {
+          showToast('Task not found');
+          return;
+        }
+
+        const task = taskDoc.data();
+        
+        // Populate the edit form
+        document.getElementById('editTaskId').value = taskId;
+        document.getElementById('editCompanyName').value = task['Existing Company Name'] || '';
+        document.getElementById('editTypeOfWork').value = task['TYPE OF WORK'] || '';
+        document.getElementById('editStatus').value = task.Status || 'Not Started';
+        document.getElementById('editOwner').value = task.Owner || '';
+        document.getElementById('editDueDate').value = task['Due date'] || '';
+        document.getElementById('editNotes').value = task.Notes || '';
+        document.getElementById('editRemarks').value = task.Remarks || '';
+
+        // Show the modal
+        editTaskModal.style.display = 'flex';
+      } catch (error) {
+        console.error('Error opening edit modal:', error);
+        showToast('Error loading task details');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    async function deleteTask(taskId) {
+      if (!confirm('Are you sure you want to delete this task?')) return;
+
+      try {
+        showLoading();
+        await db.collection('tasks').doc(taskId).delete();
+        showToast('Task deleted successfully');
+        loadTasks(); // Reload the task list
+      } catch (error) {
+        console.error('Error deleting task:', error);
+        showToast('Error deleting task');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase().trim();
+      
+      if (!searchTerm) {
+        filteredTasks = allTasks;
+      } else {
+        filteredTasks = allTasks.filter(task => {
+          // Search across multiple fields
+          return (
+            (task['Existing Company Name'] && task['Existing Company Name'].toLowerCase().includes(searchTerm)) ||
+            (task['TYPE OF WORK'] && task['TYPE OF WORK'].toLowerCase().includes(searchTerm)) ||
+            (task.SINO && task.SINO.toLowerCase().includes(searchTerm)) ||
+            (task.Status && task.Status.toLowerCase().includes(searchTerm)) ||
+            (task.Notes && task.Notes.toLowerCase().includes(searchTerm))
+          );
+        });
+      }
+      
+      currentPage = 1;
+      renderTablePage(currentPage, filteredTasks);
+      renderPagination(filteredTasks);
+    });
+
+    // Modal event handlers
+    createTaskBtn.addEventListener('click', async () => {
+      // Generate SINO
+      const newSINO = await generateSINO();
+      document.getElementById('SINO').value = newSINO;
+          
+      // Set default values
+      document.getElementById('Owner').value = username;
+      document.getElementById('Task').value = 'Daily Task';
+          
+      // Load dropdown options with current user's data
+      await loadDropdownOptions();
+      
+      // Show modal
+      taskModal.style.display = 'flex';
+      document.getElementById('modalTitle').textContent = 'Create New Task';
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      taskModal.style.display = 'none';
+      taskForm.reset();
+    });
+
+    editCancelBtn.addEventListener('click', () => {
+      editTaskModal.style.display = 'none';
+    });
+
+    // MODIFICATION 1: Remove the window click event listener that closes the modal when clicking outside
+    // This prevents the modal from closing when clicking outside of it
+
+    // Handle form submission for creating/editing tasks
+    taskForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      try {
+        showLoading();
+        
+        const formData = new FormData(taskForm);
+        const taskData = Object.fromEntries(formData.entries());
+        
+        // Add timestamp
+        taskData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        taskData.CreatedBy = username;
+        
+        // Save to Firestore
+        await db.collection('tasks').add(taskData);
+        
+        showToast('Task created successfully');
+        taskModal.style.display = 'none';
+        taskForm.reset();
+        
+        // MODIFICATION 2: Redirect to CurrentTask.html after creating a task
+        window.location.href = 'CurrentTask.html';
+      } catch (error) {
+        console.error('Error creating task:', error);
+        showToast('Error creating task');
+      } finally {
+        hideLoading();
+      }
+    });
+
+    // Handle edit form submission
+    editTaskForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      try {
+        showLoading();
+        
+        const taskId = document.getElementById('editTaskId').value;
+        const updatedData = {
+          'Existing Company Name': document.getElementById('editCompanyName').value,
+          'TYPE OF WORK': document.getElementById('editTypeOfWork').value,
+          'Status': document.getElementById('editStatus').value,
+          'Owner': document.getElementById('editOwner').value,
+          'Due date': document.getElementById('editDueDate').value,
+          'Notes': document.getElementById('editNotes').value,
+          'Remarks': document.getElementById('editRemarks').value,
+          'updatedAt': firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        await db.collection('tasks').doc(taskId).update(updatedData);
+        
+        showToast('Task updated successfully');
+        editTaskModal.style.display = 'none';
+        loadTasks(); // Reload tasks
+      } catch (error) {
+        console.error('Error updating task:', error);
+        showToast('Error updating task');
+      } finally {
+        hideLoading();
+      }
+    });
+
+
+    // Load dropdown options from current user's tasks only
+    async function loadDropdownOptions() {
+      try {
+        // Only get tasks for the current user
+        const snapshot = await db.collection('tasks').where('Owner', '==', username).get();
+        const companies = new Set();
+        const workTypes = new Set();
+        const accounts = new Set();
+        const assignedBys = new Set();
+        
+        snapshot.forEach(doc => {
+          const task = doc.data();
+          if (task['Existing Company Name']) companies.add(task['Existing Company Name']);
+          if (task['TYPE OF WORK']) workTypes.add(task['TYPE OF WORK']);
+          if (task['Accounts / Cards']) accounts.add(task['Accounts / Cards']);
+          if (task['Assigned By']) assignedBys.add(task['Assigned By']);
+        });
+        
+        // Update datalists
+        const companyList = document.getElementById('companyList');
+        companyList.innerHTML = '';
+        companies.forEach(company => {
+          const option = document.createElement('option');
+          option.value = company;
+          companyList.appendChild(option);
+        });
+        
+        const workTypeList = document.getElementById('workTypeList');
+        workTypeList.innerHTML = '';
+        workTypes.forEach(workType => {
+          const option = document.createElement('option');
+          option.value = workType;
+          workTypeList.appendChild(option);
+        });
+        
+        const accountsList = document.getElementById('accountsCardsList');
+        accountsList.innerHTML = '';
+        accounts.forEach(account => {
+          const option = document.createElement('option');
+          option.value = account;
+          accountsList.appendChild(option);
+        });
+        
+        const assignedByList = document.getElementById('assignedByList');
+        assignedByList.innerHTML = '';
+        assignedBys.forEach(assignedBy => {
+          const option = document.createElement('option');
+          option.value = assignedBy;
+          assignedByList.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading dropdown options:', error);
+      }
+    }
+
+    // Handle WORK FOR dropdown change to update period placeholder
+    document.getElementById('workFor').addEventListener('change', function(e) {
+      const periodInput = document.getElementById('period');
+      
+      // Set appropriate placeholder based on selection
+      switch(e.target.value) {
+        case 'Yearly':
+          periodInput.placeholder = 'Enter year (e.g., 2023)';
+          break;
+        case 'Monthly':
+          periodInput.placeholder = 'Enter month and year (e.g., Jan 2023)';
+          break;
+        case 'Quarterly':
+          periodInput.placeholder = 'Enter quarter and year (e.g., Q1 2023)';
+          break;
+        case 'Bi-weekly':
+          periodInput.placeholder = 'Enter bi-weekly period (e.g., 1-15 Jan 2023)';
+          break;
+        case 'Weekly':
+          periodInput.placeholder = 'Enter week and year (e.g., Week 5, 2023)';
+          break;
+        case 'Custom':
+          periodInput.placeholder = 'Enter custom period (e.g., Jan-Mar 2023)';
+          break;
+        default:
+          periodInput.placeholder = 'Enter period';
+      }
+      
+      // Make period field required for all options except empty selection
+      periodInput.required = e.target.value !== '';
+    });
+
+    // Initialize the period field on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      const workForSelect = document.getElementById('workFor');
+      const periodInput = document.getElementById('period');
+      
+      // Set initial placeholder
+      if (workForSelect.value) {
+        workForSelect.dispatchEvent(new Event('change'));
+      } else {
+        periodInput.placeholder = 'Select WORK FOR first';
+        periodInput.disabled = true;
+      }
+      
+      // Enable period input when a WORK FOR option is selected
+      workForSelect.addEventListener('change', function() {
+        periodInput.disabled = !this.value;
+      });
+      
+      // Your other initialization code
+      loadTasks();
+      loadDropdownOptions();
+    });
+  </script>
+</body>
+</html>

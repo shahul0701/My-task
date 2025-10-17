@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Current Task</title>
+<style>
+    body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #ecf0f1; padding: 20px; }
+    .close-btn { background: #e74c3c; color: white; border: none; padding: 8px 14px; font-weight: bold; border-radius: 3px; cursor: pointer; float: right; }
+    h2 { margin-top: 0; }
+    .task-table { width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius: 10px; overflow: hidden; }
+    .task-table th, .task-table td { padding: 12px; text-align: left; }
+    .task-table th { background: #34495e; color: white; }
+    .task-table tr { background: #fdfdfd; cursor: pointer; transition: background-color 0.3s; }
+    .task-table tr:hover { background: #f1f1f1; }
+    td.status { font-weight: bold; color: white; border-radius: 4px; padding: 6px 10px; }
+    .status.not-started { background: #95a5a6; }
+    .status.in-progress { background: #3498db; }
+    .status.pending { background: #f1c40f; color: black; }
+    .combo-box { display: none; animation: fadeIn 0.4s ease-in-out; }
+    .combo-box button { margin: 5px; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; transition: transform 0.3s ease; color: white; font-weight: bold; }
+    .combo-box button:hover { transform: scale(1.05); }
+    .btn-start { background: #2980b9; }
+    .btn-pending { background: #e67e22; }
+    .btn-continue { background: #8e44ad; }
+    .btn-complete { background: #27ae60; }
+    .btn-logoff { background: #e74c3c; }
+    .btn-login { background: #2ecc71; }
+    .highlight { border: 2px solid #fff; box-shadow: 0 0 8px rgba(255, 255, 255, 0.6); }
+    @keyframes fadeIn { from { opacity:0; transform: scale(0.95); } to { opacity:1; transform: scale(1); } }
+    
+    /* Kanban View Styles */
+    .view-toggle { margin: 15px 0; text-align: center; }
+    .view-toggle button { padding: 8px 16px; margin: 0 5px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .view-toggle button.active { background: #2c3e50; }
+    .kanban-container { display: none; margin-top: 20px; }
+    .kanban-columns { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 20px; }
+    .kanban-column { flex: 1; min-width: 300px; background: #f8f9fa; border-radius: 8px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .kanban-column h3 { margin-top: 0; padding-bottom: 10px; border-bottom: 2px solid #ddd; }
+    .kanban-card { background: white; margin: 10px 0; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: grab; }
+    .kanban-card:active { cursor: grabbing; }
+    .kanban-card h4 { margin: 0 0 8px 0; }
+    .kanban-card p { margin: 5px 0; }
+    .kanban-card .status { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 12px; color: white; }
+    .drag-over { background-color: rgba(52, 152, 219, 0.2) !important; }
+    .dragging { opacity: 0.5; }
+    
+    /* Attachment Modal Styles */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; }
+    .modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 500px; }
+    .close-modal { float: right; font-size: 24px; cursor: pointer; }
+    .attachment-preview { max-width: 100%; max-height: 200px; margin: 10px 0; display: none; }
+    .uploaded-images { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+    .uploaded-images img { max-width: 100px; max-height: 100px; object-fit: cover; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <button class="close-btn" onclick="window.history.back()">Back</button>
+  <h2>Current Task Details</h2>
+  
+  <div class="view-toggle">
+    <button id="tableViewBtn" class="active" onclick="toggleView('table')">Table View</button>
+    <button id="kanbanViewBtn" onclick="toggleView('kanban')">Kanban View</button>
+  </div>
+
+  <table class="task-table" id="taskTableView">
+    <thead>
+      <tr>
+        <th>SINO</th><th>Company</th><th>Task</th><th>Due Date</th><th>Status</th><th>Owner</th><th>Work Hours</th>
+      </tr>
+    </thead>
+    <tbody id="task-body"></tbody>
+  </table>
+
+  <div class="kanban-container" id="kanbanView">
+    <div class="kanban-columns">
+      <div class="kanban-column" data-status="not-started">
+        <h3>Not Started</h3>
+        <div class="kanban-cards" id="kanban-not-started"></div>
+      </div>
+      <div class="kanban-column" data-status="in-progress">
+        <h3>In Progress</h3>
+        <div class="kanban-cards" id="kanban-in-progress"></div>
+      </div>
+      <div class="kanban-column" data-status="pending">
+        <h3>Pending</h3>
+        <div class="kanban-cards" id="kanban-pending"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attachment Modal -->
+  <div id="attachmentModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal()">&times;</span>
+      <h3>Add Attachments</h3>
+      <p>Would you like to add attachments to this task?</p>
+      <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+      <button onclick="document.getElementById('fileInput').click()">Select Images</button>
+      <img id="attachmentPreview" class="attachment-preview" alt="Preview">
+      <div id="uploadedImages" class="uploaded-images"></div>
+      <div style="margin-top: 15px;">
+        <button onclick="uploadImages()" style="background: #27ae60; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Upload Images</button>
+        <button onclick="closeModal()" style="background: #e74c3c; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Skip</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- Cloudinary SDK -->
+  <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+  <script>
+  // Initialize Firebase
+  firebase.initializeApp({
+    apiKey: "AIzaSyD9ymWqihHWbVb4IRop1lXT-huLjBvS50w",
+    authDomain: "task-manager-602da.firebaseapp.com",
+    projectId: "task-manager-602da",
+    storageBucket: "task-manager-602da.appspot.com",
+    messagingSenderId: "438978699329",
+    appId: "1:438978699329:web:9f475d04352bbdaa5ce6c0"
+  });
+  const db = firebase.firestore();
+
+  // Cloudinary configuration
+  const cloudinaryConfig = {
+    cloudName: 'your_cloud_name', // Replace with your Cloudinary cloud name
+    uploadPreset: 'your_upload_preset' // Replace with your Cloudinary upload preset
+  };
+
+  // Global variables
+  let currentTasks = [];
+  let currentTaskId = null;
+  const taskBody = document.getElementById("task-body");
+  const statusLabels = {
+    "not-started": {label:"Not Started", class:"not-started"},
+    "in-progress": {label:"In Progress", class:"in-progress"},
+    "pending": {label:"Pending", class:"pending"}
+  };
+
+  const now = () => firebase.firestore.Timestamp.now();
+
+  function formatMs(ms) {
+    const s = Math.floor(ms / 1000);
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+  }
+
+  function calcTimeDetails(sessions = [], logoffSessions = []) {
+    let totalWorkMs = 0, totalPauseMs = 0, totalLogoffMs = 0, pauseCount = 0, lastEnd = null;
+    
+    // Calculate work time and pause time
+    if (Array.isArray(sessions)) {
+      sessions.forEach(sess => {
+        const startMs = sess.start?.toDate ? sess.start.toDate().getTime() : null;
+        const endMs = sess.end?.toDate ? sess.end.toDate().getTime() : now().toDate().getTime();
+        
+        if (startMs) {
+          const workTime = endMs - startMs;
+          totalWorkMs += workTime;
+          
+          if (lastEnd !== null) {
+            const pause = startMs - lastEnd;
+            if (pause > 0) { 
+              totalPauseMs += pause; 
+              pauseCount++; 
+            }
+          }
+          lastEnd = endMs;
+        }
+      });
+    }
+    
+    // Calculate logoff time (only count time when user was logged off)
+    if (Array.isArray(logoffSessions)) {
+      logoffSessions.forEach(sess => {
+        const startMs = sess.start?.toDate ? sess.start.toDate().getTime() : null;
+        const endMs = sess.end?.toDate ? sess.end.toDate().getTime() : now().toDate().getTime();
+        
+        if (startMs) {
+          totalLogoffMs += endMs - startMs;
+        }
+      });
+    }
+    
+    // IMPORTANT: Don't count logoff time as pause time
+    // Subtract logoff time from pause time if they overlap
+    // This ensures pause time only includes actual pauses, not logoff periods
+    if (totalPauseMs > 0 && totalLogoffMs > 0) {
+      // We need to check for overlapping periods between pauses and logoffs
+      // For simplicity, we'll subtract the total logoff time from pause time
+      // but this might not be perfect if there are multiple overlapping periods
+      totalPauseMs = Math.max(0, totalPauseMs - totalLogoffMs);
+    }
+    
+    const startTime = sessions[0]?.start?.toDate ? sessions[0].start.toDate().toLocaleString() : '—';
+    const endTime = sessions.length > 0 && sessions[sessions.length-1]?.end?.toDate ? 
+                    sessions[sessions.length-1].end.toDate().toLocaleString() : 
+                    (sessions.length > 0 && !sessions[sessions.length-1]?.end ? 'In Progress' : '—');
+    
+    return { totalWorkMs, totalPauseMs, totalLogoffMs, pauseCount, startTime, endTime };
+  }
+
+  function getButtonsHTML(statusKey, isLogoff = false) {
+    if (isLogoff) {
+      // When logged off, only show Login and Resume buttons
+      return `
+        <button class="btn-login highlight">Login</button>
+        <button class="btn-continue">Resume</button>
+      `;
+    } else if (statusKey === "in-progress") {
+      // When in progress, show Pause, Logoff and Complete buttons
+      return `
+        <button class="btn-pending">Pause</button>
+        <button class="btn-logoff highlight">Logoff</button>
+        <button class="btn-complete">Complete</button>
+      `;
+    } else if (statusKey === "pending") {
+      // When paused (not logged off), show Resume button
+      return `<button class="btn-continue highlight">Resume</button>`;
+    } else if (statusKey === "not-started") {
+      // When not started, show Start button
+      return `<button class="btn-start highlight">Start</button>`;
+    }
+    
+    return `<em>No actions available</em>`;
+  }
+
+  function toggleComboBox(idx) {
+    document.querySelectorAll(".combo-box").forEach((r, i) => {
+      r.style.display = (idx === i && r.style.display !== "table-row") ? "table-row" : "none";
+    });
+  }
+
+  function renderTasks(tasks) {
+    currentTasks = tasks;
+    renderTableView(tasks);
+    renderKanbanView(tasks);
+  }
+
+  function renderTableView(tasks) {
+    taskBody.innerHTML = "";
+    tasks.forEach((task, idx) => {
+      const sk = (task.Status || "").toLowerCase().replace(/\s+/g, "-");
+      const { totalWorkMs, totalPauseMs, totalLogoffMs, pauseCount, startTime, endTime } = 
+            calcTimeDetails(task.workSessions || [], task.logoffSessions || []);
+      const ownerName = task.Owner ? task.Owner : "No Owner";
+      const isLogoff = task.isLogoff || false;
+
+      const tr = document.createElement("tr");
+      tr.onclick = () => toggleComboBox(idx);
+      tr.innerHTML = `
+        <td>${task.SINO}</td>
+        <td>${task["Existing Company Name"]}</td>
+        <td>${task["TYPE OF WORK"]}</td>
+        <td>${task["Due date"]}</td>
+        <td class="status ${statusLabels[sk]?.class}">${statusLabels[sk]?.label}</td>
+        <td>${ownerName}</td>
+        <td>${formatMs(totalWorkMs)}</td>
+      `;
+      taskBody.appendChild(tr);
+
+      const cr = document.createElement("tr");
+      cr.className = "combo-box";
+      cr.style.display = "none";
+      cr.innerHTML = `<td colspan="7">
+        <div><strong>Started:</strong> ${startTime}</div>
+        <div><strong>Ended:</strong> ${endTime}</div>
+        <div><strong>Work hrs:</strong> ${formatMs(totalWorkMs)}</div>
+        <div><strong>Pause hrs:</strong> ${formatMs(totalPauseMs)}</div>
+        <div><strong>Logoff hrs:</strong> ${formatMs(totalLogoffMs)}</div>
+        <div><strong>Pause count:</strong> ${pauseCount}</div>
+        <div><strong>Remarks:</strong> ${task.Remarks || '-'}</div>
+        <hr style="margin:8px 0;">
+        ${getButtonsHTML(sk, isLogoff)}
+      </td>`;
+      taskBody.appendChild(cr);
+    });
+    attachActions(tasks);
+  }
+
+  function renderKanbanView(tasks) {
+    // Clear all kanban columns
+    document.getElementById('kanban-not-started').innerHTML = '';
+    document.getElementById('kanban-in-progress').innerHTML = '';
+    document.getElementById('kanban-pending').innerHTML = '';
+    
+    tasks.forEach((task, idx) => {
+      const sk = (task.Status || "").toLowerCase().replace(/\s+/g, "-");
+      const { totalWorkMs } = calcTimeDetails(task.workSessions || [], task.logoffSessions || []);
+      const ownerName = task.Owner ? task.Owner : "No Owner";
+      const isLogoff = task.isLogoff || false;
+      
+      const card = document.createElement('div');
+      card.className = 'kanban-card';
+      card.draggable = true;
+      card.dataset.id = task.id;
+      card.dataset.index = idx;
+      card.innerHTML = `
+        <h4>${task["TYPE OF WORK"]}</h4>
+        <p><strong>Company:</strong> ${task["Existing Company Name"]}</p>
+        <p><strong>Due:</strong> ${task["Due date"]}</p>
+        <p><strong>Owner:</strong> ${ownerName}</p>
+        <p><strong>Worked:</strong> ${formatMs(totalWorkMs)}</p>
+        <span class="status ${statusLabels[sk]?.class}">${statusLabels[sk]?.label}</span>
+        <div style="margin-top: 10px;">
+          ${getButtonsHTML(sk, isLogoff)}
+        </div>
+      `;
+      
+      // Add to appropriate column
+      document.getElementById(`kanban-${sk}`).appendChild(card);
+      
+      // Add drag events
+      card.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', task.id);
+        setTimeout(() => card.classList.add('dragging'), 0);
+      });
+      
+      card.addEventListener('dragend', () => {
+        document.querySelectorAll('.kanban-column').forEach(col => {
+          col.classList.remove('drag-over');
+        });
+        card.classList.remove('dragging');
+      });
+      
+      // Add button event listeners
+      attachKanbanButtonListeners(card, task);
+    });
+    
+    // Make columns droppable
+    document.querySelectorAll('.kanban-column').forEach(column => {
+      column.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const afterElement = getDragAfterElement(column, e.clientY);
+        const draggable = document.querySelector('.dragging');
+        if (draggable) {
+          if (afterElement) {
+            column.insertBefore(draggable, afterElement);
+          } else {
+            column.appendChild(draggable);
+          }
+        }
+      });
+      
+      column.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const taskId = e.dataTransfer.getData('text/plain');
+        const newStatus = column.dataset.status;
+        
+        // Update task status in Firebase
+        updateTaskStatus(taskId, newStatus);
+      });
+    });
+  }
+
+  function attachKanbanButtonListeners(card, task) {
+    const buttons = card.querySelectorAll('button');
+    buttons.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const ref = db.collection("tasks").doc(task.id);
+        const ts = now();
+        const sess = task.workSessions || [];
+        const logoffSess = task.logoffSessions || [];
+        const isLogoff = task.isLogoff || false;
+
+        try {
+          if (btn.classList.contains("btn-start")) {
+            if (sess.some(s => !s.end)) return alert("Already running");
+            sess.push({ start: ts, end: null });
+            await ref.update({ 
+              Status: "In Progress", 
+              taskStart: ts, 
+              workSessions: sess,
+              isLogoff: false
+            });
+            alert("Started");
+          }
+          if (btn.classList.contains("btn-pending")) {
+            const i = sess.findIndex(s => !s.end);
+            if (i < 0) return alert("Not running");
+            sess[i].end = ts;
+            await ref.update({ 
+              Status: "Pending", 
+              workSessions: sess,
+              isLogoff: false
+            });
+            alert("Paused");
+          }
+          if (btn.classList.contains("btn-continue")) {
+            if (sess.some(s => !s.end)) return alert("Already running");
+            sess.push({ start: ts, end: null });
+            await ref.update({ 
+              Status: "In Progress", 
+              workSessions: sess,
+              isLogoff: false
+            });
+            alert("Resumed");
+          }
+          if (btn.classList.contains("btn-logoff")) {
+            const i = sess.findIndex(s => !s.end);
+            if (i < 0) return alert("Not running");
+            sess[i].end = ts;
+            logoffSess.push({ start: ts, end: null });
+            await ref.update({ 
+              Status: "Pending", 
+              workSessions: sess,
+              logoffSessions: logoffSess,
+              isLogoff: true
+            });
+            alert("Logged off");
+          }
+          if (btn.classList.contains("btn-login")) {
+            const i = logoffSess.findIndex(s => !s.end);
+            if (i < 0) return alert("Not logged off");
+            logoffSess[i].end = ts;
+            sess.push({ start: ts, end: null });
+            await ref.update({ 
+              Status: "In Progress", 
+              workSessions: sess,
+              logoffSessions: logoffSess,
+              isLogoff: false
+            });
+            alert("Logged in");
+          }
+          if (btn.classList.contains("btn-complete")) {
+            const i = sess.findIndex(s => !s.end);
+            if (i > -1) sess[i].end = ts;
+
+            // End any active logoff session
+            const j = logoffSess.findIndex(s => !s.end);
+            if (j > -1) logoffSess[j].end = ts;
+
+            // Use the same calculation function for consistency
+            const { totalWorkMs, totalPauseMs, totalLogoffMs, pauseCount } = 
+                  calcTimeDetails(sess, logoffSess);
+            const startTime = sess[0]?.start || ts;
+            const endTime = sess.at(-1)?.end || ts;
+
+            const userRemarks = prompt("Enter remarks for completing this task:", task.Remarks || "");
+            if (userRemarks === null) return;
+
+            await ref.update({
+              Status: "Complete",
+              taskStart: startTime,
+              taskEnd: endTime,
+              workSessions: sess,
+              logoffSessions: logoffSess,
+              TimeStarted: startTime.toDate().toLocaleString(),
+              TimeEnd: endTime.toDate().toLocaleString || "-",
+              isLogoff: false
+            });
+
+            // Store the completed task ID and show attachment modal
+            currentTaskId = task.id;
+            showAttachmentModal();
+          }
+
+          loadUserTasks();
+        } catch {
+          alert("Update failed");
+        }
+      });
+    });
+  }
+
+  function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.kanban-card:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child };
+      } else {
+        return closest;
+      }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+
+  async function updateTaskStatus(taskId, newStatus) {
+    try {
+      const statusMap = {
+        'not-started': 'Not Started',
+        'in-progress': 'In Progress',
+        'pending': 'Pending'
+      };
+
+      const taskRef = db.collection("tasks").doc(taskId);
+      const doc = await taskRef.get();
+      const data = doc.data();
+
+      if (!doc.exists) throw new Error("Task not found");
+
+      const prevStatus = (data.Status || "").toLowerCase().replace(/\s+/g, "-");
+      const sessions = Array.isArray(data.workSessions) ? [...data.workSessions] : [];
+      const logoffSessions = Array.isArray(data.logoffSessions) ? [...data.logoffSessions] : [];
+      const nowTs = now();
+
+      // 1. In Progress → Pending: close current session
+      if (prevStatus === 'in-progress' && newStatus === 'pending') {
+        const i = sessions.findIndex(s => !s.end);
+        if (i >= 0) {
+          sessions[i].end = nowTs;
+        }
+      }
+
+      // 2. Pending → In Progress: start new session
+      if (prevStatus === 'pending' && newStatus === 'in-progress') {
+        const running = sessions.some(s => !s.end);
+        if (!running) {
+          sessions.push({ start: nowTs, end: null });
+        }
+      }
+
+      // 3. Not Started → In Progress: first session
+      if (prevStatus === 'not-started' && newStatus === 'in-progress') {
+        if (!sessions.length) {
+          sessions.push({ start: nowTs, end: null });
+        }
+      }
+
+      // 4. Update Firestore
+      await taskRef.update({
+        Status: statusMap[newStatus],
+        workSessions: sessions,
+        logoffSessions: logoffSessions,
+        taskStart: data.taskStart || sessions[0]?.start || nowTs,
+        isLogoff: false // Reset logoff status when changing status via drag and drop
+      });
+
+      // 5. Refresh UI
+      loadUserTasks();
+
+    } catch (error) {
+      console.error("Error updating task status:", error);
+      alert("Failed to update task status");
+    }
+  }
+
+  function attachActions(tasks) {
+    document.querySelectorAll(".combo-box").forEach((cr, idx) => {
+      cr.querySelectorAll("button").forEach(btn => {
+        btn.onclick = async e => {
+          e.stopPropagation();
+          const t = tasks[idx], ref = db.collection("tasks").doc(t.id);
+          const ts = now(), sess = t.workSessions || [];
+          const logoffSess = t.logoffSessions || [];
+          const isLogoff = t.isLogoff || false;
+
+          try {
+            if (btn.classList.contains("btn-start")) {
+              if (sess.some(s => !s.end)) return alert("Already running");
+              sess.push({ start: ts, end: null });
+              await ref.update({ 
+                Status: "In Progress", 
+                taskStart: ts, 
+                workSessions: sess,
+                isLogoff: false
+              });
+              alert("Started");
+            }
+            if (btn.classList.contains("btn-pending")) {
+              const i = sess.findIndex(s => !s.end);
+              if (i < 0) return alert("Not running");
+              sess[i].end = ts;
+              await ref.update({ 
+                Status: "Pending", 
+                workSessions: sess,
+                isLogoff: false
+              });
+              alert("Paused");
+            }
+            if (btn.classList.contains("btn-continue")) {
+              if (sess.some(s => !s.end)) return alert("Already running");
+              sess.push({ start: ts, end: null });
+              await ref.update({ 
+                Status: "In Progress", 
+                workSessions: sess,
+                isLogoff: false
+              });
+              alert("Resumed");
+            }
+            if (btn.classList.contains("btn-logoff")) {
+              const i = sess.findIndex(s => !s.end);
+              if (i < 0) return alert("Not running");
+              sess[i].end = ts;
+              logoffSess.push({ start: ts, end: null });
+              await ref.update({ 
+                Status: "Pending", 
+                workSessions: sess,
+                logoffSessions: logoffSess,
+                isLogoff: true
+              });
+              alert("Logged off");
+            }
+            if (btn.classList.contains("btn-login")) {
+              const i = logoffSess.findIndex(s => !s.end);
+              if (i < 0) return alert("Not logged off");
+              logoffSess[i].end = ts;
+              sess.push({ start: ts, end: null });
+              await ref.update({ 
+                Status: "In Progress", 
+                workSessions: sess,
+                logoffSessions: logoffSess,
+                isLogoff: false
+              });
+              alert("Logged in");
+            }
+            if (btn.classList.contains("btn-complete")) {
+              const i = sess.findIndex(s => !s.end);
+              if (i > -1) sess[i].end = ts;
+
+              // End any active logoff session
+              const j = logoffSess.findIndex(s => !s.end);
+              if (j > -1) logoffSess[j].end = ts;
+
+              // Use the same calculation function for consistency
+              const { totalWorkMs, totalPauseMs, totalLogoffMs, pauseCount } = 
+                    calcTimeDetails(sess, logoffSess);
+              const startTime = sess[0]?.start || ts;
+              const endTime = sess.at(-1)?.end || ts;
+
+              const userRemarks = prompt("Enter remarks for completing this task:", t.Remarks || "");
+              if (userRemarks === null) return;
+
+              await ref.update({
+                Status: "Complete",
+                taskStart: startTime,
+                taskEnd: endTime,
+                workSessions: sess,
+                logoffSessions: logoffSess,
+                TimeStarted: startTime.toDate().toLocaleString(),
+                TimeEnd: endTime.toDate().toLocaleString(),
+                TotalWorkHours: formatMs(totalWorkMs),
+                TotalPauseHours: formatMs(totalPauseMs),
+                TotalLogoffHours: formatMs(totalLogoffMs),
+                Remarks: userRemarks || "-",
+                isLogoff: false
+              });
+
+              // Store the completed task ID and show attachment modal
+              currentTaskId = t.id;
+              showAttachmentModal();
+            }
+
+            loadUserTasks();
+          } catch {
+            alert("Update failed");
+          }
+        };
+      });
+    });
+  }
+
+  function toggleView(viewType) {
+    if (viewType === 'table') {
+      document.getElementById('taskTableView').style.display = 'table';
+      document.getElementById('kanbanView').style.display = 'none';
+      document.getElementById('tableViewBtn').classList.add('active');
+      document.getElementById('kanbanViewBtn').classList.remove('active');
+    } else {
+      document.getElementById('taskTableView').style.display = 'none';
+      document.getElementById('kanbanView').style.display = 'block';
+      document.getElementById('tableViewBtn').classList.remove('active');
+      document.getElementById('kanbanViewBtn').classList.add('active');
+    }
+  }
+
+  function showAttachmentModal() {
+    document.getElementById('attachmentModal').style.display = 'block';
+  }
+
+  function closeModal() {
+    document.getElementById('attachmentModal').style.display = 'none';
+    document.getElementById('fileInput').value = '';
+    document.getElementById('attachmentPreview').style.display = 'none';
+    document.getElementById('uploadedImages').innerHTML = '';
+    loadUserTasks(); // Refresh the task list
+  }
+
+  // Handle file selection for preview
+  document.getElementById('fileInput').addEventListener('change', function(e) {
+    const preview = document.getElementById('attachmentPreview');
+    const uploadedImages = document.getElementById('uploadedImages');
+    
+    uploadedImages.innerHTML = '';
+    
+    if (this.files && this.files.length > 0) {
+      Array.from(this.files).forEach(file => {
+        if (file.type.match('image.*')) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            uploadedImages.appendChild(img);
+          }
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+  });
+
+  async function uploadImages() {
+    const files = document.getElementById('fileInput').files;
+    
+    if (files.length === 0) {
+      closeModal();
+      return;
+    }
+    
+    try {
+      // Upload each file to Cloudinary
+      const uploadPromises = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const formData = new FormData();
+        formData.append('file', files[i]);
+        formData.append('upload_preset', cloudinaryConfig.uploadPreset);
+        
+        const uploadPromise = fetch(`https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`, {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          return data.secure_url;
+        });
+        
+        uploadPromises.push(uploadPromise);
+      }
+      
+      // Wait for all uploads to complete
+      const imageUrls = await Promise.all(uploadPromises);
+      
+      // Save URLs to Firebase
+      if (currentTaskId) {
+        const taskRef = db.collection("tasks").doc(currentTaskId);
+        const taskDoc = await taskRef.get();
+        const currentAttachments = taskDoc.data().attachments || [];
+        
+        await taskRef.update({
+          attachments: [...currentAttachments, ...imageUrls]
+        });
+      }
+      
+      alert('Images uploaded successfully!');
+      closeModal();
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      alert('Failed to upload images. Please try again.');
+    }
+  }
+
+  // Loading tasks for the logged-in user
+  window.onload = async () => {
+    taskBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Loading tasks...</td></tr>`;
+    loadUserTasks();
+  };
+
+  // Function to load tasks based on logged-in username
+  async function loadUserTasks() {
+    const username = sessionStorage.getItem("username");
+
+    if (!username) {
+      taskBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No user session found. Please login.</td></tr>`;
+      return;
+    }
+
+    try {
+      const snap = await db.collection("tasks")
+        .where("Owner", "==", username)
+        .where("Status", "in", ["Not Started", "In Progress", "Pending"])
+        .get();
+
+      const arr = [];
+      snap.forEach(doc => {
+        const d = doc.data();
+        arr.push({ id: doc.id, ...d });
+      });
+
+      if (arr.length === 0) {
+        taskBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No tasks found.</td></tr>`;
+        document.getElementById('kanban-not-started').innerHTML = '<p>No tasks</p>';
+        document.getElementById('kanban-in-progress').innerHTML = '<p>No tasks</p>';
+        document.getElementById('kanban-pending').innerHTML = '<p>No tasks</p>';
+      } else {
+        renderTasks(arr);
+      }
+    } catch (err) {
+      console.error("Error loading tasks:", err);
+      taskBody.innerHTML = `<tr><td colspan="7" style="color:red;">Error loading tasks: ${err.message}</td></tr>`;
+    }
+  }
+  </script>
+
+</body>
+</html>

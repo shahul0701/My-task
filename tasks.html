@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tasks Overview</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Reset & base */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #6b73ff 0%, #000dff 100%);
+      margin: 40px 0;
+      color: #444;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 20px;
+      box-shadow:
+        0 4px 30px rgba(0, 0, 0, 0.25),
+        0 10px 20px rgba(50, 50, 93, 0.1);
+      width: 95%;
+      max-width: 1400px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 25px;
+      font-weight: 700;
+      color: #222;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+
+    /* Filters container */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 25px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .filters input, .filters select {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      min-width: 150px;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+      transition: border-color 0.3s ease;
+    }
+
+    .filters input:focus, .filters select:focus {
+      outline: none;
+      border-color: #3a42f4;
+      box-shadow: 0 0 8px rgba(58, 66, 244, 0.5);
+    }
+
+    /* Table styling */
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      background: #fefefe;
+    }
+
+    thead tr {
+      background: linear-gradient(90deg, #3a42f4, #6b73ff);
+      color: white;
+      font-weight: 700;
+      text-transform: uppercase;
+      box-shadow: inset 0 -4px 10px rgba(0,0,0,0.2);
+    }
+
+    thead th {
+      padding: 12px 16px;
+      user-select: none;
+      border-right: 1px solid rgba(255,255,255,0.2);
+    }
+
+    thead th:last-child {
+      border-right: none;
+    }
+
+    tbody tr {
+      transition: background-color 0.25s ease, box-shadow 0.3s ease;
+      cursor: default;
+    }
+
+    tbody tr:nth-child(odd) {
+      background-color: #fafaff;
+    }
+
+    tbody tr:hover {
+      background-color: #e3e5ff;
+      box-shadow: 0 6px 15px rgba(58, 66, 244, 0.25);
+    }
+
+    tbody td {
+      padding: 14px 16px;
+      border-right: 1px solid #ddd;
+      vertical-align: middle;
+      font-size: 14px;
+      color: #333;
+      max-width: 180px;
+      word-break: break-word;
+    }
+
+    tbody td:last-child {
+      border-right: none;
+    }
+
+    /* Edit/Delete button styles */
+    .action-btn {
+      padding: 6px 14px;
+      margin: 0 4px;
+      border-radius: 8px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      transition: background-color 0.3s ease;
+    }
+
+    .edit-btn {
+      background-color: #4caf50;
+      color: white;
+    }
+
+    .edit-btn:hover {
+      background-color: #3b8e40;
+    }
+
+    .delete-btn {
+      background-color: #f44336;
+      color: white;
+    }
+
+    .delete-btn:hover {
+      background-color: #b83227;
+    }
+
+    /* Pagination styles */
+    .pagination {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .pagination button {
+      margin: 0 6px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: none;
+      background-color: #3a42f4;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(58, 66, 244, 0.4);
+      transition: background-color 0.3s ease;
+    }
+
+    .pagination button:disabled {
+      background-color: #999;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .pagination button:hover:not(:disabled) {
+      background-color: #2a31d9;
+    }
+
+    /* Added for detail row visibility */
+    .details-row td {
+      background-color: #f9f9f9;
+      padding: 16px;
+      border-top: 1px solid #ccc;
+    }
+
+    .details-box {
+      background: #eef1ff;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    /* Optional animation for detail reveal */
+    .details-row {
+      transition: all 0.3s ease;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .top-button {
+      display: inline-block;
+      padding: 10px 20px;
+      text-decoration: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 5px;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    .top-button:hover {
+      background-color: #0056b3;
+    }
+
+    #createTaskBtn, #uploadCSVBtn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      font-size: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      z-index: 999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    #uploadCSVBtn {
+      bottom: 100px;
+      background-color: #007bff;
+      font-size: 20px;
+    }
+
+    /* Modal container */
+    #taskModal {
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Modal box */
+    #taskModal > div {
+      background-color: #fff;
+      padding: 30px 25px;
+      border-radius: 12px;
+      width: 95%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+      font-family: 'Segoe UI', sans-serif;
+      position: relative;
+    }
+
+    /* Modal heading */
+    #taskModal h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #333;
+      font-size: 22px;
+      text-align: center;
+    }
+
+    /* Inputs, selects, textarea */
+    #taskModal input,
+    #taskModal select,
+    #taskModal textarea {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 15px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+      transition: border 0.3s;
+    }
+
+    #taskModal input:focus,
+    #taskModal select:focus,
+    #taskModal textarea:focus {
+      border-color: #007bff;
+      outline: none;
+    }
+
+    /* Buttons */
+    #taskModal button[type="submit"] {
+      background-color: #007bff;
+      color: #fff;
+      font-weight: bold;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 48%;
+      margin-right: 4%;
+      transition: background-color 0.3s;
+    }
+
+    #taskModal button[type="submit"]:hover {
+      background-color: #0056b3;
+    }
+
+    #taskModal button[type="button"] {
+      background-color: #6c757d;
+      color: #fff;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 48%;
+      transition: background-color 0.3s;
+    }
+
+    #taskModal button[type="button"]:hover {
+      background-color: #5a6268;
+    }
+    
+    /* Time editing section in modal */
+    .time-edit-section {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    
+    .time-edit-section h4 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    
+    .time-input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .time-input-group input {
+      flex: 1;
+      margin-bottom: 0;
+    }
+    
+    /* Status badges */
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    .status-pending {
+      background-color: #ff9800;
+      color: white;
+    }
+    
+    .status-complete {
+      background-color: #4caf50;
+      color: white;
+    }
+    
+    .status-progress {
+      background-color: #2196f3;
+      color: white;
+    }
+    
+    /* Date filter section */
+    .date-filter-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #f0f4ff;
+      border-radius: 8px;
+    }
+    
+    .date-filter-section select, 
+    .date-filter-section input {
+      flex: 1;
+      min-width: 120px;
+    }
+    
+    /* Responsive tweaks */
+    @media (max-width: 768px) {
+      .filters {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .filters select,
+      .filters input {
+        min-width: 100%;
+      }
+
+      .container {
+        padding: 20px 25px;
+      }
+
+      tbody td {
+        font-size: 12px;
+      }
+      
+      .date-filter-section {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="top-bar">
+    <a href="Home.html" class="top-button">Home</a>
+    <a href="Current task.html" class="top-button">Current Works</a>
+  </div>
+
+  <h1>Tasks Overview</h1>
+
+  <div class="filters">
+    <input type="text" id="searchCompany" placeholder="Search Company Name" />
+    <input type="text" id="searchOwner" placeholder="Search Owner" />
+    <select id="statusFilter">
+      <option value="">All Status</option>
+      <option value="Pending">Pending</option>
+      <option value="Complete">Completed</option>
+      <option value="In Progress">In Progress</option>
+    </select>
+    
+    <div class="date-filter-section">
+      <select id="dateFilter">
+        <option value="">All Dates</option>
+        <option value="today">Today</option>
+        <option value="yesterday">Yesterday</option>
+        <option value="thisWeek">This Week</option>
+        <option value="lastWeek">Last Week</option>
+        <option value="thisMonth">This Month</option>
+        <option value="lastMonth">Last Month</option>
+        <option value="custom">Custom Range</option>
+      </select>
+      
+      <input type="date" id="customDateStart" style="display: none;" placeholder="Start Date">
+      <input type="date" id="customDateEnd" style="display: none;" placeholder="End Date">
+    </div>
+  </div>
+
+  <table id="tasksTable" class="overview-table">
+    <thead>
+      <tr>
+        <th>SINO</th>
+        <th>Existing Company Name</th>
+        <th>TYPE OF WORK</th>
+        <th>Status</th>
+        <th>Owner</th>
+        <th>Due Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Rows appended by JS -->
+    </tbody>
+  </table>
+
+  <div id="paginationControls" class="pagination" style="margin-top: 20px;"></div>
+
+  <div id="taskDetails" class="task-details" style="display:none;">
+    <h2>Task Details</h2>
+    <table id="detailsTable">
+      <!-- Details rows generated by JS -->
+    </table>
+  </div>
+</div>
+
+<!-- Modal for Creating/Editing Task -->
+<div id="taskModal" style="display:none;">
+  <div>
+    <h3 id="modalTitle">Create New Task</h3>
+    <form id="taskForm">
+      <input list="companyList" name="company" id="companyInput" placeholder="Company Name" required />
+      <datalist id="companyList"></datalist>
+
+      <input list="workTypeList" name="typeOfWork" id="typeOfWorkInput" placeholder="TYPE OF WORK" required />
+      <datalist id="workTypeList"></datalist>
+
+      <select name="accountType" id="accountTypeSelect">
+        <option value="">Select ACCOUNT TYPE</option>
+        <option value="Saving Acc">Saving Acc</option>
+        <option value="Chequing Acc">Chequing Acc</option>
+        <option value="Loan Acc">Loan Acc</option>
+        <option value="Credit Card">Credit Card</option>
+        <option value="Other">Other</option>
+      </select><br/>
+
+      <input type="text" name="accountsCards" id="accountsCards" placeholder="Accounts / Cards" list="accountsCardsList"/><br/>
+      <datalist id="accountsCardsList"></datalist>
+
+      <input type="text" name="task" placeholder="Task" /><br/>
+
+      <select name="owner" id="ownerSelect" required>
+        <option value="">Select Owner</option>
+      </select><br/>
+
+      <select name="workFor" id="workForSelect">
+        <option value="">Select WORK FOR</option>
+        <option value="Yearly">Yearly</option>
+        <option value="Monthly">Monthly</option>
+        <option value="Weekly">Weekly</option>
+        <option value="Daily">Daily</option>
+        <option value="Custom">Custom</option>
+      </select><br/>
+
+      <input type="text" name="period" id="periodInput" placeholder="PERIOD" style="display:none;" /><br/>
+
+      <input type="date" name="dueDate" required /><br/>
+
+      <select name="assignedBy" id="assignedBySelect" required>
+        <option value="">Select Assigned By</option>
+      </select><br/>
+
+      <textarea name="notes" placeholder="Notes"></textarea><br/>
+      
+      <!-- Time Editing Section -->
+      <div class="time-edit-section">
+        <h4>Time Tracking</h4>
+        <div class="time-input-group">
+          <input type="datetime-local" id="timeStartInput" placeholder="Start Time">
+          <input type="datetime-local" id="timeEndInput" placeholder="End Time">
+        </div>
+        <div class="time-input-group">
+          <input type="text" id="totalWorkHours" placeholder="Total Work Hours" readonly>
+          <input type="text" id="totalPauseHours" placeholder="Total Pause Hours" readonly>
+        </div>
+        <input type="text" id="remarksInput" placeholder="Remarks">
+      </div>
+
+      <button type="submit">Save</button>
+      <button type="button" onclick="document.getElementById('taskModal').style.display='none'">Cancel</button>
+    </form> 
+  </div>
+</div>
+
+<!-- Floating Buttons -->
+<button id="createTaskBtn">+</button>
+<input type="file" id="csvUpload" style="display:none" accept=".csv" />
+<button id="uploadCSVBtn"><i class="fas fa-upload"></i></button>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<!-- PapaParse CSV Parser -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+<script>
+let editingTaskId = null;
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyD9ymWqihHWbVb4IRop1lXT-huLjBvS50w",
+  authDomain: "task-manager-602da.firebaseapp.com",
+  projectId: "task-manager-602da",
+  storageBucket: "task-manager-602da.appspot.com",
+  messagingSenderId: "438978699329",
+  appId: "1:438978699329:web:9f475d04352bbdaa5ce6c0"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// DOM Elements
+const taskTableBody = document.querySelector('#tasksTable tbody');
+const paginationDiv = document.getElementById('paginationControls');
+const searchCompany = document.getElementById('searchCompany');
+const searchOwner = document.getElementById('searchOwner');
+const statusFilter = document.getElementById('statusFilter');
+const dateFilter = document.getElementById('dateFilter');
+const customDateStart = document.getElementById('customDateStart');
+const customDateEnd = document.getElementById('customDateEnd');
+const createTaskBtn = document.getElementById('createTaskBtn');
+const taskModal = document.getElementById('taskModal');
+const taskForm = document.getElementById('taskForm');
+const ownerSelect = document.getElementById('ownerSelect');
+const assignedBySelect = document.getElementById('assignedBySelect');
+const companyInput = taskForm.elements['company'];
+const modalTitle = document.getElementById('modalTitle');
+const uploadCSVBtn = document.getElementById('uploadCSVBtn');
+const csvUpload = document.getElementById('csvUpload');
+const modalContent = document.getElementById('modalContent'); // Added
+
+const rowsPerPage = 10;
+let currentPage = 1;
+let allTasks = [];
+let filteredTasks = [];
+
+// Load tasks from Firestore
+async function loadTasks() {
+  try {
+    const snapshot = await db.collection('tasks').get();
+    allTasks = []; // reset on reload
+    snapshot.forEach(doc => {
+      allTasks.push({ id: doc.id, ...doc.data() });
+    });
+
+    // Sort ascending by numeric part of SINO
+    allTasks.sort((a, b) => {
+      const getNumber = sino => {
+        if (!sino) return 0;
+        const match = sino.match(/(\d+)$/);
+        return match ? parseInt(match[1], 10) : 0;
+      };
+      return getNumber(a.SINO) - getNumber(b.SINO);
+    });
+
+    // Auto update incomplete tasks
+    await Promise.all(
+      allTasks
+        .filter(task =>
+          task.Status === "Complete" &&
+          Array.isArray(task.workSessions) &&
+          task.workSessions.length > 0 &&
+          (task.TotalWorkHours === undefined || task.TotalWorkHours === '' ||
+ task.TotalPauseHours === undefined || task.TotalPauseHours === '')
+        )
+        .map(task => {
+          console.log(`Auto-calculating times for task: ${task.SINO} (${task.id})`);
+          console.log(`Auto-updating task: ${task.SINO} (${task.id})`);
+          const taskRef = db.collection('tasks').doc(task.id);
+          return updateTaskAsComplete(taskRef, task);
+        })
+    );
+    
+    populateCompanyList();
+    applyFilters(); // Initial render with sorting applied
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function populateCompanyList() {
+  const companyList = document.getElementById('companyList');
+  companyList.innerHTML = ''; // Clear previous options
+
+  const companiesSet = new Set();
+
+  allTasks.forEach(task => {
+    const company = task['Existing Company Name'];
+    if (company) {
+      companiesSet.add(company);
+    }
+  });
+
+  companiesSet.forEach(name => {
+    const option = document.createElement('option');
+    option.value = name;
+    companyList.appendChild(option);
+  });
+}
+
+// Render a specific page
+function renderTablePage(page, tasks) {
+  taskTableBody.innerHTML = '';
+  const start = (page - 1) * rowsPerPage;
+  const pageTasks = tasks.slice(start, start + rowsPerPage);
+
+  pageTasks.forEach(task => {
+    const tr = document.createElement('tr');
+    tr.classList.add('task-row');
+    
+    // Create status badge
+    let statusClass = '';
+    if (task.Status === 'Pending') statusClass = 'status-pending';
+    else if (task.Status === 'Complete') statusClass = 'status-complete';
+    else if (task.Status === 'In Progress') statusClass = 'status-progress';
+    
+    tr.innerHTML = `
+      <td>${task.SINO || ''}</td>
+      <td>${task['Existing Company Name'] || ''}</td>
+      <td>${task['TYPE OF WORK'] || ''}</td>
+      <td><span class="status-badge ${statusClass}">${task.Status || ''}</span></td>
+      <td>${task.Owner || ''}</td>
+      <td>${task['Due date'] || ''}</td>
+    `;
+
+    const detailsTr = document.createElement('tr');
+    detailsTr.classList.add('details-row');
+    detailsTr.style.display = 'none';
+    
+    // Only show time information for completed tasks
+    const timeInfoHtml = task.Status === 'Complete' ? `
+      <strong>Time Started:</strong> ${formatTimestamp(task.taskStart)}<br/>
+      <strong>Time End:</strong> ${formatTimestamp(task.taskEnd)}<br/>
+      <strong>Total Work Hours:</strong> ${task.TotalWorkHours || ''}<br/>
+      <strong>Total Pause Hours:</strong> ${task.TotalPauseHours || ''}<br/>
+      <strong>Remarks:</strong> ${task.Remarks || ''}<br/><br/>
+    ` : '';
+    
+    detailsTr.innerHTML = `
+      <td colspan="6">
+        <div class="details-box">
+          <strong>ACCOUNT TYPE:</strong> ${task['ACCOUNT TYPE'] || ''}<br/>
+          <strong>Accounts / Cards:</strong> ${task['Accounts / Cards'] || ''}<br/>
+          <strong>Task:</strong> ${task.Task || ''}<br/>
+          <strong>WORK FOR:</strong> ${task['WORK FOR'] || ''}<br/>
+          <strong>PERIOD:</strong> ${task.PERIOD || ''}<br/>
+          <strong>Due Date:</strong> ${task['Due date'] || ''}<br/>
+          <strong>Assigned By:</strong> ${task['Assigned By'] || ''}<br/>
+          <strong>Notes:</strong> ${task.Notes || ''}<br/>
+          ${timeInfoHtml}
+          <button class="edit-btn action-btn" data-id="${task.id}">Edit</button>
+          <button class="delete-btn action-btn" data-id="${task.id}">Delete</button>
+        </div>
+      </td>
+    `;
+
+    tr.addEventListener('click', () => {
+      detailsTr.style.display = detailsTr.style.display === 'none' ? 'table-row' : 'none';
+    });
+
+    taskTableBody.appendChild(tr);
+    taskTableBody.appendChild(detailsTr);
+  });
+
+  attachRowEventListeners();
+}
+
+function formatTimestamp(ts) {
+  if (!ts) return '';
+  if (typeof ts.toDate === 'function') {
+    return ts.toDate().toLocaleString();
+  }
+  if (ts instanceof Date) {
+    return ts.toLocaleString();
+  }
+  return '';
+}
+
+// Update task as Complete with real time calculations
+async function updateTaskAsComplete(taskRef, task) {
+  const nowTimestamp = firebase.firestore.Timestamp.now();
+
+  function formatMs(ms) {
+    const hrs = Math.floor(ms / 3600000);
+    const mins = Math.floor((ms % 3600000) / 60000);
+    return `${hrs}h ${mins}m`;
+  }
+
+  function toFirestoreTimestamp(value) {
+    if (!value) return null;
+    if (value instanceof firebase.firestore.Timestamp) return value;
+    if (value instanceof Date) return firebase.firestore.Timestamp.fromDate(value);
+    const d = new Date(value);
+    if (!isNaN(d.getTime())) return firebase.firestore.Timestamp.fromDate(d);
+    return null;
+  }
+
+  function calcTimeDetails(sessions = []) {
+    let totalWorkMs = 0, totalPauseMs = 0, pauseCount = 0, lastEnd = null;
+
+    sessions.forEach(sess => {
+      const startMs = sess.start?.toDate?.().getTime();
+      const endMs = sess.end?.toDate?.().getTime();
+      if (startMs && endMs) {
+        totalWorkMs += endMs - startMs;
+        if (lastEnd !== null) {
+          const pause = startMs - lastEnd;
+          if (pause > 0) {
+            totalPauseMs += pause;
+            pauseCount++;
+          }
+        }
+        lastEnd = endMs;
+      }
+    });
+
+    const startTime = sessions[0]?.start || null;
+    const endTime = sessions.length ? sessions[sessions.length - 1]?.end || null : null;
+
+    return { totalWorkMs, totalPauseMs, pauseCount, startTime, endTime };
+  }
+
+  const sessions = Array.isArray(task.workSessions) ? task.workSessions : [];
+
+  const { totalWorkMs, totalPauseMs, pauseCount, startTime, endTime } = calcTimeDetails(sessions);
+
+  const taskStart = toFirestoreTimestamp(task.taskStart) || toFirestoreTimestamp(startTime) || nowTimestamp;
+  const taskEnd = toFirestoreTimestamp(task.taskEnd) || toFirestoreTimestamp(endTime) || nowTimestamp;
+
+  try {
+    await taskRef.update({
+      Status: "Complete",
+      taskStart: taskStart,
+      taskEnd: taskEnd,
+      TimeStarted: formatTimestamp(taskStart),
+      TimeEnd: formatTimestamp(taskEnd),
+      TotalWorkHours: formatMs(totalWorkMs || (taskEnd.toMillis() - taskStart.toMillis())),
+      TotalPauseHours: formatMs(totalPauseMs),
+      Remarks: pauseCount > 1 ? "-" : (task.Remarks || "")
+    });
+
+    alert("Task marked complete with updated time info.");
+  } catch (err) {
+    console.error("Failed to update task:", err);
+    alert("Failed to update task time info.");
+  }
+}
+
+// Attach edit/delete/complete button events
+function attachRowEventListeners() {
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const id = e.target.dataset.id;
+      if (confirm('Delete this task?')) {
+        try {
+          await db.collection('tasks').doc(id).delete();
+          alert('Deleted');
+          loadTasks();
+        } catch (err) {
+          console.error(err);
+          alert('Delete failed');
+        }
+      }
+    });
+  });
+
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const id = e.target.dataset.id;
+      const task = allTasks.find(t => t.id === id);
+      if (!task) return alert('Task not found');
+
+      editingTaskId = id; // Track the task being edited
+      modalTitle.textContent = 'Edit Task';
+      populateDropdowns(); // Ensure dropdowns are filled
+      taskForm.reset(); // Clear previous data
+
+      // Populate form fields
+      taskForm.elements['company'].value = task['Existing Company Name'] || '';
+      taskForm.elements['typeOfWork'].value = task['TYPE OF WORK'] || '';
+      taskForm.elements['accountType'].value = task['ACCOUNT TYPE'] || '';
+      taskForm.elements['accountsCards'].value = task['Accounts / Cards'] || '';
+      taskForm.elements['task'].value = task.Task || '';
+      taskForm.elements['owner'].value = task.Owner || '';
+      taskForm.elements['workFor'].value = task['WORK FOR'] || '';
+      taskForm.elements['period'].value = task.PERIOD || '';
+      taskForm.elements['dueDate'].value = task['Due date'] || '';
+      taskForm.elements['assignedBy'].value = task['Assigned By'] || '';
+      taskForm.elements['notes'].value = task.Notes || '';
+      
+      // Populate time fields
+      document.getElementById('timeStartInput').value = task.taskStart ? formatDateTimeLocal(task.taskStart.toDate()) : '';
+      document.getElementById('timeEndInput').value = task.taskEnd ? formatDateTimeLocal(task.taskEnd.toDate()) : '';
+      document.getElementById('totalWorkHours').value = task.TotalWorkHours || '';
+      document.getElementById('totalPauseHours').value = task.TotalPauseHours || '';
+      document.getElementById('remarksInput').value = task.Remarks || '';
+
+      taskModal.style.display = 'flex';
+    });
+  });
+}
+
+function formatDateTimeLocal(date) {
+  if (!date) return '';
+  
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+// Render pagination with page numbers
+function renderPagination(tasks) {
+  paginationDiv.innerHTML = '';
+  const totalPages = Math.ceil(tasks.length / rowsPerPage);
+  if (totalPages <= 1) return;
+
+  const maxVisiblePages = 5;
+  const pages = [];
+
+  // Always show first page
+  pages.push(1);
+
+  let start = Math.max(2, currentPage - 1);
+  let end = Math.min(totalPages - 1, currentPage + 1);
+
+  if (currentPage <= 3) {
+    end = Math.min(4, totalPages - 1);
+  } else if (currentPage >= totalPages - 2) {
+    start = Math.max(totalPages - 3, 2);
+  }
+
+  if (start > 2) pages.push('...');
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+  if (end < totalPages - 1) pages.push('...');
+  
+  // Always show last page
+  if (totalPages > 1) pages.push(totalPages);
+
+  const prevBtn = createPageButton('Prev', currentPage === 1, () => {
+    if (currentPage > 1) {
+      currentPage--;
+      renderTablePage(currentPage, filteredTasks);
+      renderPagination(filteredTasks);
+    }
+  });
+  paginationDiv.appendChild(prevBtn);
+
+  pages.forEach(p => {
+    const isEllipsis = p === '...';
+    const btn = document.createElement('button');
+    btn.textContent = p;
+    btn.disabled = isEllipsis || p === currentPage;
+    if (!isEllipsis && p !== currentPage) {
+      btn.addEventListener('click', () => {
+        currentPage = p;
+        renderTablePage(currentPage, filteredTasks);
+        renderPagination(filteredTasks);
+      });
+    }
+    paginationDiv.appendChild(btn);
+  });
+
+  const nextBtn = createPageButton('Next', currentPage === totalPages, () => {
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderTablePage(currentPage, filteredTasks);
+      renderPagination(filteredTasks);
+    }
+  });
+  paginationDiv.appendChild(nextBtn);
+}
+
+function createPageButton(label, disabled, onClick) {
+  const btn = document.createElement('button');
+  btn.textContent = label;
+  btn.disabled = disabled;
+  if (!disabled) btn.addEventListener('click', onClick);
+  return btn;
+}
+
+// Filter tasks based on inputs
+function applyFilters() {
+  const company = searchCompany.value.toLowerCase();
+  const owner = searchOwner.value.toLowerCase();
+  const status = statusFilter.value;
+  const dateFilterValue = dateFilter.value;
+  
+  filteredTasks = allTasks.filter(task => {
+    const matchCompany = task['Existing Company Name']?.toLowerCase().includes(company);
+    const matchOwner = task.Owner?.toLowerCase().includes(owner);
+    const matchStatus = !status || task.Status === status;
+    
+    // Date filtering
+    let matchDate = true;
+    if (dateFilterValue) {
+      const dueDate = task['Due date'] ? new Date(task['Due date']) : null;
+      
+      if (dueDate) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        // Start of week (Monday)
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
+        startOfWeek.setHours(0, 0, 0, 0);
+        
+        // End of week (Sunday)
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+        
+        // Start of last week
+        const startOfLastWeek = new Date(startOfWeek);
+        startOfLastWeek.setDate(startOfWeek.getDate() - 7);
+        
+        // End of last week
+        const endOfLastWeek = new Date(startOfLastWeek);
+        endOfLastWeek.setDate(startOfLastWeek.getDate() + 6);
+        endOfLastWeek.setHours(23, 59, 59, 999);
+        
+        // Start of month
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        
+        // End of month
+        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        endOfMonth.setHours(23, 59, 59, 999);
+        
+        // Start of last month
+        const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        
+               // End of last month
+        const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+        endOfLastMonth.setHours(23, 59, 59, 999);
+        
+        // Custom date range
+        const customStart = customDateStart.value ? new Date(customDateStart.value) : null;
+        const customEnd = customDateEnd.value ? new Date(customDateEnd.value) : null;
+        if (customEnd) customEnd.setHours(23, 59, 59, 999);
+        
+        switch(dateFilterValue) {
+          case 'today':
+            matchDate = dueDate >= today && dueDate < tomorrow;
+            break;
+          case 'yesterday':
+            matchDate = dueDate >= yesterday && dueDate < today;
+            break;
+          case 'thisWeek':
+            matchDate = dueDate >= startOfWeek && dueDate <= endOfWeek;
+            break;
+          case 'lastWeek':
+            matchDate = dueDate >= startOfLastWeek && dueDate <= endOfLastWeek;
+            break;
+          case 'thisMonth':
+            matchDate = dueDate >= startOfMonth && dueDate <= endOfMonth;
+            break;
+          case 'lastMonth':
+            matchDate = dueDate >= startOfLastMonth && dueDate <= endOfLastMonth;
+            break;
+          case 'custom':
+            if (customStart && customEnd) {
+              matchDate = dueDate >= customStart && dueDate <= customEnd;
+            } else if (customStart) {
+              matchDate = dueDate >= customStart;
+            } else if (customEnd) {
+              matchDate = dueDate <= customEnd;
+            }
+            break;
+        }
+      } else {
+        matchDate = false; // If no due date and filtering by date
+      }
+    }
+    
+    return matchCompany && matchOwner && matchStatus && matchDate;
+  });
+
+  currentPage = 1;
+  renderTablePage(currentPage, filteredTasks);
+  renderPagination(filteredTasks);
+}
+
+// Attach filter input listeners
+[searchCompany, searchOwner, statusFilter, dateFilter, customDateStart, customDateEnd].forEach(el =>
+  el.addEventListener('input', applyFilters)
+);
+
+// Show/hide custom date inputs based on date filter selection
+dateFilter.addEventListener('change', function() {
+  if (this.value === 'custom') {
+    customDateStart.style.display = 'inline-block';
+    customDateEnd.style.display = 'inline-block';
+  } else {
+    customDateStart.style.display = 'none';
+    customDateEnd.style.display = 'none';
+  }
+  applyFilters();
+});
+
+// Load tasks on page load
+window.onload = loadTasks;
+
+// Open modal on + button click
+createTaskBtn.addEventListener('click', () => {
+  editingTaskId = null;
+  modalTitle.textContent = 'Create New Task';
+  populateDropdowns();
+  taskForm.reset();
+  document.getElementById('timeStartInput').value = '';
+  document.getElementById('timeEndInput').value = '';
+  document.getElementById('totalWorkHours').value = '';
+  document.getElementById('totalPauseHours').value = '';
+  document.getElementById('remarksInput').value = '';
+  taskModal.style.display = 'flex';
+});
+
+// Prevent modal from closing when clicking outside
+taskModal.addEventListener('click', (e) => {
+  // Only close if clicking directly on the modal background (not the content)
+  if (e.target === taskModal) {
+    // Do nothing - prevent closing
+  }
+});
+
+// Close modal with cancel button or escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && taskModal.style.display === 'flex') {
+    taskModal.style.display = 'none';
+  }
+});
+
+// Populate Owner and Assigned By dropdowns from existing tasks
+function populateDropdowns() {
+  const owners = new Set();
+  const assignedBys = new Set();
+  const workTypes = new Set();
+  const accountsCards = new Set();
+
+  allTasks.forEach(task => {
+    if (task.Owner) owners.add(task.Owner);
+    if (task['Assigned By']) assignedBys.add(task['Assigned By']);
+    if (task['TYPE OF WORK']) workTypes.add(task['TYPE OF WORK']);
+    if (task['Accounts / Cards']) accountsCards.add(task['Accounts / Cards']);
+  });
+
+  ownerSelect.innerHTML = '<option value="">Select Owner</option>';
+  assignedBySelect.innerHTML = '<option value="">Select Assigned By</option>';
+  
+  const workTypeList = document.getElementById('workTypeList');
+  workTypeList.innerHTML = '';
+  
+  const accountsCardsList = document.getElementById('accountsCardsList');
+  accountsCardsList.innerHTML = '';
+
+  owners.forEach(name => {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    ownerSelect.appendChild(option);
+  });
+
+  assignedBys.forEach(name => {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    assignedBySelect.appendChild(option);
+  });
+  
+  workTypes.forEach(type => {
+    const option = document.createElement('option');
+    option.value = type;
+    workTypeList.appendChild(option);
+  });
+  
+  accountsCards.forEach(account => {
+    const option = document.createElement('option');
+    option.value = account;
+    accountsCardsList.appendChild(option);
+  });
+}
+
+// When user types company name, prefill if exists
+companyInput.addEventListener('input', () => {
+  const val = companyInput.value.trim().toLowerCase();
+  if (!val) return;
+  const existingTask = allTasks.find(task => (task['Existing Company Name']?.toLowerCase() === val));
+  if (existingTask) {
+    taskForm.elements['typeOfWork'].value = existingTask['TYPE OF WORK'] || '';
+    taskForm.elements['accountType'].value = existingTask['ACCOUNT TYPE'] || '';
+    taskForm.elements['accountsCards'].value = existingTask['Accounts / Cards'] || '';
+    taskForm.elements['owner'].value = existingTask.Owner || '';
+    taskForm.elements['assignedBy'].value = existingTask['Assigned By'] || '';
+  }
+});
+
+// Generate SINO: generates globally incremented SINO ignoring company name
+function generateSINO() {
+  let maxNumber = 0;
+  allTasks.forEach(task => {
+    if (task.SINO) {
+      const match = task.SINO.match(/(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNumber) maxNumber = num;
+      }
+    }
+  });
+
+  const nextNumber = maxNumber + 1;
+  return String(nextNumber).padStart(3, '0');
+}
+
+function cleanUndefined(obj) {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, v]) => v !== undefined)
+  );
+}
+
+// Calculate time difference between two timestamps
+function calculateTimeDifference(start, end) {
+  if (!start || !end) return { hours: 0, minutes: 0 };
+  
+  const startTime = new Date(start);
+  const endTime = new Date(end);
+  const diffMs = endTime - startTime;
+  
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  
+  return { hours, minutes };
+}
+
+// Update time display when start/end times change
+document.getElementById('timeStartInput').addEventListener('change', updateTimeDisplay);
+document.getElementById('timeEndInput').addEventListener('change', updateTimeDisplay);
+
+function updateTimeDisplay() {
+  const startTime = document.getElementById('timeStartInput').value;
+  const endTime = document.getElementById('timeEndInput').value;
+  
+  if (startTime && endTime) {
+    const { hours, minutes } = calculateTimeDifference(startTime, endTime);
+    document.getElementById('totalWorkHours').value = `${hours}h ${minutes}m`;
+  }
+}
+
+taskForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData(taskForm);
+  const data = {};
+
+  formData.forEach((value, key) => {
+    data[key] = value.trim();
+  });
+
+  if (!data.company || !data.typeOfWork || !data.dueDate || !data.owner || !data.assignedBy) {
+    alert('Please fill in all required fields.');
+    return;
+  }
+
+  // Handle time inputs
+  const timeStartInput = document.getElementById('timeStartInput').value;
+  const timeEndInput = document.getElementById('timeEndInput').value;
+  const remarksInput = document.getElementById('remarksInput').value;
+  
+  let taskStart = null;
+  let taskEnd = null;
+  
+  if (timeStartInput) {
+    taskStart = firebase.firestore.Timestamp.fromDate(new Date(timeStartInput));
+  }
+  
+  if (timeEndInput) {
+    taskEnd = firebase.firestore.Timestamp.fromDate(new Date(timeEndInput));
+  }
+
+  const taskData = {
+    SINO: editingTaskId ? undefined : generateSINO(),
+    Status: editingTaskId ? undefined : 'Not Started',
+    'Existing Company Name': data.company,
+    'TYPE OF WORK': data.typeOfWork,
+    'ACCOUNT TYPE': data.accountType || '',
+    'Accounts / Cards': data.accountsCards || '',
+    Task: data.task || '',
+    Owner: data.owner,
+    'WORK FOR': data.workFor || '',
+    PERIOD: data.period || '',
+    'Due date': data.dueDate,
+    'Assigned By': data.assignedBy,
+    Notes: data.notes || '',
+    taskStart: taskStart,
+    taskEnd: taskEnd,
+    TimeStarted: timeStartInput ? new Date(timeStartInput).toLocaleString() : '',
+    TimeEnd: timeEndInput ? new Date(timeEndInput).toLocaleString() : '',
+    TotalWorkHours: document.getElementById('totalWorkHours').value,
+    TotalPauseHours: document.getElementById('totalPauseHours').value,
+    Remarks: remarksInput || ''
+  };
+
+  try {
+    if (editingTaskId) {
+      const existingTask = allTasks.find(t => t.id === editingTaskId);
+      if (!existingTask) throw new Error("Task not found for editing.");
+
+      const mergedTask = { ...existingTask, ...cleanUndefined(taskData) };
+
+      await db.collection('tasks').doc(editingTaskId).set(mergedTask);
+      alert('Task updated successfully!');
+      editingTaskId = null;
+    } else {
+      await db.collection('tasks').add(taskData);
+      alert('Task created successfully!');
+    }
+
+    taskModal.style.display = 'none';
+    loadTasks();
+  } catch (err) {
+    console.error('Error saving task:', err);
+    alert('Error saving task. See console for details.');
+  }
+});
+
+// Update Accounts/Cards list based on company and account type
+const accountTypeSelect = taskForm.elements['accountType'];
+const accountsCardsList = document.getElementById('accountsCardsList');
+
+function updateAccountsCardsList() {
+  const company = companyInput.value.trim();
+  const accountType = accountTypeSelect.value;
+
+  accountsCardsList.innerHTML = '';
+
+  if (!company) return;
+
+  const cardsSet = new Set();
+
+  allTasks.forEach(task => {
+    const taskCompany = task['Existing Company Name'] || '';
+    const taskAccountType = task['ACCOUNT TYPE'] || '';
+
+    if (
+      taskCompany.toLowerCase() === company.toLowerCase() &&
+      taskAccountType.toLowerCase() === accountType.toLowerCase() &&
+      task['Accounts / Cards']
+    ) {
+      cardsSet.add(task['Accounts / Cards']);
+    }
+  });
+
+  cardsSet.forEach(card => {
+    const option = document.createElement('option');
+    option.value = card;
+    accountsCardsList.appendChild(option);
+  });
+}
+
+// Add event listeners to update Accounts / Cards dynamically
+companyInput.addEventListener('input', updateAccountsCardsList);
+accountTypeSelect.addEventListener('change', updateAccountsCardsList);
+
+// Show/hide period input based on WORK FOR selection
+document.getElementById('workForSelect').addEventListener('change', function () {
+  const val = this.value;
+  const period = document.getElementById('periodInput');
+  if (val) {
+    period.style.display = 'inline-block';
+    period.placeholder = `${val} Period`;
+  } else {
+    period.style.display = 'none';
+  }
+});
+
+// CSV Upload functionality
+uploadCSVBtn.addEventListener('click', () => {
+  csvUpload.click();
+});
+
+csvUpload.addEventListener('change', handleCSVUpload);
+
+async function handleCSVUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return alert('No file selected.');
+
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: async function (results) {
+      const rows = results.data;
+
+      const requiredHeaders = ['SINO', 'Company', 'Type of Work', 'Owner', 'DueDate', 'Assigned By', 'Status'];
+      const csvHeaders = Object.keys(rows[0]);
+
+      const hasAllRequired = requiredHeaders.every(h => csvHeaders.includes(h));
+      if (!hasAllRequired) return alert('Missing required headers in CSV.');
+
+      const tasksToUpload = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const dueDateStr = row['DueDate'];
+        const timeStartStr = row['Time Started'];
+        const timeEndStr = row['Time End'];
+
+        let timeStart = null, timeEnd = null;
+        try {
+          // Convert to valid Date
+          timeStart = timeStartStr ? new Date(timeStartStr) : null;
+          timeEnd = timeEndStr ? new Date(timeEndStr) : null;
+        } catch (e) {
+          console.warn(`Invalid time format in row ${i + 2}`);
+        }
+
+        const workSessions = (timeStart && timeEnd)
+          ? [{
+              start: firebase.firestore.Timestamp.fromDate(timeStart),
+              end: firebase.firestore.Timestamp.fromDate(timeEnd)
+            }]
+          : [];
+
+        const finalTask = {
+          SINO: row['SINO'],
+          'Existing Company Name': row['Company'],
+          'TYPE OF WORK': row['Type of Work'],
+          'ACCOUNT TYPE': row['Account Type'],
+          'Accounts / Cards': row['Accounts / Cards'],
+          Task: row['Task'],
+          Owner: row['Owner'],
+          'WORK FOR': row['Work For'],
+          PERIOD: row['Period'],
+          'Due date': row['DueDate'],
+          'Assigned By': row['Assigned By'],
+          Notes: row['Notes'],
+          Status: row['Status'] || 'Not Started',
+
+          TimeStarted: timeStart ? timeStart.toLocaleString() : '',
+          TimeEnd: timeEnd ? timeEnd.toLocaleString() : '',
+          taskStart: timeStart ? firebase.firestore.Timestamp.fromDate(timeStart) : null,
+          taskEnd: timeEnd ? firebase.firestore.Timestamp.fromDate(timeEnd) : null,
+
+          TotalWorkHours: row['Total Work Hours'] || '',
+          TotalPauseHours: row['Total Pause Hours'] || '',
+          Remarks: row['Remarks'] || '',
+          workSessions
+        };
+
+        tasksToUpload.push(finalTask);
+      }
+
+      try {
+        const batch = db.batch();
+        const tasksRef = db.collection('tasks');
+
+        tasksToUpload.forEach(task => {
+          const newDoc = tasksRef.doc();
+          batch.set(newDoc, task);
+        });
+
+        await batch.commit();
+        alert(`${tasksToUpload.length} tasks uploaded successfully.`);
+        loadTasks(); // Reload the task table
+      } catch (err) {
+        console.error('Error uploading tasks:', err);
+        alert('Failed to upload tasks. See console for details.');
+      }
+    },
+    error: function (err) {
+      console.error("PapaParse error:", err);
+      alert("CSV parsing failed.");
+    }
+  });
+}
+</script>
+</body>
+</html>

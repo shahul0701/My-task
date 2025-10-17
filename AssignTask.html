@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Assign Task</title>
+  <link rel="stylesheet" href="AssignTask.css" />
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<!-- Add EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<script>
+  (function() {
+    emailjs.init("Mf8X4wsRkLHgx9Snn");
+  })();
+</script>
+
+</head>
+<body>
+  <header>
+    <button id="homeBtn" title="Home">🏠 Home</button>
+    <h1>Assign Task</h1>
+    <button id="createTaskBtn" title="Create Task">➕</button>
+  </header>
+
+  <main>
+    <table id="assignedTasksTable">
+      <thead>
+        <tr>
+          <th>SINO</th>
+          <th>Company Name</th>
+          <th>Description/Path</th>
+          <th>Assign To</th>
+          <th>Report To</th>
+          <th>Due Date</th>
+          <th>Priority</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Task rows will be added here dynamically -->
+      </tbody>
+    </table>
+  </main>
+
+  <!-- Modal -->
+  <div id="taskModal" class="modal">
+    <div class="modal-content">
+      <h2>Create & Assign Task</h2>
+      <form id="taskForm">
+        <div>
+          <label for="sinoInput">SINO:</label>
+          <input type="text" id="sinoInput" name="sino" readonly />
+        </div>
+
+        <div>
+          <label for="companyNameInput">Company Name*:</label>
+          <input type="text" id="companyNameInput" name="companyName" required />
+        </div>
+
+        <div>
+          <label for="descriptionInput">Description/Path:</label>
+          <input type="text" id="descriptionInput" name="description" />
+        </div>
+
+        <div>
+          <label for="assignToSelect">Assign To*:</label>
+          <select id="assignToSelect" name="assignTo" required></select>
+        </div>
+
+        <div>
+          <label for="reportToSelect">Report To*:</label>
+          <select id="reportToSelect" name="reportTo" required></select>
+        </div>
+
+        <div>
+          <label for="dueDateInput">Due Date*:</label>
+          <input type="date" id="dueDateInput" name="dueDate" required />
+        </div>
+
+        <div>
+          <label for="prioritySelect">Priority:</label>
+          <select id="prioritySelect" name="priority">
+            <option value="Low">Low</option>
+            <option value="Normal" selected>Normal</option>
+            <option value="High">High</option>
+          </select>
+        </div>
+
+        <div class="modal-buttons">
+          <button type="submit">Assign</button>
+          <button type="button" id="cancelBtn">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="AssignTask.js"></script>
+</body>
+</html>
