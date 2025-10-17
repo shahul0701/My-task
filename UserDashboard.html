@@ -124,6 +124,16 @@
       color: white;
     }
 
+    /* Attendance menu item specific styles */
+    .attendance-menu-item {
+      background: #27ae60;
+      color: white;
+    }
+
+    .attendance-menu-item:hover {
+      background: #2ecc71 !important;
+    }
+
     .main-content {
       display: flex;
       gap: 24px;
@@ -340,6 +350,74 @@
       padding: 20px;
       font-style: italic;
     }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      z-index: 10000;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      max-width: 300px;
+      transform: translateX(150%);
+    }
+
+    .toast.show {
+      transform: translateX(0);
+    }
+
+    .toast.success {
+      background: #27ae60;
+    }
+
+    .toast.error {
+      background: #e74c3c;
+    }
+
+    .toast.warning {
+      background: #f39c12;
+    }
+
+    .toast.info {
+      background: #3498db;
+    }
+
+    /* Loading spinner for attendance check */
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+      }
+      .main-content {
+        flex-direction: column;
+      }
+      .toast {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+      }
+    }
   </style>
 </head>
 <body>
@@ -361,6 +439,14 @@
         <li class="menu-item active" data-section="tasks">Tasks</li>
         <li class="menu-item" data-section="chart">View in Chart</li>
         <li class="menu-item" data-section="report">Generate Report</li>
+        <!-- Attendance Menu Item -->
+        <li class="menu-item attendance-menu-item" id="attendanceMenuItem">
+          <a href="#" id="attendanceLink" style="color: inherit; text-decoration: none; display: block;">
+            <span id="attendanceIcon">⏱️</span>
+            <span id="attendanceText">Attendance</span>
+            <span id="attendanceLoading" class="loading" style="display: none;"></span>
+          </a>
+        </li>
       </ul>
     </nav>
 
@@ -393,6 +479,9 @@
     </div>
   </main>
 
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -422,6 +511,18 @@
       window.location.href = "index.html";
     } else {
       document.getElementById("profileName").textContent = fullName || username;
+    }
+
+    // Toast notification function
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast';
+      toast.classList.add(type, 'show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 4000);
     }
 
     // Profile dropdown functionality
@@ -492,6 +593,128 @@
 
     function showLoading(element, message = "Loading...") {
       element.innerHTML = `<div class="loading-message">${message}</div>`;
+    }
+
+    // Enhanced attendance link click handler with multiple lookup methods
+    document.getElementById('attendanceLink').addEventListener('click', async function(e) {
+      e.preventDefault();
+      
+      const attendanceLink = document.getElementById('attendanceLink');
+      const attendanceLoading = document.getElementById('attendanceLoading');
+      const attendanceIcon = document.getElementById('attendanceIcon');
+      const attendanceText = document.getElementById('attendanceText');
+      
+      // Show loading state
+      attendanceLoading.style.display = 'inline-block';
+      attendanceIcon.style.display = 'none';
+      attendanceText.textContent = 'Checking...';
+      attendanceLink.style.pointerEvents = 'none';
+      
+      try {
+        const currentUsername = sessionStorage.getItem("username");
+        if (!currentUsername || currentUsername === "Guest") {
+          showToast('Please log in to access attendance', 'error');
+          resetAttendanceLink();
+          return;
+        }
+
+        console.log("Looking up user:", currentUsername);
+
+        // Method 1: Try to find user by username first (since we have username in session)
+        let userDoc = null;
+        let userData = null;
+
+        // Search by username
+        const usernameQuery = await db.collection("users")
+          .where("username", "==", currentUsername)
+          .get();
+
+        if (!usernameQuery.empty) {
+          userDoc = usernameQuery.docs[0];
+          userData = userDoc.data();
+          console.log("User found by username:", userData);
+        } else {
+          // Method 2: If not found by username, try to get all users and find by partial match
+          console.log("User not found by exact username, trying broader search...");
+          const allUsersSnapshot = await db.collection("users").get();
+          const allUsers = allUsersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          
+          // Try to find user by partial username match (case insensitive)
+          const foundUser = allUsers.find(user => 
+            user.username && user.username.toLowerCase().includes(currentUsername.toLowerCase())
+          );
+          
+          if (foundUser) {
+            userData = foundUser;
+            console.log("User found by partial match:", userData);
+          } else {
+            // Method 3: Show all available users for debugging
+            console.log("All users in database:", allUsers);
+            showToast('User account not found. Please contact administrator.', 'error');
+            resetAttendanceLink();
+            return;
+          }
+        }
+
+        if (userData) {
+          const attendanceEnabled = userData.attendanceEnabled || false;
+          
+          if (attendanceEnabled) {
+            showToast('Redirecting to attendance...', 'success');
+            setTimeout(() => {
+              window.location.href = "Attendance.html";
+            }, 1000);
+          } else {
+            showToast('Attendance feature is not enabled for your account. Please contact administrator.', 'warning');
+            resetAttendanceLink();
+          }
+        }
+      } catch (error) {
+        console.error("Error checking attendance setting:", error);
+        showToast('Something went wrong. Please try again.', 'error');
+        resetAttendanceLink();
+      }
+    });
+
+    function resetAttendanceLink() {
+      const attendanceLoading = document.getElementById('attendanceLoading');
+      const attendanceIcon = document.getElementById('attendanceIcon');
+      const attendanceText = document.getElementById('attendanceText');
+      const attendanceLink = document.getElementById('attendanceLink');
+      
+      attendanceLoading.style.display = 'none';
+      attendanceIcon.style.display = 'inline-block';
+      attendanceText.textContent = 'Attendance';
+      attendanceLink.style.pointerEvents = 'auto';
+    }
+
+    // Check user attendance status on page load and update UI accordingly
+    async function checkUserAttendanceStatus() {
+      try {
+        const currentUsername = sessionStorage.getItem("username");
+        if (!currentUsername || currentUsername === "Guest") return;
+
+        const usernameQuery = await db.collection("users")
+          .where("username", "==", currentUsername)
+          .get();
+
+        if (!usernameQuery.empty) {
+          const userData = usernameQuery.docs[0].data();
+          const attendanceEnabled = userData.attendanceEnabled || false;
+          
+          // Update attendance link style based on status
+          const attendanceMenuItem = document.getElementById('attendanceMenuItem');
+          if (attendanceEnabled) {
+            attendanceMenuItem.style.background = '#27ae60';
+            attendanceMenuItem.style.opacity = '1';
+          } else {
+            attendanceMenuItem.style.background = '#95a5a6';
+            attendanceMenuItem.style.opacity = '0.7';
+          }
+        }
+      } catch (error) {
+        console.error("Error checking user attendance status:", error);
+      }
     }
 
     // Load pending tasks with better error handling
@@ -706,27 +929,30 @@
 
     // Menu navigation
     document.querySelectorAll(".menu-item").forEach(item => {
-      item.addEventListener("click", () => {
-        document.querySelectorAll(".menu-item").forEach(el => el.classList.remove("active"));
-        item.classList.add("active");
-        const section = item.getAttribute("data-section");
-        switch (section) {
-          case "tasks":
-            window.location.href = "User task.html";
-            break;
-          case "chart":
-            window.location.href = "UserChart.html";
-            break;
-          case "report":
-            window.location.href = "User Generate Report.Html";
-            break;
-        }
-      });
+      if (item.id !== 'attendanceMenuItem') {
+        item.addEventListener("click", () => {
+          document.querySelectorAll(".menu-item").forEach(el => el.classList.remove("active"));
+          item.classList.add("active");
+          const section = item.getAttribute("data-section");
+          switch (section) {
+            case "tasks":
+              window.location.href = "User task.html";
+              break;
+            case "chart":
+              window.location.href = "UserChart.html";
+              break;
+            case "report":
+              window.location.href = "User Generate Report.Html";
+              break;
+          }
+        });
+      }
     });
 
     // Initialize the application
     loadTasks(currentDate);
     loadPendingTasks();
+    checkUserAttendanceStatus();
     
     // Auto-refresh every 2 minutes
     setInterval(loadPendingTasks, 120000);
