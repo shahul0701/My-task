@@ -244,6 +244,7 @@
     const db = firebase.firestore();
 
     const username = sessionStorage.getItem("username") || "Guest";
+    const userEmail = sessionStorage.getItem("userEmail") || "";
     document.getElementById("userGreeting").textContent = username;
     document.getElementById("profileInitial").textContent = username[0]?.toUpperCase() || "?";
 
@@ -400,21 +401,25 @@
       }
     });
 
-    // Attendance link click handler
+    // Attendance link click handler - Now searches by email
     document.getElementById('attendanceLink').addEventListener('click', async function(e) {
       e.preventDefault();
       
       try {
-        const currentUser = sessionStorage.getItem("username");
-        if (!currentUser) {
+        const currentUserEmail = sessionStorage.getItem("userEmail");
+        if (!currentUserEmail) {
           showToast('Please log in to access attendance', 'error');
           return;
         }
 
-        // Check if attendance is enabled for this user
-        const userDoc = await db.collection("users").doc(currentUser).get();
-        
-        if (userDoc.exists) {
+        // Search for user by email in Firestore
+        const usersSnapshot = await db.collection("users")
+          .where("email", "==", currentUserEmail)
+          .get();
+
+        if (!usersSnapshot.empty) {
+          // User found by email
+          const userDoc = usersSnapshot.docs[0];
           const userData = userDoc.data();
           const attendanceEnabled = userData.attendanceEnabled || false;
           
@@ -425,7 +430,7 @@
             showToast('Attendance feature is not enabled for your account. Please contact administrator.', 'warning');
           }
         } else {
-          showToast('User not found in system', 'error');
+          showToast('User not found in system. Please contact administrator.', 'error');
         }
       } catch (error) {
         console.error("Error checking attendance setting:", error);
@@ -434,14 +439,19 @@
     });
 
     // Real-time listener for user setting changes (optional - for future enhancements)
-    const currentUser = sessionStorage.getItem("username");
-    if (currentUser) {
-      db.collection("users").doc(currentUser).onSnapshot((doc) => {
-        if (doc.exists) {
-          // You can add real-time updates here if needed
-          console.log("User settings updated");
-        }
-      });
+    const currentUserEmail = sessionStorage.getItem("userEmail");
+    if (currentUserEmail) {
+      // Set up real-time listener for user document by email
+      db.collection("users")
+        .where("email", "==", currentUserEmail)
+        .onSnapshot((snapshot) => {
+          if (!snapshot.empty) {
+            const userDoc = snapshot.docs[0];
+            console.log("User settings updated", userDoc.data());
+          }
+        }, (error) => {
+          console.error("Error in real-time listener:", error);
+        });
     }
   </script>
 </body>
