@@ -158,6 +158,23 @@
       border-radius: 4px; cursor: pointer;
     }
 
+    /* Loading spinner for attendance check */
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     /* Responsive Design */
     @media (max-width: 768px) {
       .sidebar {
@@ -202,7 +219,11 @@
       
       <!-- Attendance Menu Item (Always visible now) -->
       <li class="menu-item">
-        <a href="#" id="attendanceLink">⏱️ Attendance</a>
+        <a href="#" id="attendanceLink">
+          <span id="attendanceIcon">⏱️</span>
+          <span id="attendanceText">Attendance</span>
+          <span id="attendanceLoading" class="loading" style="display: none;"></span>
+        </a>
       </li>
     </ul>
   </nav>
@@ -244,7 +265,6 @@
     const db = firebase.firestore();
 
     const username = sessionStorage.getItem("username") || "Guest";
-    const userEmail = sessionStorage.getItem("userEmail") || "";
     document.getElementById("userGreeting").textContent = username;
     document.getElementById("profileInitial").textContent = username[0]?.toUpperCase() || "?";
 
@@ -401,58 +421,133 @@
       }
     });
 
-    // Attendance link click handler - Now searches by email
+    // Enhanced attendance link click handler with multiple lookup methods
     document.getElementById('attendanceLink').addEventListener('click', async function(e) {
       e.preventDefault();
       
+      const attendanceLink = document.getElementById('attendanceLink');
+      const attendanceLoading = document.getElementById('attendanceLoading');
+      const attendanceIcon = document.getElementById('attendanceIcon');
+      const attendanceText = document.getElementById('attendanceText');
+      
+      // Show loading state
+      attendanceLoading.style.display = 'inline-block';
+      attendanceIcon.style.display = 'none';
+      attendanceText.textContent = 'Checking...';
+      attendanceLink.style.pointerEvents = 'none';
+      
       try {
-        const currentUserEmail = sessionStorage.getItem("userEmail");
-        if (!currentUserEmail) {
+        const currentUsername = sessionStorage.getItem("username");
+        if (!currentUsername || currentUsername === "Guest") {
           showToast('Please log in to access attendance', 'error');
+          resetAttendanceLink();
           return;
         }
 
-        // Search for user by email in Firestore
-        const usersSnapshot = await db.collection("users")
-          .where("email", "==", currentUserEmail)
+        console.log("Looking up user:", currentUsername);
+
+        // Method 1: Try to find user by username first (since we have username in session)
+        let userDoc = null;
+        let userData = null;
+
+        // Search by username
+        const usernameQuery = await db.collection("users")
+          .where("username", "==", currentUsername)
           .get();
 
-        if (!usersSnapshot.empty) {
-          // User found by email
-          const userDoc = usersSnapshot.docs[0];
-          const userData = userDoc.data();
+        if (!usernameQuery.empty) {
+          userDoc = usernameQuery.docs[0];
+          userData = userDoc.data();
+          console.log("User found by username:", userData);
+        } else {
+          // Method 2: If not found by username, try to get all users and find by partial match
+          console.log("User not found by exact username, trying broader search...");
+          const allUsersSnapshot = await db.collection("users").get();
+          const allUsers = allUsersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          
+          // Try to find user by partial username match (case insensitive)
+          const foundUser = allUsers.find(user => 
+            user.username && user.username.toLowerCase().includes(currentUsername.toLowerCase())
+          );
+          
+          if (foundUser) {
+            userData = foundUser;
+            console.log("User found by partial match:", userData);
+          } else {
+            // Method 3: Show all available users for debugging
+            console.log("All users in database:", allUsers);
+            showToast('User account not found. Please contact administrator.', 'error');
+            resetAttendanceLink();
+            return;
+          }
+        }
+
+        if (userData) {
           const attendanceEnabled = userData.attendanceEnabled || false;
           
           if (attendanceEnabled) {
-            // Redirect to attendance page
-            window.location.href = "Attendance.html";
+            showToast('Redirecting to attendance...', 'success');
+            setTimeout(() => {
+              window.location.href = "Attendance.html";
+            }, 1000);
           } else {
             showToast('Attendance feature is not enabled for your account. Please contact administrator.', 'warning');
+            resetAttendanceLink();
           }
-        } else {
-          showToast('User not found in system. Please contact administrator.', 'error');
         }
       } catch (error) {
         console.error("Error checking attendance setting:", error);
         showToast('Something went wrong. Please try again.', 'error');
+        resetAttendanceLink();
       }
     });
 
-    // Real-time listener for user setting changes (optional - for future enhancements)
-    const currentUserEmail = sessionStorage.getItem("userEmail");
-    if (currentUserEmail) {
-      // Set up real-time listener for user document by email
-      db.collection("users")
-        .where("email", "==", currentUserEmail)
-        .onSnapshot((snapshot) => {
-          if (!snapshot.empty) {
-            const userDoc = snapshot.docs[0];
-            console.log("User settings updated", userDoc.data());
-          }
-        }, (error) => {
-          console.error("Error in real-time listener:", error);
-        });
+    function resetAttendanceLink() {
+      const attendanceLoading = document.getElementById('attendanceLoading');
+      const attendanceIcon = document.getElementById('attendanceIcon');
+      const attendanceText = document.getElementById('attendanceText');
+      const attendanceLink = document.getElementById('attendanceLink');
+      
+      attendanceLoading.style.display = 'none';
+      attendanceIcon.style.display = 'inline-block';
+      attendanceText.textContent = 'Attendance';
+      attendanceLink.style.pointerEvents = 'auto';
     }
+
+    // Check user attendance status on page load and update UI accordingly
+    async function checkUserAttendanceStatus() {
+      try {
+        const currentUsername = sessionStorage.getItem("username");
+        if (!currentUsername || currentUsername === "Guest") return;
+
+        const usernameQuery = await db.collection("users")
+          .where("username", "==", currentUsername)
+          .get();
+
+        if (!usernameQuery.empty) {
+          const userData = usernameQuery.docs[0].data();
+          const attendanceEnabled = userData.attendanceEnabled || false;
+          
+          // Update attendance link style based on status
+          const attendanceLink = document.getElementById('attendanceLink');
+          if (attendanceEnabled) {
+            attendanceLink.style.background = '#27ae60';
+            attendanceLink.style.opacity = '1';
+          } else {
+            attendanceLink.style.background = '#95a5a6';
+            attendanceLink.style.opacity = '0.7';
+          }
+        }
+      } catch (error) {
+        console.error("Error checking user attendance status:", error);
+      }
+    }
+
+    // Check attendance status when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      checkUserAttendanceStatus();
+    });
+
   </script>
 </body>
 </html>
