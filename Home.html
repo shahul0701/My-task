@@ -76,42 +76,40 @@
     }
     .sidebar .menu-item a:hover { background: #34495e; }
 
-    /* Attendance Menu Item */
-    .attendance-menu-item {
-      display: none;
-      margin-bottom: 12px;
-      background: #27ae60;
-      border-radius: 6px;
-      overflow: hidden;
-      animation: slideDown 0.3s ease;
-    }
-
-    .attendance-menu-item.visible {
-      display: block;
-    }
-
-    .attendance-menu-item a {
-      background: #27ae60 !important;
-      color: white !important;
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 8px;
+      color: white;
       font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      z-index: 10000;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      max-width: 300px;
+      transform: translateX(150%);
     }
 
-    .attendance-menu-item a:hover {
-      background: #2ecc71 !important;
+    .toast.show {
+      transform: translateX(0);
     }
 
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    .toast.success {
+      background: #27ae60;
+    }
+
+    .toast.error {
+      background: #e74c3c;
+    }
+
+    .toast.warning {
+      background: #f39c12;
+    }
+
+    .toast.info {
+      background: #3498db;
     }
 
     .main-content {
@@ -172,6 +170,11 @@
         max-width: 100%;
         margin-left: 0;
       }
+      .toast {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+      }
     }
   </style>
 </head>
@@ -197,9 +200,9 @@
       <li class="menu-item"><a href="AssignTask.html">🎯 Assign Task</a></li>
       <li class="menu-item"><a href="Genrate Report.html">📈 Report</a></li>
       
-      <!-- Attendance Menu Item (Controlled by user setting) -->
-      <li class="attendance-menu-item" id="attendanceMenuItem">
-        <a href="Attendance.html">⏱️ Attendance</a>
+      <!-- Attendance Menu Item (Always visible now) -->
+      <li class="menu-item">
+        <a href="#" id="attendanceLink">⏱️ Attendance</a>
       </li>
     </ul>
   </nav>
@@ -222,6 +225,9 @@
     </div>
   </main>
 
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDYhLNuJKj2ucwGimfddTfpTb32Y0c-bXg",
@@ -240,6 +246,18 @@
     const username = sessionStorage.getItem("username") || "Guest";
     document.getElementById("userGreeting").textContent = username;
     document.getElementById("profileInitial").textContent = username[0]?.toUpperCase() || "?";
+
+    // Toast notification function
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast';
+      toast.classList.add(type, 'show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 4000);
+    }
 
     // Profile dropdown functionality
     const profileDiv = document.getElementById("profileDiv");
@@ -382,42 +400,46 @@
       }
     });
 
-    // Attendance menu visibility based on user setting
-    async function checkAttendanceSetting() {
+    // Attendance link click handler
+    document.getElementById('attendanceLink').addEventListener('click', async function(e) {
+      e.preventDefault();
+      
       try {
         const currentUser = sessionStorage.getItem("username");
-        if (!currentUser) return;
+        if (!currentUser) {
+          showToast('Please log in to access attendance', 'error');
+          return;
+        }
 
+        // Check if attendance is enabled for this user
         const userDoc = await db.collection("users").doc(currentUser).get();
+        
         if (userDoc.exists) {
           const userData = userDoc.data();
           const attendanceEnabled = userData.attendanceEnabled || false;
-          const attendanceMenuItem = document.getElementById('attendanceMenuItem');
           
-          if (attendanceMenuItem) {
-            if (attendanceEnabled) {
-              attendanceMenuItem.classList.add('visible');
-            } else {
-              attendanceMenuItem.classList.remove('visible');
-            }
+          if (attendanceEnabled) {
+            // Redirect to attendance page
+            window.location.href = "Attendance.html";
+          } else {
+            showToast('Attendance feature is not enabled for your account. Please contact administrator.', 'warning');
           }
+        } else {
+          showToast('User not found in system', 'error');
         }
       } catch (error) {
         console.error("Error checking attendance setting:", error);
+        showToast('Something went wrong. Please try again.', 'error');
       }
-    }
-
-    // Check attendance setting on page load
-    document.addEventListener('DOMContentLoaded', function() {
-      checkAttendanceSetting();
     });
 
-    // Real-time listener for user setting changes
+    // Real-time listener for user setting changes (optional - for future enhancements)
     const currentUser = sessionStorage.getItem("username");
     if (currentUser) {
       db.collection("users").doc(currentUser).onSnapshot((doc) => {
         if (doc.exists) {
-          checkAttendanceSetting();
+          // You can add real-time updates here if needed
+          console.log("User settings updated");
         }
       });
     }
