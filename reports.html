@@ -1145,7 +1145,7 @@
       };
     }
 
-    // Generate report
+    // Generate report - UPDATED TO AVOID COMPOSITE INDEX ISSUES
     async function generateReport() {
       try {
         updateDebugInfo('Generating report...');
@@ -1160,29 +1160,33 @@
         let attendanceQuery;
         
         if (isAdmin && employeeFilter === 'all') {
-          // Admin viewing all data
+          // Admin viewing all data - load all records and filter by date client-side
           updateDebugInfo('Loading all attendance data (admin view)');
-          attendanceQuery = await db.collection("attendance")
-            .where("date", ">=", dateRange.start)
-            .where("date", "<=", dateRange.end)
-            .get();
+          attendanceQuery = await db.collection("attendance").get();
+          reportData = [];
+          attendanceQuery.forEach(doc => {
+            const record = { id: doc.id, ...doc.data() };
+            if (record.date >= dateRange.start && record.date <= dateRange.end) {
+              reportData.push(record);
+            }
+          });
         } else {
           // User viewing their own data or admin viewing specific user
           const userId = isAdmin ? employeeFilter : currentUser;
           updateDebugInfo(`Loading attendance data for user: ${userId}`);
           attendanceQuery = await db.collection("attendance")
             .where("userId", "==", userId)
-            .where("date", ">=", dateRange.start)
-            .where("date", "<=", dateRange.end)
             .get();
+          reportData = [];
+          attendanceQuery.forEach(doc => {
+            const record = { id: doc.id, ...doc.data() };
+            if (record.date >= dateRange.start && record.date <= dateRange.end) {
+              reportData.push(record);
+            }
+          });
         }
 
-        reportData = [];
-        attendanceQuery.forEach(doc => {
-          reportData.push({ id: doc.id, ...doc.data() });
-        });
-
-        updateDebugInfo(`Loaded ${reportData.length} attendance records`);
+        updateDebugInfo(`Loaded ${reportData.length} attendance records after filtering`);
 
         // Process and display report data
         currentReportData = processReportData(reportData, dateRange);
