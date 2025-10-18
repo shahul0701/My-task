@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Management - Leave Management System</title>
+    <title>Hours Management - Leave Management System</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -213,6 +213,17 @@
             font-weight: 700;
             color: var(--primary);
         }
+
+        .current-month-display {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
     </style>
 </head>
 <body>
@@ -220,7 +231,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container">
             <a class="navbar-brand" href="#">
-                <i class="fas fa-user-clock me-2"></i>Leave Management System
+                <i class="fas fa-clock me-2"></i>Hours Management
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -228,7 +239,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" href="#">
+                        <a class="nav-link" href="attendance.html">
                             <i class="fas fa-user-clock me-1"></i> Attendance
                         </a>
                     </li>
@@ -240,6 +251,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="holiday.html">
                             <i class="fas fa-calendar-day me-1"></i> Holiday
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">
+                            <i class="fas fa-clock me-1"></i> Hours
                         </a>
                     </li>
                     <li class="nav-item dropdown">
@@ -275,17 +291,22 @@
         <!-- Page Header -->
         <div class="row mb-4">
             <div class="col">
-                <h2 class="text-white">Attendance Management</h2>
-                <p class="text-light">Track and manage employee attendance and working hours</p>
+                <h2 class="text-white">Hours Management</h2>
+                <p class="text-light">Track and manage employee working hours</p>
             </div>
             <div class="col-auto">
                 <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#markAttendanceModal" id="markAttendanceBtn">
-                    <i class="fas fa-check-circle me-2"></i> Mark Attendance
+                    <i class="fas fa-check-circle me-2"></i> Mark Hours
                 </button>
                 <button class="btn btn-light ms-2" data-bs-toggle="modal" data-bs-target="#bulkAttendanceModal" id="bulkAttendanceBtn" style="display: none;">
                     <i class="fas fa-users me-2"></i> Bulk Update
                 </button>
             </div>
+        </div>
+
+        <!-- Current Month Display -->
+        <div class="current-month-display" id="currentMonthDisplay">
+            Loading current month...
         </div>
 
         <!-- Stats Cards -->
@@ -339,7 +360,7 @@
                     <div class="row align-items-center">
                         <div class="col-md-3">
                             <label class="form-label">Select Month</label>
-                            <input type="month" class="form-control" id="monthFilter" value="2025-01">
+                            <input type="month" class="form-control" id="monthFilter">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Select Employee</label>
@@ -381,23 +402,23 @@
                         <ul class="nav nav-tabs" id="attendanceTabs" role="tablist">
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link active" id="my-attendance-tab" data-bs-toggle="tab" data-bs-target="#my-attendance" type="button">
-                                    <i class="fas fa-user me-2"></i> My Attendance
+                                    <i class="fas fa-user me-2"></i> My Hours
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation" id="teamAttendanceTab" style="display: none;">
                                 <button class="nav-link" id="team-attendance-tab" data-bs-toggle="tab" data-bs-target="#team-attendance" type="button">
-                                    <i class="fas fa-users me-2"></i> Team Attendance
+                                    <i class="fas fa-users me-2"></i> Team Hours
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation" id="allAttendanceTab" style="display: none;">
                                 <button class="nav-link" id="all-attendance-tab" data-bs-toggle="tab" data-bs-target="#all-attendance" type="button">
-                                    <i class="fas fa-tasks me-2"></i> All Attendance (Admin)
+                                    <i class="fas fa-tasks me-2"></i> All Hours (Admin)
                                 </button>
                             </li>
                         </ul>
                     </div>
                     <div class="tab-content" id="attendanceTabsContent">
-                        <!-- My Attendance Tab -->
+                        <!-- My Hours Tab -->
                         <div class="tab-pane fade show active" id="my-attendance" role="tabpanel">
                             <div class="table-responsive">
                                 <table class="table table-hover">
@@ -408,6 +429,8 @@
                                             <th>Check In</th>
                                             <th>Check Out</th>
                                             <th>Working Hours</th>
+                                            <th>Break Time</th>
+                                            <th>Net Hours</th>
                                             <th>Status</th>
                                             <th>Remarks</th>
                                             <th>Actions</th>
@@ -415,14 +438,14 @@
                                     </thead>
                                     <tbody id="myAttendanceTableBody">
                                         <tr>
-                                            <td colspan="8" class="text-center py-4">Loading attendance data...</td>
+                                            <td colspan="10" class="text-center py-4">Loading hours data...</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                         
-                        <!-- Team Attendance Tab -->
+                        <!-- Team Hours Tab -->
                         <div class="tab-pane fade" id="team-attendance" role="tabpanel">
                             <div class="table-responsive">
                                 <table class="table table-hover">
@@ -433,6 +456,8 @@
                                             <th>Check In</th>
                                             <th>Check Out</th>
                                             <th>Working Hours</th>
+                                            <th>Break Time</th>
+                                            <th>Net Hours</th>
                                             <th>Status</th>
                                             <th>Remarks</th>
                                             <th>Actions</th>
@@ -440,14 +465,14 @@
                                     </thead>
                                     <tbody id="teamAttendanceTableBody">
                                         <tr>
-                                            <td colspan="8" class="text-center py-4">No team attendance data available</td>
+                                            <td colspan="10" class="text-center py-4">No team hours data available</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
 
-                        <!-- All Attendance Tab (Admin Only) -->
+                        <!-- All Hours Tab (Admin Only) -->
                         <div class="tab-pane fade" id="all-attendance" role="tabpanel">
                             <div class="table-responsive">
                                 <table class="table table-hover">
@@ -458,6 +483,8 @@
                                             <th>Check In</th>
                                             <th>Check Out</th>
                                             <th>Working Hours</th>
+                                            <th>Break Time</th>
+                                            <th>Net Hours</th>
                                             <th>Status</th>
                                             <th>Remarks</th>
                                             <th>Actions</th>
@@ -465,7 +492,7 @@
                                     </thead>
                                     <tbody id="allAttendanceTableBody">
                                         <tr>
-                                            <td colspan="8" class="text-center py-4">No attendance data available</td>
+                                            <td colspan="10" class="text-center py-4">No hours data available</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -477,12 +504,12 @@
         </div>
     </div>
 
-    <!-- Mark Attendance Modal -->
+    <!-- Mark Hours Modal -->
     <div class="modal fade" id="markAttendanceModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-check-circle me-2"></i> Mark Attendance</h5>
+                    <h5 class="modal-title"><i class="fas fa-check-circle me-2"></i> Mark Hours</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -499,6 +526,16 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Check Out Time</label>
                                 <input type="time" class="form-control" id="checkOutTime">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Break Start</label>
+                                <input type="time" class="form-control" id="breakStartTime">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Break End</label>
+                                <input type="time" class="form-control" id="breakEndTime">
                             </div>
                         </div>
                         <div class="mb-3">
@@ -518,18 +555,18 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="submitAttendanceBtn">Mark Attendance</button>
+                    <button type="button" class="btn btn-primary" id="submitAttendanceBtn">Mark Hours</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Bulk Attendance Modal -->
+    <!-- Bulk Hours Modal -->
     <div class="modal fade" id="bulkAttendanceModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-users me-2"></i> Bulk Attendance Update</h5>
+                    <h5 class="modal-title"><i class="fas fa-users me-2"></i> Bulk Hours Update</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -566,18 +603,18 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="submitBulkAttendanceBtn">Update Bulk Attendance</button>
+                    <button type="button" class="btn btn-primary" id="submitBulkAttendanceBtn">Update Bulk Hours</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Edit Attendance Modal -->
+    <!-- Edit Hours Modal -->
     <div class="modal fade" id="editAttendanceModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i> Edit Attendance</h5>
+                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i> Edit Hours</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -597,6 +634,16 @@
                                 <input type="time" class="form-control" id="editCheckOutTime">
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Break Start</label>
+                                <input type="time" class="form-control" id="editBreakStartTime">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Break End</label>
+                                <input type="time" class="form-control" id="editBreakEndTime">
+                            </div>
+                        </div>
                         <div class="mb-3">
                             <label class="form-label">Status</label>
                             <select class="form-select" id="editAttendanceStatus" required>
@@ -614,7 +661,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="updateAttendanceBtn">Update Attendance</button>
+                    <button type="button" class="btn btn-primary" id="updateAttendanceBtn">Update Hours</button>
                 </div>
             </div>
         </div>
@@ -667,6 +714,31 @@
         let allUsers = [];
         let attendanceData = [];
 
+        // Get current month and year
+        function getCurrentMonthYear() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            return `${year}-${month}`;
+        }
+
+        // Format month for display
+        function formatMonthDisplay(monthYear) {
+            const [year, month] = monthYear.split('-');
+            const date = new Date(year, month - 1);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+        }
+
+        // Update current month display
+        function updateCurrentMonthDisplay() {
+            const currentMonth = getCurrentMonthYear();
+            const displayText = formatMonthDisplay(currentMonth);
+            document.getElementById('currentMonthDisplay').textContent = `Viewing Hours for ${displayText}`;
+            
+            // Set the month filter to current month
+            document.getElementById('monthFilter').value = currentMonth;
+        }
+
         // Toast notification function
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
@@ -689,6 +761,9 @@
         async function initializeApp() {
             updateDebugInfo('Starting initialization...');
             
+            // Update current month display
+            updateCurrentMonthDisplay();
+            
             // Get user from session storage
             const username = sessionStorage.getItem("username");
             if (!username) {
@@ -698,7 +773,6 @@
             }
 
             document.getElementById('currentUserName').textContent = username;
-            updateDebugInfo('User from session: ' + username);
 
             // Find user in Firestore
             try {
@@ -783,9 +857,9 @@
         // Load attendance data based on filters
         async function loadAttendanceData() {
             try {
-                updateDebugInfo('Loading attendance data...');
+                updateDebugInfo('Loading hours data...');
                 
-                const monthFilter = document.getElementById('monthFilter').value;
+                const monthFilter = document.getElementById('monthFilter').value || getCurrentMonthYear();
                 const employeeFilter = document.getElementById('employeeFilter').value;
                 const statusFilter = document.getElementById('statusFilter').value;
 
@@ -793,6 +867,9 @@
                 const [year, month] = monthFilter.split('-');
                 const startDate = `${year}-${month}-01`;
                 const endDate = `${year}-${month}-${new Date(year, month, 0).getDate()}`;
+
+                // Update current month display
+                document.getElementById('currentMonthDisplay').textContent = `Viewing Hours for ${formatMonthDisplay(monthFilter)}`;
 
                 let attendanceQuery;
                 
@@ -822,7 +899,7 @@
                     attendanceData = attendanceData.filter(record => record.status === statusFilter);
                 }
 
-                updateDebugInfo(`Loaded ${attendanceData.length} attendance records`);
+                updateDebugInfo(`Loaded ${attendanceData.length} hours records`);
 
                 // Update UI
                 updateAttendanceTables();
@@ -830,9 +907,9 @@
                 updateSummaryCards();
 
             } catch (error) {
-                updateDebugInfo('Error loading attendance data: ' + error.message);
-                console.error("Error loading attendance data:", error);
-                showToast('Error loading attendance data', 'error');
+                updateDebugInfo('Error loading hours data: ' + error.message);
+                console.error("Error loading hours data:", error);
+                showToast('Error loading hours data', 'error');
             }
         }
 
@@ -851,7 +928,7 @@
             const myAttendance = attendanceData.filter(record => record.userId === currentUser);
 
             if (myAttendance.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">No attendance records found for the selected period</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4">No hours records found for the selected period</td></tr>';
                 return;
             }
 
@@ -860,457 +937,3 @@
 
             myAttendance.forEach(record => {
                 const row = createAttendanceRow(record, 'my');
-                tbody.appendChild(row);
-            });
-        }
-
-        // Update team attendance table
-        function updateTeamAttendanceTable() {
-            const tbody = document.getElementById('teamAttendanceTableBody');
-            tbody.innerHTML = '';
-
-            if (userRole !== 'Admin' && userRole !== 'Sub Admin') {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">Team attendance view available for managers only</td></tr>';
-                return;
-            }
-
-            // For managers, show their team members' attendance
-            const teamAttendance = attendanceData.filter(record => {
-                const user = allUsers.find(u => u.id === record.userId);
-                return user && (user.manager === userData.username || userRole === 'Admin' || userRole === 'Sub Admin');
-            });
-
-            if (teamAttendance.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">No team attendance records found</td></tr>';
-                return;
-            }
-
-            // Sort by date descending
-            teamAttendance.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            teamAttendance.forEach(record => {
-                const row = createAttendanceRow(record, 'team');
-                tbody.appendChild(row);
-            });
-        }
-
-        // Update all attendance table (admin only)
-        function updateAllAttendanceTable() {
-            const tbody = document.getElementById('allAttendanceTableBody');
-            tbody.innerHTML = '';
-
-            if (userRole !== 'Admin' && userRole !== 'Sub Admin') {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">All attendance view available for admins only</td></tr>';
-                return;
-            }
-
-            if (attendanceData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">No attendance records found</td></tr>';
-                return;
-            }
-
-            // Sort by date descending
-            const sortedData = [...attendanceData].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            sortedData.forEach(record => {
-                const row = createAttendanceRow(record, 'all');
-                tbody.appendChild(row);
-            });
-        }
-
-        // Create attendance row
-        function createAttendanceRow(record, viewType) {
-            const row = document.createElement('tr');
-            
-            const date = new Date(record.date);
-            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-            const formattedDate = date.toLocaleDateString('en-US');
-
-            // Calculate working hours
-            let workingHours = 'N/A';
-            let hoursClass = 'working-hours';
-            
-            if (record.checkIn && record.checkOut) {
-                const checkIn = new Date(`${record.date}T${record.checkIn}`);
-                const checkOut = new Date(`${record.date}T${record.checkOut}`);
-                const diffMs = checkOut - checkIn;
-                const diffHrs = diffMs / (1000 * 60 * 60);
-                
-                workingHours = diffHrs.toFixed(1) + ' hrs';
-                
-                if (diffHrs > 8) {
-                    hoursClass = 'overtime';
-                    workingHours += ' (+' + (diffHrs - 8).toFixed(1) + ')';
-                } else if (diffHrs < 8) {
-                    hoursClass = 'undertime';
-                    workingHours += ' (-' + (8 - diffHrs).toFixed(1) + ')';
-                }
-            }
-
-            // Status badge
-            let statusBadge = '';
-            let statusClass = '';
-            
-            switch(record.status) {
-                case 'present':
-                    statusBadge = '<span class="status-present">Present</span>';
-                    statusClass = 'badge-present';
-                    break;
-                case 'absent':
-                    statusBadge = '<span class="status-absent">Absent</span>';
-                    statusClass = 'badge-absent';
-                    break;
-                case 'leave':
-                    statusBadge = '<span class="status-leave">On Leave</span>';
-                    statusClass = 'badge-leave';
-                    break;
-                case 'holiday':
-                    statusBadge = '<span class="status-holiday">Holiday</span>';
-                    statusClass = 'badge-holiday';
-                    break;
-            }
-
-            // Get employee name for team/all views
-            let employeeName = '';
-            if (viewType !== 'my') {
-                const user = allUsers.find(u => u.id === record.userId);
-                employeeName = user ? `${user.username} (${user.empId || 'N/A'})` : 'Unknown User';
-            }
-
-            // Action buttons
-            let actionButtons = '';
-            if ((userRole === 'Admin' || userRole === 'Sub Admin') || record.userId === currentUser) {
-                actionButtons = `
-                    <div class="admin-actions">
-                        <button class="btn btn-sm btn-outline-primary" onclick="editAttendanceRecord('${record.id}')" title="Edit Attendance">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        ${(userRole === 'Admin' || userRole === 'Sub Admin') ? `
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteAttendanceRecord('${record.id}')" title="Delete Attendance">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                        ` : ''}
-                    </div>
-                `;
-            }
-
-            // Build row content based on view type
-            let rowContent = '';
-            
-            if (viewType === 'my') {
-                rowContent = `
-                    <td>${formattedDate}</td>
-                    <td>${dayName}</td>
-                    <td>${record.checkIn || 'N/A'}</td>
-                    <td>${record.checkOut || 'N/A'}</td>
-                    <td class="${hoursClass}">${workingHours}</td>
-                    <td>${statusBadge}</td>
-                    <td>${record.remarks || '-'}</td>
-                    <td>${actionButtons}</td>
-                `;
-            } else {
-                rowContent = `
-                    <td>${employeeName}</td>
-                    <td>${formattedDate}</td>
-                    <td>${record.checkIn || 'N/A'}</td>
-                    <td>${record.checkOut || 'N/A'}</td>
-                    <td class="${hoursClass}">${workingHours}</td>
-                    <td>${statusBadge}</td>
-                    <td>${record.remarks || '-'}</td>
-                    <td>${actionButtons}</td>
-                `;
-            }
-
-            row.innerHTML = rowContent;
-            return row;
-        }
-
-        // Update attendance statistics
-        function updateAttendanceStats() {
-            const today = new Date().toISOString().split('T')[0];
-            
-            // Today's stats
-            const todayAttendance = attendanceData.filter(record => record.date === today);
-            const presentToday = todayAttendance.filter(record => record.status === 'present').length;
-            const absentToday = todayAttendance.filter(record => record.status === 'absent').length;
-            const leaveToday = todayAttendance.filter(record => record.status === 'leave').length;
-
-            // Monthly stats
-            const presentThisMonth = attendanceData.filter(record => record.status === 'present').length;
-            const totalRecords = attendanceData.length;
-            const attendanceRate = totalRecords > 0 ? Math.round((presentThisMonth / totalRecords) * 100) : 0;
-
-            document.getElementById('presentToday').textContent = presentToday;
-            document.getElementById('absentToday').textContent = absentToday;
-            document.getElementById('onLeaveToday').textContent = leaveToday;
-            document.getElementById('attendanceRate').textContent = attendanceRate + '%';
-        }
-
-        // Update summary cards
-        function updateSummaryCards() {
-            const container = document.getElementById('attendanceSummary');
-            container.innerHTML = '';
-
-            const presentCount = attendanceData.filter(record => record.status === 'present').length;
-            const absentCount = attendanceData.filter(record => record.status === 'absent').length;
-            const leaveCount = attendanceData.filter(record => record.status === 'leave').length;
-            const holidayCount = attendanceData.filter(record => record.status === 'holiday').length;
-            
-            const totalHours = attendanceData
-                .filter(record => record.checkIn && record.checkOut)
-                .reduce((total, record) => {
-                    const checkIn = new Date(`${record.date}T${record.checkIn}`);
-                    const checkOut = new Date(`${record.date}T${record.checkOut}`);
-                    return total + (checkOut - checkIn) / (1000 * 60 * 60);
-                }, 0);
-
-            const overtimeHours = attendanceData
-                .filter(record => record.checkIn && record.checkOut)
-                .reduce((total, record) => {
-                    const checkIn = new Date(`${record.date}T${record.checkIn}`);
-                    const checkOut = new Date(`${record.date}T${record.checkOut}`);
-                    const hours = (checkOut - checkIn) / (1000 * 60 * 60);
-                    return total + Math.max(0, hours - 8);
-                }, 0);
-
-            const summaries = [
-                { label: 'Total Present', value: presentCount, icon: 'fa-user-check' },
-                { label: 'Total Absent', value: absentCount, icon: 'fa-user-times' },
-                { label: 'Total Leave', value: leaveCount, icon: 'fa-umbrella-beach' },
-                { label: 'Total Holidays', value: holidayCount, icon: 'fa-calendar' },
-                { label: 'Total Hours', value: totalHours.toFixed(1) + 'h', icon: 'fa-clock' },
-                { label: 'Overtime', value: overtimeHours.toFixed(1) + 'h', icon: 'fa-plus-circle' }
-            ];
-
-            summaries.forEach(summary => {
-                const div = document.createElement('div');
-                div.className = 'summary-item';
-                div.innerHTML = `
-                    <div class="summary-label">${summary.label}</div>
-                    <div class="summary-value">
-                        <i class="fas ${summary.icon} me-2"></i>${summary.value}
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        // Mark attendance
-        document.getElementById('submitAttendanceBtn').addEventListener('click', async function() {
-            const form = document.getElementById('markAttendanceForm');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
-            const date = document.getElementById('attendanceDate').value;
-            const checkIn = document.getElementById('checkInTime').value;
-            const checkOut = document.getElementById('checkOutTime').value;
-            const status = document.getElementById('attendanceStatus').value;
-            const remarks = document.getElementById('attendanceRemarks').value.trim();
-
-            try {
-                // Check if attendance already exists for this date and user
-                const existingQuery = await db.collection("attendance")
-                    .where("userId", "==", currentUser)
-                    .where("date", "==", date)
-                    .get();
-
-                if (!existingQuery.empty) {
-                    showToast('Attendance already marked for this date', 'warning');
-                    return;
-                }
-
-                const attendanceData = {
-                    userId: currentUser,
-                    username: userData.username,
-                    empId: userData.empId || 'N/A',
-                    date: date,
-                    checkIn: checkIn,
-                    checkOut: checkOut,
-                    status: status,
-                    remarks: remarks,
-                    createdBy: userData.username,
-                    createdAt: new Date().toISOString()
-                };
-
-                await db.collection("attendance").add(attendanceData);
-
-                // Close modal and reset form
-                const modal = bootstrap.Modal.getInstance(document.getElementById('markAttendanceModal'));
-                modal.hide();
-                form.reset();
-
-                showToast('Attendance marked successfully!');
-                
-                // Reload data
-                await loadAttendanceData();
-
-            } catch (error) {
-                console.error("Error marking attendance:", error);
-                showToast('Error marking attendance', 'error');
-            }
-        });
-
-        // Bulk attendance update
-        document.getElementById('submitBulkAttendanceBtn').addEventListener('click', async function() {
-            const form = document.getElementById('bulkAttendanceForm');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
-            const selectedUsers = Array.from(document.getElementById('bulkEmployees').selectedOptions).map(opt => opt.value);
-            const date = document.getElementById('bulkAttendanceDate').value;
-            const status = document.getElementById('bulkAttendanceStatus').value;
-            const remarks = document.getElementById('bulkRemarks').value.trim();
-
-            if (selectedUsers.length === 0) {
-                showToast('Please select at least one employee', 'error');
-                return;
-            }
-
-            try {
-                let successCount = 0;
-                let errorCount = 0;
-
-                for (const userId of selectedUsers) {
-                    try {
-                        const user = allUsers.find(u => u.id === userId);
-                        if (!user) continue;
-
-                        // Check if attendance already exists
-                        const existingQuery = await db.collection("attendance")
-                            .where("userId", "==", userId)
-                            .where("date", "==", date)
-                            .get();
-
-                        if (!existingQuery.empty) {
-                            // Update existing record
-                            await db.collection("attendance").doc(existingQuery.docs[0].id).update({
-                                status: status,
-                                remarks: remarks,
-                                updatedBy: userData.username,
-                                updatedAt: new Date().toISOString()
-                            });
-                        } else {
-                            // Create new record
-                            const attendanceData = {
-                                userId: userId,
-                                username: user.username,
-                                empId: user.empId || 'N/A',
-                                date: date,
-                                status: status,
-                                remarks: remarks,
-                                createdBy: userData.username,
-                                createdAt: new Date().toISOString()
-                            };
-
-                            await db.collection("attendance").add(attendanceData);
-                        }
-                        successCount++;
-                    } catch (error) {
-                        console.error(`Error updating attendance for user ${userId}:`, error);
-                        errorCount++;
-                    }
-                }
-
-                // Close modal and reset form
-                const modal = bootstrap.Modal.getInstance(document.getElementById('bulkAttendanceModal'));
-                modal.hide();
-                form.reset();
-
-                showToast(`Bulk attendance updated: ${successCount} successful, ${errorCount} failed`);
-                
-                // Reload data
-                await loadAttendanceData();
-
-            } catch (error) {
-                console.error("Error in bulk attendance update:", error);
-                showToast('Error updating bulk attendance', 'error');
-            }
-        });
-
-        // Edit attendance record
-        async function editAttendanceRecord(attendanceId) {
-            const record = attendanceData.find(r => r.id === attendanceId);
-            if (!record) return;
-
-            document.getElementById('editAttendanceId').value = attendanceId;
-            document.getElementById('editAttendanceDate').value = record.date;
-            document.getElementById('editCheckInTime').value = record.checkIn || '';
-            document.getElementById('editCheckOutTime').value = record.checkOut || '';
-            document.getElementById('editAttendanceStatus').value = record.status;
-            document.getElementById('editAttendanceRemarks').value = record.remarks || '';
-
-            const modal = new bootstrap.Modal(document.getElementById('editAttendanceModal'));
-            modal.show();
-        }
-
-        // Update attendance record
-        document.getElementById('updateAttendanceBtn').addEventListener('click', async function() {
-            const attendanceId = document.getElementById('editAttendanceId').value;
-            const date = document.getElementById('editAttendanceDate').value;
-            const checkIn = document.getElementById('editCheckInTime').value;
-            const checkOut = document.getElementById('editCheckOutTime').value;
-            const status = document.getElementById('editAttendanceStatus').value;
-            const remarks = document.getElementById('editAttendanceRemarks').value.trim();
-
-            try {
-                const updateData = {
-                    date: date,
-                    checkIn: checkIn,
-                    checkOut: checkOut,
-                    status: status,
-                    remarks: remarks,
-                    updatedBy: userData.username,
-                    updatedAt: new Date().toISOString()
-                };
-
-                await db.collection("attendance").doc(attendanceId).update(updateData);
-
-                // Close modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('editAttendanceModal'));
-                modal.hide();
-
-                showToast('Attendance updated successfully!');
-                
-                // Reload data
-                await loadAttendanceData();
-
-            } catch (error) {
-                console.error("Error updating attendance:", error);
-                showToast('Error updating attendance', 'error');
-            }
-        });
-
-        // Delete attendance record
-        async function deleteAttendanceRecord(attendanceId) {
-            if (!confirm('Are you sure you want to delete this attendance record?')) {
-                return;
-            }
-
-            try {
-                await db.collection("attendance").doc(attendanceId).delete();
-                showToast('Attendance record deleted successfully!');
-                
-                // Reload data
-                await loadAttendanceData();
-
-            } catch (error) {
-                console.error("Error deleting attendance record:", error);
-                showToast('Error deleting attendance record', 'error');
-            }
-        }
-
-        // Logout function
-        function logout() {
-            sessionStorage.removeItem("username");
-            window.location.href = "index.html";
-        }
-
-        // Initialize the app when DOM is loaded
-        document.addEventListener('DOMContentLoaded', initializeApp);
-    </script>
-</body>
-</html>
