@@ -532,6 +532,11 @@
       border-left: 4px solid #dc3545;
     }
 
+    /* User-specific styles */
+    .user-view .admin-only-element {
+      display: none !important;
+    }
+
     /* Responsive Design */
     @media (max-width: 1024px) {
       .page-header {
@@ -662,7 +667,7 @@
     <div class="page-header">
       <div>
         <h1 class="page-title">Attendance Reports</h1>
-        <p class="page-subtitle">Comprehensive attendance analytics and export functionality</p>
+        <p class="page-subtitle" id="userRoleInfo">Comprehensive attendance analytics and export functionality</p>
       </div>
       <div class="export-buttons">
         <button class="export-btn export-excel" onclick="exportToExcel()">
@@ -694,7 +699,7 @@
             <input type="date" class="filter-input" id="endDate" style="flex: 1;">
           </div>
         </div>
-        <div class="filter-group">
+        <div class="filter-group" id="employeeFilterGroup">
           <label class="filter-label">Employee</label>
           <select class="filter-select" id="employeeFilter">
             <option value="all">All Employees</option>
@@ -705,7 +710,7 @@
           <select class="filter-select" id="reportType">
             <option value="summary">Summary Report</option>
             <option value="detailed">Detailed Report</option>
-            <option value="comparison">Comparison Report</option>
+            <option value="comparison" id="comparisonOption" style="display: none;">Comparison Report</option>
           </select>
         </div>
         <div class="filter-group">
@@ -905,7 +910,7 @@
 
     // Home button click handler
     function handleHomeClick() {
-      if (userRole === 'Admin') {
+      if (userRole === 'Admin' || userRole === 'admin') {
         window.location.href = 'Home.html';
       } else {
         window.location.href = 'UserDashboard.html';
@@ -980,16 +985,13 @@
         currentUser = userQuery.docs[0].id;
         userRole = userData.role || 'employee';
 
-        updateDebugInfo(`User loaded: ${userData.username}, Role: ${userRole}`);
+        updateDebugInfo(`User loaded: ${userData.username}, Role: ${userRole}, ID: ${currentUser}`);
 
-        // Check if user is admin
-        if (userRole === 'Admin' || userRole === 'admin') {
-          document.getElementById('adminMenu').classList.add('visible');
-          document.getElementById('comparisonTab').style.display = 'block';
-        }
+        // Update UI based on user role
+        updateUIForUserRole();
 
-        // Load all users
-        await loadAllUsers();
+        // Load all users (for admin) or just current user data
+        await loadUsersData();
         
         // Initialize charts
         initializeCharts();
@@ -1003,10 +1005,31 @@
       }
     }
 
-    // Load all users for filters
-    async function loadAllUsers() {
+    // Update UI based on user role
+    function updateUIForUserRole() {
+      const isAdmin = userRole === 'Admin' || userRole === 'admin';
+      
+      if (isAdmin) {
+        document.getElementById('adminMenu').classList.add('visible');
+        document.getElementById('comparisonTab').style.display = 'block';
+        document.getElementById('comparisonOption').style.display = 'block';
+        document.getElementById('userRoleInfo').textContent = 'Comprehensive attendance analytics for all employees';
+      } else {
+        // Regular user - hide admin features
+        document.getElementById('employeeFilterGroup').style.display = 'none';
+        document.getElementById('comparisonTab').style.display = 'none';
+        document.getElementById('comparisonOption').style.display = 'none';
+        document.getElementById('userRoleInfo').textContent = 'Your personal attendance analytics and reports';
+        
+        // Add user-view class to main content for CSS targeting
+        document.getElementById('mainContent').classList.add('user-view');
+      }
+    }
+
+    // Load users data based on role
+    async function loadUsersData() {
       try {
-        updateDebugInfo('Loading users from Firestore...');
+        updateDebugInfo('Loading users data...');
         const usersQuery = await db.collection("users").get();
         allUsers = [];
         usersQuery.forEach(doc => {
@@ -1016,16 +1039,26 @@
         // Update total employees count
         document.getElementById('totalEmployees').textContent = allUsers.length;
 
-        // Populate employee filter dropdown
-        const employeeFilter = document.getElementById('employeeFilter');
-        employeeFilter.innerHTML = '<option value="all">All Employees</option>';
-        
-        allUsers.forEach(user => {
+        // Populate employee filter dropdown (only for admins)
+        if (userRole === 'Admin' || userRole === 'admin') {
+          const employeeFilter = document.getElementById('employeeFilter');
+          employeeFilter.innerHTML = '<option value="all">All Employees</option>';
+          
+          allUsers.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.id;
+            option.textContent = `${user.username} (${user.empId || 'N/A'})`;
+            employeeFilter.appendChild(option);
+          });
+        } else {
+          // For regular users, set the employee filter to show only themselves
+          const employeeFilter = document.getElementById('employeeFilter');
+          employeeFilter.innerHTML = '';
           const option = document.createElement('option');
-          option.value = user.id;
-          option.textContent = `${user.username} (${user.empId || 'N/A'})`;
+          option.value = currentUser;
+          option.textContent = `${userData.username} (${userData.empId || 'N/A'})`;
           employeeFilter.appendChild(option);
-        });
+        }
 
         updateDebugInfo(`Loaded ${allUsers.length} users`);
 
@@ -1085,19 +1118,21 @@
         const employeeFilter = document.getElementById('employeeFilter').value;
         const reportType = document.getElementById('reportType').value;
 
-        updateDebugInfo(`Date range: ${dateRange.start} to ${dateRange.end}`);
+        updateDebugInfo(`Date range: ${dateRange.start} to ${dateRange.end}, Employee: ${employeeFilter}`);
 
         let attendanceQuery;
         
-        if (employeeFilter === 'all' && (userRole === 'Admin' || userRole === 'admin')) {
+        if ((userRole === 'Admin' || userRole === 'admin') && employeeFilter === 'all') {
           // Admin viewing all data
+          updateDebugInfo('Loading all attendance data (admin view)');
           attendanceQuery = await db.collection("attendance")
             .where("date", ">=", dateRange.start)
             .where("date", "<=", dateRange.end)
             .get();
         } else {
           // User viewing their own data or admin viewing specific user
-          const userId = employeeFilter === 'all' ? currentUser : employeeFilter;
+          const userId = (userRole === 'Admin' || userRole === 'admin') ? employeeFilter : currentUser;
+          updateDebugInfo(`Loading attendance data for user: ${userId}`);
           attendanceQuery = await db.collection("attendance")
             .where("userId", "==", userId)
             .where("date", ">=", dateRange.start)
@@ -1140,10 +1175,15 @@
         dateRange: dateRange
       };
 
+      // Determine which users to process based on role
+      const usersToProcess = (userRole === 'Admin' || userRole === 'admin') ? 
+        allUsers : 
+        allUsers.filter(user => user.id === currentUser);
+
       // Group data by user
       const userData = {};
       
-      allUsers.forEach(user => {
+      usersToProcess.forEach(user => {
         userData[user.id] = {
           user: user,
           records: [],
@@ -1230,7 +1270,10 @@
       tbody.innerHTML = '';
 
       Object.values(data.summary).forEach(userData => {
-        if (userData.records.length === 0 && userData.user.id !== currentUser) return;
+        // For regular users, only show their data
+        if ((userRole !== 'Admin' && userRole !== 'admin') && userData.user.id !== currentUser) {
+          return;
+        }
 
         const totalDays = userData.presentDays + userData.absentDays + userData.leaveDays;
         const attendanceRate = totalDays > 0 ? Math.round((userData.presentDays / totalDays) * 100) : 0;
@@ -1267,6 +1310,11 @@
       tbody.innerHTML = '';
 
       data.detailed.forEach(record => {
+        // For regular users, only show their data
+        if ((userRole !== 'Admin' && userRole !== 'admin') && record.userId !== currentUser) {
+          return;
+        }
+
         const user = allUsers.find(u => u.id === record.userId);
         const userName = user ? `${user.username} (${user.empId || 'N/A'})` : 'Unknown';
 
@@ -1503,7 +1551,8 @@
 
     // Update statistics
     function updateStatistics(data) {
-      const totalEmployees = allUsers.length;
+      const totalEmployees = (userRole === 'Admin' || userRole === 'admin') ? 
+        allUsers.length : 1;
       
       // Calculate working days in period
       const start = new Date(data.dateRange.start);
@@ -1535,6 +1584,7 @@
       document.getElementById('totalDays').textContent = workingDays;
       document.getElementById('avgAttendance').textContent = avgAttendance + '%';
       document.getElementById('avgHours').textContent = avgHours + 'h';
+      document.getElementById('totalEmployees').textContent = totalEmployees;
     }
 
     // Initialize charts
@@ -1602,6 +1652,11 @@
       let present = 0, absent = 0, leave = 0, holiday = 0;
       
       data.detailed.forEach(record => {
+        // For regular users, only count their data
+        if ((userRole !== 'Admin' && userRole !== 'admin') && record.userId !== currentUser) {
+          return;
+        }
+
         if (record.loginTime) {
           present++;
         } else if (record.status === 'leave') {
@@ -1629,6 +1684,11 @@
       let weekIndex = 0;
       
       data.detailed.forEach(record => {
+        // For regular users, only count their data
+        if ((userRole !== 'Admin' && userRole !== 'admin') && record.userId !== currentUser) {
+          return;
+        }
+
         if (record.loginTime) {
           weeks[weekIndex % 4]++;
         }
@@ -1689,7 +1749,11 @@
             dataToExport = prepareDetailedDataForExport(currentReportData);
             break;
           case 'comparison':
-            dataToExport = prepareComparisonDataForExport(currentReportData);
+            if (userRole === 'Admin' || userRole === 'admin') {
+              dataToExport = prepareComparisonDataForExport(currentReportData);
+            } else {
+              dataToExport = prepareSummaryDataForExport(currentReportData);
+            }
             break;
         }
 
@@ -1712,7 +1776,10 @@
       const exportData = [];
       
       Object.values(data.summary).forEach(userData => {
-        if (userData.records.length === 0 && userData.user.id !== currentUser) return;
+        // For regular users, only export their data
+        if ((userRole !== 'Admin' && userRole !== 'admin') && userData.user.id !== currentUser) {
+          return;
+        }
 
         const totalDays = userData.presentDays + userData.absentDays + userData.leaveDays;
         const attendanceRate = totalDays > 0 ? Math.round((userData.presentDays / totalDays) * 100) : 0;
@@ -1739,6 +1806,11 @@
       const exportData = [];
       
       data.detailed.forEach(record => {
+        // For regular users, only export their data
+        if ((userRole !== 'Admin' && userRole !== 'admin') && record.userId !== currentUser) {
+          return;
+        }
+
         const user = allUsers.find(u => u.id === record.userId);
         
         let workingHours = '-';
@@ -1832,9 +1904,15 @@
         const dateRange = `From ${currentReportData.dateRange.start} to ${currentReportData.dateRange.end}`;
         doc.text(dateRange, 105, 25, { align: 'center' });
         
+        // Add user info for regular users
+        if (userRole !== 'Admin' && userRole !== 'admin') {
+          doc.setFontSize(10);
+          doc.text(`Employee: ${userData.username} (${userData.empId || 'N/A'})`, 14, 35);
+        }
+        
         // Add summary table
         doc.autoTable({
-          startY: 35,
+          startY: userRole !== 'Admin' && userRole !== 'admin' ? 45 : 35,
           head: [['Employee', 'Present', 'Absent', 'Leave', 'Total Hours', 'Attendance %']],
           body: preparePDFSummaryData(currentReportData),
           theme: 'grid',
@@ -1862,7 +1940,10 @@
       const pdfData = [];
       
       Object.values(data.summary).forEach(userData => {
-        if (userData.records.length === 0 && userData.user.id !== currentUser) return;
+        // For regular users, only export their data
+        if ((userRole !== 'Admin' && userRole !== 'admin') && userData.user.id !== currentUser) {
+          return;
+        }
 
         const totalDays = userData.presentDays + userData.absentDays + userData.leaveDays;
         const attendanceRate = totalDays > 0 ? Math.round((userData.presentDays / totalDays) * 100) : 0;
