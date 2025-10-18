@@ -936,4 +936,539 @@
             myAttendance.sort((a, b) => new Date(b.date) - new Date(a.date));
 
             myAttendance.forEach(record => {
-                const row = createAttendanceRow(record, 'my');
+                const row = createAttendanceRow(record, 'my');                tbody.appendChild(row);
+            });
+        }
+
+        // Update team attendance table
+        function updateTeamAttendanceTable() {
+            const tbody = document.getElementById('teamAttendanceTableBody');
+            tbody.innerHTML = '';
+
+            if (userRole !== 'Admin' && userRole !== 'Sub Admin') {
+                return;
+            }
+
+            // Get team members (for now, show all users except current user)
+            const teamAttendance = attendanceData.filter(record => record.userId !== currentUser);
+
+            if (teamAttendance.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4">No team hours records found for the selected period</td></tr>';
+                return;
+            }
+
+            // Sort by date descending
+            teamAttendance.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            teamAttendance.forEach(record => {
+                const row = createAttendanceRow(record, 'team');
+                tbody.appendChild(row);
+            });
+        }
+
+        // Update all attendance table (admin only)
+        function updateAllAttendanceTable() {
+            const tbody = document.getElementById('allAttendanceTableBody');
+            tbody.innerHTML = '';
+
+            if (userRole !== 'Admin' && userRole !== 'Sub Admin') {
+                return;
+            }
+
+            if (attendanceData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4">No hours records found for the selected period</td></tr>';
+                return;
+            }
+
+            // Sort by date descending
+            attendanceData.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            attendanceData.forEach(record => {
+                const row = createAttendanceRow(record, 'all');
+                tbody.appendChild(row);
+            });
+        }
+
+        // Create attendance table row
+        function createAttendanceRow(record, tableType) {
+            const row = document.createElement('tr');
+            
+            // Format date and day
+            const dateObj = new Date(record.date);
+            const formattedDate = dateObj.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+            
+            // Calculate working hours
+            let workingHours = 'N/A';
+            let netHours = 'N/A';
+            let breakTime = 'N/A';
+            
+            if (record.checkIn && record.checkOut) {
+                const checkInTime = new Date(`${record.date}T${record.checkIn}`);
+                const checkOutTime = new Date(`${record.date}T${record.checkOut}`);
+                
+                // Calculate total working hours in hours
+                const totalMs = checkOutTime - checkInTime;
+                const totalHours = totalMs / (1000 * 60 * 60);
+                
+                // Calculate break time if available
+                let breakMs = 0;
+                if (record.breakStart && record.breakEnd) {
+                    const breakStartTime = new Date(`${record.date}T${record.breakStart}`);
+                    const breakEndTime = new Date(`${record.date}T${record.breakEnd}`);
+                    breakMs = breakEndTime - breakStartTime;
+                }
+                
+                const breakHours = breakMs / (1000 * 60 * 60);
+                const netHoursValue = totalHours - breakHours;
+                
+                // Format times
+                workingHours = totalHours.toFixed(2) + 'h';
+                breakTime = breakHours.toFixed(2) + 'h';
+                netHours = netHoursValue.toFixed(2) + 'h';
+                
+                // Add overtime/undertime indicators
+                if (netHoursValue > 8) {
+                    netHours = `<span class="overtime">${netHours} (+${(netHoursValue - 8).toFixed(2)}h)</span>`;
+                } else if (netHoursValue < 8 && record.status === 'present') {
+                    netHours = `<span class="undertime">${netHours} (-${(8 - netHoursValue).toFixed(2)}h)</span>`;
+                } else {
+                    netHours = `<span class="working-hours">${netHours}</span>`;
+                }
+            }
+
+            // Get employee name
+            let employeeName = record.username || 'Unknown';
+            if (tableType !== 'my') {
+                const user = allUsers.find(u => u.id === record.userId);
+                employeeName = user ? `${user.username} (${user.empId || 'N/A'})` : 'Unknown';
+            }
+
+            // Create status badge
+            let statusBadge = '';
+            switch (record.status) {
+                case 'present':
+                    statusBadge = `<span class="status-present">Present</span>`;
+                    break;
+                case 'absent':
+                    statusBadge = `<span class="status-absent">Absent</span>`;
+                    break;
+                case 'leave':
+                    statusBadge = `<span class="status-leave">On Leave</span>`;
+                    break;
+                case 'holiday':
+                    statusBadge = `<span class="status-holiday">Holiday</span>`;
+                    break;
+                default:
+                    statusBadge = `<span class="badge bg-secondary">${record.status}</span>`;
+            }
+
+            // Create row HTML based on table type
+            if (tableType === 'my') {
+                row.innerHTML = `
+                    <td>${formattedDate}</td>
+                    <td>${dayName}</td>
+                    <td>${record.checkIn || '-'}</td>
+                    <td>${record.checkOut || '-'}</td>
+                    <td>${workingHours}</td>
+                    <td>${breakTime}</td>
+                    <td>${netHours}</td>
+                    <td>${statusBadge}</td>
+                    <td>${record.remarks || '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editAttendance('${record.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteAttendance('${record.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+            } else {
+                row.innerHTML = `
+                    <td>${employeeName}</td>
+                    <td>${formattedDate}</td>
+                    <td>${record.checkIn || '-'}</td>
+                    <td>${record.checkOut || '-'}</td>
+                    <td>${workingHours}</td>
+                    <td>${breakTime}</td>
+                    <td>${netHours}</td>
+                    <td>${statusBadge}</td>
+                    <td>${record.remarks || '-'}</td>
+                    <td>
+                        <div class="admin-actions">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editAttendance('${record.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteAttendance('${record.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+            }
+
+            return row;
+        }
+
+        // Update attendance statistics
+        function updateAttendanceStats() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Get today's attendance
+            const todayAttendance = attendanceData.filter(record => record.date === today);
+            
+            // Count by status
+            const presentToday = todayAttendance.filter(record => record.status === 'present').length;
+            const absentToday = todayAttendance.filter(record => record.status === 'absent').length;
+            const onLeaveToday = todayAttendance.filter(record => record.status === 'leave').length;
+            
+            // Calculate attendance rate for the month
+            const totalWorkDays = calculateTotalWorkDays();
+            const presentCount = attendanceData.filter(record => 
+                record.userId === currentUser && record.status === 'present'
+            ).length;
+            
+            const attendanceRate = totalWorkDays > 0 ? 
+                Math.round((presentCount / totalWorkDays) * 100) : 0;
+            
+            // Update DOM
+            document.getElementById('presentToday').textContent = presentToday;
+            document.getElementById('absentToday').textContent = absentToday;
+            document.getElementById('onLeaveToday').textContent = onLeaveToday;
+            document.getElementById('attendanceRate').textContent = `${attendanceRate}%`;
+        }
+
+        // Calculate total work days in the current month
+        function calculateTotalWorkDays() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            
+            let workDays = 0;
+            for (let day = firstDay; day <= lastDay; day.setDate(day.getDate() + 1)) {
+                // Count only weekdays (Monday to Friday)
+                if (day.getDay() !== 0 && day.getDay() !== 6) {
+                    workDays++;
+                }
+            }
+            
+            return workDays;
+        }
+
+        // Update summary cards
+        function updateSummaryCards() {
+            const summaryContainer = document.getElementById('attendanceSummary');
+            
+            // Calculate summary data
+            const totalRecords = attendanceData.length;
+            const presentCount = attendanceData.filter(record => record.status === 'present').length;
+            const absentCount = attendanceData.filter(record => record.status === 'absent').length;
+            const leaveCount = attendanceData.filter(record => record.status === 'leave').length;
+            const holidayCount = attendanceData.filter(record => record.status === 'holiday').length;
+            
+            // Calculate average working hours for present days
+            const presentRecords = attendanceData.filter(record => 
+                record.status === 'present' && record.checkIn && record.checkOut
+            );
+            
+            let totalNetHours = 0;
+            presentRecords.forEach(record => {
+                if (record.checkIn && record.checkOut) {
+                    const checkInTime = new Date(`${record.date}T${record.checkIn}`);
+                    const checkOutTime = new Date(`${record.date}T${record.checkOut}`);
+                    const totalMs = checkOutTime - checkInTime;
+                    
+                    let breakMs = 0;
+                    if (record.breakStart && record.breakEnd) {
+                        const breakStartTime = new Date(`${record.date}T${record.breakStart}`);
+                        const breakEndTime = new Date(`${record.date}T${record.breakEnd}`);
+                        breakMs = breakEndTime - breakStartTime;
+                    }
+                    
+                    const netHours = (totalMs - breakMs) / (1000 * 60 * 60);
+                    totalNetHours += netHours;
+                }
+            });
+            
+            const avgWorkingHours = presentRecords.length > 0 ? 
+                (totalNetHours / presentRecords.length).toFixed(2) + 'h' : '0h';
+            
+            summaryContainer.innerHTML = `
+                <div class="summary-item">
+                    <div class="summary-label">Total Records</div>
+                    <div class="summary-value">${totalRecords}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Present Days</div>
+                    <div class="summary-value">${presentCount}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Absent Days</div>
+                    <div class="summary-value">${absentCount}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Leave Days</div>
+                    <div class="summary-value">${leaveCount}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Holidays</div>
+                    <div class="summary-value">${holidayCount}</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Avg Hours</div>
+                    <div class="summary-value">${avgWorkingHours}</div>
+                </div>
+            `;
+        }
+
+        // Mark attendance function
+        document.getElementById('submitAttendanceBtn').addEventListener('click', async function() {
+            try {
+                const form = document.getElementById('markAttendanceForm');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                const attendanceData = {
+                    userId: currentUser,
+                    username: userData.username,
+                    date: document.getElementById('attendanceDate').value,
+                    checkIn: document.getElementById('checkInTime').value,
+                    checkOut: document.getElementById('checkOutTime').value || null,
+                    breakStart: document.getElementById('breakStartTime').value || null,
+                    breakEnd: document.getElementById('breakEndTime').value || null,
+                    status: document.getElementById('attendanceStatus').value,
+                    remarks: document.getElementById('attendanceRemarks').value || '',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                // Check if attendance already exists for this date and user
+                const existingQuery = await db.collection("attendance")
+                    .where("userId", "==", currentUser)
+                    .where("date", "==", attendanceData.date)
+                    .get();
+
+                if (!existingQuery.empty) {
+                    showToast('Hours already marked for this date', 'warning');
+                    return;
+                }
+
+                await db.collection("attendance").add(attendanceData);
+                
+                showToast('Hours marked successfully!');
+                $('#markAttendanceModal').modal('hide');
+                form.reset();
+                
+                // Reload data
+                await loadAttendanceData();
+
+            } catch (error) {
+                console.error("Error marking hours:", error);
+                showToast('Error marking hours: ' + error.message, 'error');
+            }
+        });
+
+        // Bulk attendance function
+        document.getElementById('submitBulkAttendanceBtn').addEventListener('click', async function() {
+            try {
+                const form = document.getElementById('bulkAttendanceForm');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                const selectedEmployees = Array.from(document.getElementById('bulkEmployees').selectedOptions)
+                    .map(option => option.value);
+
+                if (selectedEmployees.length === 0) {
+                    showToast('Please select at least one employee', 'warning');
+                    return;
+                }
+
+                const bulkData = {
+                    date: document.getElementById('bulkAttendanceDate').value,
+                    status: document.getElementById('bulkAttendanceStatus').value,
+                    remarks: document.getElementById('bulkRemarks').value || '',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                let successCount = 0;
+                let errorCount = 0;
+
+                // Process each selected employee
+                for (const employeeId of selectedEmployees) {
+                    try {
+                        const user = allUsers.find(u => u.id === employeeId);
+                        if (!user) continue;
+
+                        // Check if attendance already exists
+                        const existingQuery = await db.collection("attendance")
+                            .where("userId", "==", employeeId)
+                            .where("date", "==", bulkData.date)
+                            .get();
+
+                        if (!existingQuery.empty) {
+                            errorCount++;
+                            continue;
+                        }
+
+                        // Add attendance record
+                        await db.collection("attendance").add({
+                            ...bulkData,
+                            userId: employeeId,
+                            username: user.username
+                        });
+
+                        successCount++;
+
+                    } catch (error) {
+                        console.error(`Error processing employee ${employeeId}:`, error);
+                        errorCount++;
+                    }
+                }
+
+                showToast(`Bulk update completed: ${successCount} successful, ${errorCount} failed`);
+                $('#bulkAttendanceModal').modal('hide');
+                form.reset();
+                
+                // Reload data
+                await loadAttendanceData();
+
+            } catch (error) {
+                console.error("Error in bulk hours update:", error);
+                showToast('Error in bulk hours update: ' + error.message, 'error');
+            }
+        });
+
+        // Edit attendance function
+        async function editAttendance(attendanceId) {
+            try {
+                const attendanceDoc = await db.collection("attendance").doc(attendanceId).get();
+                if (!attendanceDoc.exists) {
+                    showToast('Hours record not found', 'error');
+                    return;
+                }
+
+                const record = attendanceDoc.data();
+
+                // Populate edit form
+                document.getElementById('editAttendanceId').value = attendanceId;
+                document.getElementById('editAttendanceDate').value = record.date;
+                document.getElementById('editCheckInTime').value = record.checkIn || '';
+                document.getElementById('editCheckOutTime').value = record.checkOut || '';
+                document.getElementById('editBreakStartTime').value = record.breakStart || '';
+                document.getElementById('editBreakEndTime').value = record.breakEnd || '';
+                document.getElementById('editAttendanceStatus').value = record.status;
+                document.getElementById('editAttendanceRemarks').value = record.remarks || '';
+
+                // Show edit modal
+                $('#editAttendanceModal').modal('show');
+
+            } catch (error) {
+                console.error("Error loading hours for edit:", error);
+                showToast('Error loading hours record', 'error');
+            }
+        }
+
+        // Update attendance function
+        document.getElementById('updateAttendanceBtn').addEventListener('click', async function() {
+            try {
+                const form = document.getElementById('editAttendanceForm');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                const attendanceId = document.getElementById('editAttendanceId').value;
+                const updateData = {
+                    date: document.getElementById('editAttendanceDate').value,
+                    checkIn: document.getElementById('editCheckInTime').value,
+                    checkOut: document.getElementById('editCheckOutTime').value || null,
+                    breakStart: document.getElementById('editBreakStartTime').value || null,
+                    breakEnd: document.getElementById('editBreakEndTime').value || null,
+                    status: document.getElementById('editAttendanceStatus').value,
+                    remarks: document.getElementById('editAttendanceRemarks').value || '',
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                await db.collection("attendance").doc(attendanceId).update(updateData);
+                
+                showToast('Hours updated successfully!');
+                $('#editAttendanceModal').modal('hide');
+                
+                // Reload data
+                await loadAttendanceData();
+
+            } catch (error) {
+                console.error("Error updating hours:", error);
+                showToast('Error updating hours: ' + error.message, 'error');
+            }
+        });
+
+        // Delete attendance function
+        async function deleteAttendance(attendanceId) {
+            if (!confirm('Are you sure you want to delete this hours record?')) {
+                return;
+            }
+
+            try {
+                await db.collection("attendance").doc(attendanceId).delete();
+                showToast('Hours record deleted successfully!');
+                
+                // Reload data
+                await loadAttendanceData();
+
+            } catch (error) {
+                console.error("Error deleting hours:", error);
+                showToast('Error deleting hours record', 'error');
+            }
+        }
+
+        // Logout function
+        function logout() {
+            sessionStorage.removeItem("username");
+            showToast('Logged out successfully');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        }
+
+        // Auto-fill current time for check-in
+        document.getElementById('markAttendanceBtn').addEventListener('click', function() {
+            const now = new Date();
+            const currentTime = now.toTimeString().split(' ')[0].substring(0, 5);
+            
+            // Set current time for check-in
+            document.getElementById('checkInTime').value = currentTime;
+            
+            // Set check-out time to 9 hours later (standard work day)
+            const checkOutTime = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+            const checkOutTimeStr = checkOutTime.toTimeString().split(' ')[0].substring(0, 5);
+            document.getElementById('checkOutTime').value = checkOutTimeStr;
+            
+            // Set break time (1 hour lunch break)
+            const breakStartTime = new Date(now.getTime() + 4 * 60 * 60 * 1000);
+            const breakStartStr = breakStartTime.toTimeString().split(' ')[0].substring(0, 5);
+            document.getElementById('breakStartTime').value = breakStartStr;
+            
+            const breakEndTime = new Date(now.getTime() + 5 * 60 * 60 * 1000);
+            const breakEndStr = breakEndTime.toTimeString().split(' ')[0].substring(0, 5);
+            document.getElementById('breakEndTime').value = breakEndStr;
+        });
+
+        // Initialize app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+    </script>
+</body>
+</html>
