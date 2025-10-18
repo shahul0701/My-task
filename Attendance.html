@@ -1013,20 +1013,18 @@
       }
     }
 
-    // Load last 5 days attendance history - FIXED VERSION
+    // Load last 5 days attendance history - COMPLETELY FIXED VERSION
     async function loadAttendanceHistory() {
       const tbody = document.getElementById('attendanceTableBody');
       tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Loading attendance data...</td></tr>';
 
       try {
-        // Get all attendance records for the user and filter client-side
+        // Get all attendance records for the user (no complex queries)
         const attendanceQuery = await db.collection("attendance")
           .where("userId", "==", currentUser)
-          .orderBy("date", "desc")
-          .limit(30) // Get more records to ensure we have last 5 days
           .get();
 
-        console.log("Found", attendanceQuery.size, "attendance records");
+        console.log("Found", attendanceQuery.size, "attendance records total");
 
         if (attendanceQuery.empty) {
           tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #666;">No attendance records found.</td></tr>';
@@ -1058,7 +1056,7 @@
 
       } catch (error) {
         console.error("Error loading attendance history:", error);
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #e74c3c;">Error loading attendance data: ' + error.message + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #e74c3c;">Error loading attendance data. Please try again.</td></tr>';
       }
     }
 
@@ -1067,8 +1065,14 @@
       
       if (!record) {
         // No attendance record for this date
+        const formattedDate = new Date(dateStr).toLocaleDateString('en-US', { 
+          weekday: 'short', 
+          month: 'short', 
+          day: 'numeric' 
+        });
+        
         row.innerHTML = `
-          <td>${new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</td>
+          <td>${formattedDate}</td>
           <td>-</td>
           <td>-</td>
           <td>-</td>
@@ -1117,11 +1121,38 @@
           // Day is still in progress (today)
           status = 'Working';
           totalHours = 'In Progress';
+          
+          // Calculate break time for current day
+          if (record.breaks && Array.isArray(record.breaks)) {
+            let breakMs = 0;
+            record.breaks.forEach(breakRecord => {
+              if (breakRecord.breakOut && breakRecord.breakIn) {
+                const breakOut = parseTimeString(breakRecord.breakOut, record.date);
+                const breakIn = parseTimeString(breakRecord.breakIn, record.date);
+                if (breakOut && breakIn) {
+                  breakMs += (breakIn - breakOut);
+                }
+              } else if (breakRecord.breakOut && !breakRecord.breakIn) {
+                // Currently on break
+                const breakOut = parseTimeString(breakRecord.breakOut, record.date);
+                if (breakOut) {
+                  breakMs += (new Date() - breakOut);
+                }
+              }
+            });
+            breakTime = `${Math.floor(breakMs / (1000 * 60))}m`;
+          }
         }
       }
 
+      const formattedDate = new Date(record.date).toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+
       row.innerHTML = `
-        <td>${new Date(record.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</td>
+        <td>${formattedDate}</td>
         <td>${record.loginTime || '-'}</td>
         <td>${record.logoutTime || '-'}</td>
         <td>${breakTime}</td>
@@ -1136,14 +1167,8 @@
     async function initializeCharts() {
       try {
         // Get last 7 days data for the chart
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
-
         const attendanceQuery = await db.collection("attendance")
           .where("userId", "==", currentUser)
-          .where("date", ">=", sevenDaysAgoStr)
-          .orderBy("date", "asc")
           .get();
 
         const weeklyData = {};
