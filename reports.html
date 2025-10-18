@@ -1,0 +1,1905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reports - Attendance System</title>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- SheetJS for Excel Export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- jsPDF for PDF Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #2c3e50;
+    }
+
+    /* Topbar */
+    .topbar {
+      height: 70px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 30px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 100;
+    }
+
+    .topbar .left {
+      display: flex;
+      align-items: center;
+      gap: 25px;
+    }
+
+    .topbar .left a {
+      color: #2c3e50;
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 16px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      transition: all 0.3s ease;
+    }
+
+    .topbar .left a:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    #dateTime {
+      font-weight: 600;
+      font-size: 16px;
+      color: #2c3e50;
+    }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .profile img {
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .profile-name {
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      top: 70px;
+      left: 0;
+      width: 250px;
+      height: calc(100vh - 70px);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      padding: 20px 0;
+      z-index: 99;
+      overflow-y: auto;
+    }
+
+    .sidebar-toggle {
+      position: fixed;
+      top: 80px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      z-index: 101;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: none;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .sidebar li {
+      margin-bottom: 5px;
+    }
+
+    .sidebar a {
+      display: block;
+      padding: 15px 25px;
+      color: #2c3e50;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      border-left: 4px solid transparent;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      background: rgba(102, 126, 234, 0.1);
+      border-left-color: #667eea;
+      color: #667eea;
+    }
+
+    .admin-only {
+      display: none;
+      background: rgba(255, 193, 7, 0.1);
+      border-left: 4px solid #ffc107;
+    }
+
+    .admin-only.visible {
+      display: block;
+    }
+
+    /* Main Content */
+    .main-content {
+      margin: 90px 30px 30px 280px;
+      padding: 30px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+      min-height: calc(100vh - 120px);
+      transition: margin-left 0.3s ease;
+    }
+
+    /* Page Header */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .page-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2c3e50;
+    }
+
+    .page-subtitle {
+      color: #7f8c8d;
+      margin-top: 5px;
+    }
+
+    .export-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .export-btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .export-excel {
+      background: linear-gradient(135deg, #217346, #27ae60);
+      color: white;
+    }
+
+    .export-pdf {
+      background: linear-gradient(135deg, #c0392b, #e74c3c);
+      color: white;
+    }
+
+    .export-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+
+    /* Filter Section */
+    .filter-section {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      align-items: end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .filter-label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #2c3e50;
+    }
+
+    .filter-select, .filter-input {
+      padding: 12px;
+      border: 2px solid #e9ecef;
+      border-radius: 10px;
+      font-size: 14px;
+      transition: border-color 0.3s ease;
+    }
+
+    .filter-select:focus, .filter-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .filter-btn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .filter-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+      border-left: 5px solid #667eea;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .stat-icon {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: #7f8c8d;
+      font-weight: 600;
+    }
+
+    /* Charts Section */
+    .charts-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    .chart-container {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .chart-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: white;
+      border-radius: 15px 15px 0 0;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 0;
+      overflow-x: auto;
+    }
+
+    .tab {
+      padding: 15px 25px;
+      background: none;
+      border: none;
+      font-weight: 600;
+      color: #7f8c8d;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+    }
+
+    .tab.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+
+    .tab-content {
+      display: none;
+      background: white;
+      padding: 0;
+      border-radius: 0 0 15px 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Table Styles */
+    .table-container {
+      overflow-x: auto;
+      border-radius: 0 0 15px 15px;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      min-width: 1000px;
+    }
+
+    table th {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      font-weight: 600;
+      padding: 15px 12px;
+      text-align: left;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    table td {
+      padding: 12px;
+      border-bottom: 1px solid #f1f3f4;
+    }
+
+    table tbody tr:hover {
+      background: #f8f9ff;
+    }
+
+    .status-present {
+      background: #d4edda;
+      color: #155724;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .status-absent {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .status-leave {
+      background: #fff3cd;
+      color: #856404;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .status-holiday {
+      background: #cce7ff;
+      color: #004085;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .highlight-good {
+      background: #d4edda;
+      font-weight: 600;
+    }
+
+    .highlight-bad {
+      background: #f8d7da;
+      font-weight: 600;
+    }
+
+    .comparison-table th {
+      position: sticky;
+      left: 0;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      z-index: 20;
+    }
+
+    .comparison-table td:first-child {
+      position: sticky;
+      left: 0;
+      background: white;
+      z-index: 15;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      top: 90px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      z-index: 10000;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      max-width: 300px;
+      transform: translateX(150%);
+    }
+
+    .toast.show {
+      transform: translateX(0);
+    }
+
+    .toast.success { background: #27ae60; }
+    .toast.error { background: #e74c3c; }
+    .toast.warning { background: #f39c12; }
+    .toast.info { background: #3498db; }
+
+    /* Loading States */
+    .loading {
+      color: #6c757d;
+      font-style: italic;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 40px;
+      color: #6c757d;
+    }
+
+    /* Debug Info */
+    .debug-info {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      font-family: monospace;
+      font-size: 12px;
+      border-left: 4px solid #dc3545;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .charts-section {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar-toggle {
+        display: block;
+      }
+
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+
+      .sidebar.visible {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin: 90px 15px 15px 15px;
+        padding: 20px;
+      }
+
+      .filter-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .tabs {
+        flex-direction: column;
+      }
+
+      .tab {
+        border-bottom: none;
+        border-left: 3px solid transparent;
+        text-align: left;
+      }
+
+      .tab.active {
+        border-left-color: #667eea;
+        border-bottom: none;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .export-buttons {
+        justify-content: center;
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        padding: 0 15px;
+      }
+
+      .topbar .left {
+        gap: 10px;
+      }
+
+      .topbar .left a {
+        font-size: 14px;
+        padding: 8px 12px;
+      }
+
+      .export-buttons {
+        flex-direction: column;
+      }
+
+      .export-btn {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="left">
+      <a href="#" id="homeButton">🏠 Home</a>
+    </div>
+    <div id="dateTime">Loading...</div>
+    <div class="profile">
+      <img src="https://i.pravatar.cc/45" alt="User" />
+      <span class="profile-name" id="profileName">User</span>
+    </div>
+  </div>
+
+  <!-- Sidebar Toggle -->
+  <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <ul>
+      <li><a href="Leave.html">📋 Leave</a></li>
+      <li><a href="Holiday.html">🎄 Holiday</a></li>
+      <li><a href="Attendance.html">⏱️ Attendance Tracker</a></li>
+      <li><a href="Hours.html">🕒 Hours</a></li>
+      <li><a href="Reports.html" class="active">📊 Reports</a></li>
+      <!-- Admin Only Menu -->
+      <li class="admin-only" id="adminMenu">
+        <a href="AllData.html">🔍 Detailed View</a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content" id="mainContent">
+    <!-- Debug Info -->
+    <div class="debug-info" id="debugInfo">
+      Initializing reports application...
+    </div>
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Attendance Reports</h1>
+        <p class="page-subtitle">Comprehensive attendance analytics and export functionality</p>
+      </div>
+      <div class="export-buttons">
+        <button class="export-btn export-excel" onclick="exportToExcel()">
+          <span>📊 Export to Excel</span>
+        </button>
+        <button class="export-btn export-pdf" onclick="exportToPDF()">
+          <span>📄 Export to PDF</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+      <div class="filter-grid">
+        <div class="filter-group">
+          <label class="filter-label">Report Period</label>
+          <select class="filter-select" id="periodFilter">
+            <option value="current_month">Current Month</option>
+            <option value="last_month">Last Month</option>
+            <option value="current_quarter">Current Quarter</option>
+            <option value="last_quarter">Last Quarter</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+        <div class="filter-group" id="customDateRange" style="display: none;">
+          <label class="filter-label">Custom Date Range</label>
+          <div style="display: flex; gap: 10px;">
+            <input type="date" class="filter-input" id="startDate" style="flex: 1;">
+            <input type="date" class="filter-input" id="endDate" style="flex: 1;">
+          </div>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Employee</label>
+          <select class="filter-select" id="employeeFilter">
+            <option value="all">All Employees</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Report Type</label>
+          <select class="filter-select" id="reportType">
+            <option value="summary">Summary Report</option>
+            <option value="detailed">Detailed Report</option>
+            <option value="comparison">Comparison Report</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <button class="filter-btn" onclick="generateReport()">
+            <span>📈 Generate Report</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-number" id="totalEmployees">0</div>
+        <div class="stat-label">Total Employees</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-number" id="totalDays">0</div>
+        <div class="stat-label">Working Days</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-number" id="avgAttendance">0%</div>
+        <div class="stat-label">Avg Attendance</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⏱️</div>
+        <div class="stat-number" id="avgHours">0h</div>
+        <div class="stat-label">Avg Daily Hours</div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section">
+      <div class="chart-container">
+        <div class="chart-title">Attendance Distribution</div>
+        <canvas id="attendanceChart"></canvas>
+      </div>
+      <div class="chart-container">
+        <div class="chart-title">Weekly Trend</div>
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs-container">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('summaryReport')">Summary Report</button>
+        <button class="tab" onclick="switchTab('detailedReport')">Detailed Report</button>
+        <button class="tab" onclick="switchTab('comparisonReport')" id="comparisonTab" style="display: none;">Comparison Report</button>
+      </div>
+
+      <!-- Summary Report Tab -->
+      <div class="tab-content active" id="summaryReport">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Present Days</th>
+                <th>Absent Days</th>
+                <th>Leave Days</th>
+                <th>Total Hours</th>
+                <th>Avg Hours/Day</th>
+                <th>Attendance %</th>
+                <th>Overtime Hours</th>
+              </tr>
+            </thead>
+            <tbody id="summaryTableBody">
+              <tr>
+                <td colspan="8" class="no-data">
+                  <div>Generate report to view summary data</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Detailed Report Tab -->
+      <div class="tab-content" id="detailedReport">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Employee</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Working Hours</th>
+                <th>Break Time</th>
+                <th>Net Hours</th>
+                <th>Status</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+            <tbody id="detailedTableBody">
+              <tr>
+                <td colspan="9" class="no-data">
+                  <div>Generate report to view detailed data</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Comparison Report Tab -->
+      <div class="tab-content" id="comparisonReport">
+        <div class="table-container">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <!-- Dynamic columns will be added here -->
+              </tr>
+            </thead>
+            <tbody id="comparisonTableBody">
+              <tr>
+                <td colspan="100" class="no-data">
+                  <div>Generate comparison report to view data</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDYhLNuJKj2ucwGimfddTfpTb32Y0c-bXg",
+      authDomain: "mytask-96a79.firebaseapp.com",
+      databaseURL: "https://mytask-96a79-default-rtdb.firebaseio.com",
+      projectId: "mytask-96a79",
+      storageBucket: "mytask-96a79.firebasestorage.app",
+      messagingSenderId: "963509757773",
+      appId: "1:963509757773:web:d9c81a108f5873702eb904",
+      measurementId: "G-L9C1LTCZRN"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Global variables
+    let currentUser = null;
+    let userData = null;
+    let userRole = null;
+    let allUsers = [];
+    let reportData = [];
+    let attendanceChart = null;
+    let trendChart = null;
+    let currentReportData = null;
+
+    // Update debug info
+    function updateDebugInfo(message) {
+      const debugInfo = document.getElementById('debugInfo');
+      const timestamp = new Date().toLocaleTimeString();
+      debugInfo.innerHTML = `<strong>Debug (${timestamp}):</strong> ${message}`;
+      console.log('DEBUG:', message);
+    }
+
+    // Toast notification function
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast';
+      toast.classList.add(type, 'show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 4000);
+    }
+
+    // Update date time
+    function updateDateTime() {
+      const now = new Date();
+      const options = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      };
+      document.getElementById('dateTime').textContent = now.toLocaleDateString('en-US', options);
+    }
+
+    // Home button click handler
+    function handleHomeClick() {
+      if (userRole === 'Admin') {
+        window.location.href = 'Home.html';
+      } else {
+        window.location.href = 'UserDashboard.html';
+      }
+    }
+
+    // Switch tabs
+    function switchTab(tabName) {
+      // Hide all tab contents
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Remove active class from all tabs
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Show selected tab content
+      document.getElementById(tabName).classList.add('active');
+      
+      // Add active class to clicked tab
+      event.target.classList.add('active');
+    }
+
+    // Initialize the application
+    async function initializeApp() {
+      updateDebugInfo('Starting reports initialization...');
+      updateDateTime();
+      setInterval(updateDateTime, 1000);
+
+      // Get user from session storage
+      const username = sessionStorage.getItem("username");
+      if (!username) {
+        updateDebugInfo('No user found in session storage');
+        showToast('Please login first', 'error');
+        setTimeout(() => window.location.href = 'index.html', 2000);
+        return;
+      }
+
+      document.getElementById('profileName').textContent = username;
+
+      // Set up home button click handler
+      document.getElementById('homeButton').addEventListener('click', handleHomeClick);
+
+      // Set up period filter change handler
+      document.getElementById('periodFilter').addEventListener('change', function() {
+        const customRange = document.getElementById('customDateRange');
+        customRange.style.display = this.value === 'custom' ? 'block' : 'none';
+      });
+
+      // Set default dates for custom range
+      const today = new Date();
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
+      document.getElementById('endDate').value = today.toISOString().split('T')[0];
+
+      // Find user in Firestore
+      try {
+        updateDebugInfo('Searching for user in Firestore...');
+        const userQuery = await db.collection("users")
+          .where("username", "==", username)
+          .get();
+
+        if (userQuery.empty) {
+          updateDebugInfo('User not found in Firestore');
+          showToast('User not found in system', 'error');
+          return;
+        }
+
+        userData = userQuery.docs[0].data();
+        currentUser = userQuery.docs[0].id;
+        userRole = userData.role || 'employee';
+
+        updateDebugInfo(`User loaded: ${userData.username}, Role: ${userRole}`);
+
+        // Check if user is admin
+        if (userRole === 'Admin' || userRole === 'admin') {
+          document.getElementById('adminMenu').classList.add('visible');
+          document.getElementById('comparisonTab').style.display = 'block';
+        }
+
+        // Load all users
+        await loadAllUsers();
+        
+        // Initialize charts
+        initializeCharts();
+
+        updateDebugInfo('Reports application initialized successfully');
+
+      } catch (error) {
+        updateDebugInfo('Error: ' + error.message);
+        console.error("Error initializing app:", error);
+        showToast('Error loading application: ' + error.message, 'error');
+      }
+    }
+
+    // Load all users for filters
+    async function loadAllUsers() {
+      try {
+        updateDebugInfo('Loading users from Firestore...');
+        const usersQuery = await db.collection("users").get();
+        allUsers = [];
+        usersQuery.forEach(doc => {
+          allUsers.push({ id: doc.id, ...doc.data() });
+        });
+
+        // Update total employees count
+        document.getElementById('totalEmployees').textContent = allUsers.length;
+
+        // Populate employee filter dropdown
+        const employeeFilter = document.getElementById('employeeFilter');
+        employeeFilter.innerHTML = '<option value="all">All Employees</option>';
+        
+        allUsers.forEach(user => {
+          const option = document.createElement('option');
+          option.value = user.id;
+          option.textContent = `${user.username} (${user.empId || 'N/A'})`;
+          employeeFilter.appendChild(option);
+        });
+
+        updateDebugInfo(`Loaded ${allUsers.length} users`);
+
+      } catch (error) {
+        updateDebugInfo('Error loading users: ' + error.message);
+        console.error("Error loading users:", error);
+      }
+    }
+
+    // Get date range based on period selection
+    function getDateRange() {
+      const period = document.getElementById('periodFilter').value;
+      const today = new Date();
+      let startDate, endDate;
+
+      switch (period) {
+        case 'current_month':
+          startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+          endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+          break;
+        case 'last_month':
+          startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+          endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+          break;
+        case 'current_quarter':
+          const quarter = Math.floor(today.getMonth() / 3);
+          startDate = new Date(today.getFullYear(), quarter * 3, 1);
+          endDate = new Date(today.getFullYear(), (quarter + 1) * 3, 0);
+          break;
+        case 'last_quarter':
+          const lastQuarter = Math.floor(today.getMonth() / 3) - 1;
+          startDate = new Date(today.getFullYear(), lastQuarter * 3, 1);
+          endDate = new Date(today.getFullYear(), (lastQuarter + 1) * 3, 0);
+          break;
+        case 'custom':
+          startDate = new Date(document.getElementById('startDate').value);
+          endDate = new Date(document.getElementById('endDate').value);
+          break;
+        default:
+          startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+          endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      }
+
+      return {
+        start: startDate.toISOString().split('T')[0],
+        end: endDate.toISOString().split('T')[0]
+      };
+    }
+
+    // Generate report
+    async function generateReport() {
+      try {
+        updateDebugInfo('Generating report...');
+        showToast('Generating report...', 'info');
+
+        const dateRange = getDateRange();
+        const employeeFilter = document.getElementById('employeeFilter').value;
+        const reportType = document.getElementById('reportType').value;
+
+        updateDebugInfo(`Date range: ${dateRange.start} to ${dateRange.end}`);
+
+        let attendanceQuery;
+        
+        if (employeeFilter === 'all' && (userRole === 'Admin' || userRole === 'admin')) {
+          // Admin viewing all data
+          attendanceQuery = await db.collection("attendance")
+            .where("date", ">=", dateRange.start)
+            .where("date", "<=", dateRange.end)
+            .get();
+        } else {
+          // User viewing their own data or admin viewing specific user
+          const userId = employeeFilter === 'all' ? currentUser : employeeFilter;
+          attendanceQuery = await db.collection("attendance")
+            .where("userId", "==", userId)
+            .where("date", ">=", dateRange.start)
+            .where("date", "<=", dateRange.end)
+            .get();
+        }
+
+        reportData = [];
+        attendanceQuery.forEach(doc => {
+          reportData.push({ id: doc.id, ...doc.data() });
+        });
+
+        updateDebugInfo(`Loaded ${reportData.length} attendance records`);
+
+        // Process and display report data
+        currentReportData = processReportData(reportData, dateRange);
+        displayReport(currentReportData, reportType);
+
+        // Update statistics
+        updateStatistics(currentReportData);
+
+        // Update charts
+        updateCharts(currentReportData);
+
+        showToast('Report generated successfully!', 'success');
+
+      } catch (error) {
+        updateDebugInfo('Error generating report: ' + error.message);
+        console.error("Error generating report:", error);
+        showToast('Error generating report: ' + error.message, 'error');
+      }
+    }
+
+    // Process report data
+    function processReportData(rawData, dateRange) {
+      const processedData = {
+        summary: {},
+        detailed: rawData,
+        comparison: {},
+        dateRange: dateRange
+      };
+
+      // Group data by user
+      const userData = {};
+      
+      allUsers.forEach(user => {
+        userData[user.id] = {
+          user: user,
+          records: [],
+          presentDays: 0,
+          absentDays: 0,
+          leaveDays: 0,
+          totalHours: 0,
+          overtimeHours: 0
+        };
+      });
+
+      // Process each attendance record
+      rawData.forEach(record => {
+        if (!userData[record.userId]) return;
+
+        userData[record.userId].records.push(record);
+
+        // Count status
+        if (record.loginTime) {
+          userData[record.userId].presentDays++;
+          
+          // Calculate hours if both login and logout times exist
+          if (record.loginTime && record.logoutTime) {
+            const loginTime = parseTimeString(record.loginTime, record.date);
+            const logoutTime = parseTimeString(record.logoutTime, record.date);
+            
+            if (loginTime && logoutTime) {
+              const totalMs = logoutTime - loginTime;
+              let breakMs = 0;
+
+              // Calculate break time
+              if (record.breaks && Array.isArray(record.breaks)) {
+                record.breaks.forEach(breakRecord => {
+                  if (breakRecord.breakOut && breakRecord.breakIn) {
+                    const breakOut = parseTimeString(breakRecord.breakOut, record.date);
+                    const breakIn = parseTimeString(breakRecord.breakIn, record.date);
+                    if (breakOut && breakIn) {
+                      breakMs += (breakIn - breakOut);
+                    }
+                  }
+                });
+              }
+
+              const netHours = (totalMs - breakMs) / (1000 * 60 * 60);
+              userData[record.userId].totalHours += netHours;
+
+              // Calculate overtime (more than 8 hours)
+              if (netHours > 8) {
+                userData[record.userId].overtimeHours += (netHours - 8);
+              }
+            }
+          }
+        } else if (record.status === 'leave') {
+          userData[record.userId].leaveDays++;
+        } else {
+          userData[record.userId].absentDays++;
+        }
+      });
+
+      processedData.summary = userData;
+      return processedData;
+    }
+
+    // Display report based on type
+    function displayReport(data, reportType) {
+      switch (reportType) {
+        case 'summary':
+          displaySummaryReport(data);
+          break;
+        case 'detailed':
+          displayDetailedReport(data);
+          break;
+        case 'comparison':
+          if (userRole === 'Admin' || userRole === 'admin') {
+            displayComparisonReport(data);
+          }
+          break;
+      }
+    }
+
+    // Display summary report
+    function displaySummaryReport(data) {
+      const tbody = document.getElementById('summaryTableBody');
+      tbody.innerHTML = '';
+
+      Object.values(data.summary).forEach(userData => {
+        if (userData.records.length === 0 && userData.user.id !== currentUser) return;
+
+        const totalDays = userData.presentDays + userData.absentDays + userData.leaveDays;
+        const attendanceRate = totalDays > 0 ? Math.round((userData.presentDays / totalDays) * 100) : 0;
+        const avgHours = userData.presentDays > 0 ? (userData.totalHours / userData.presentDays).toFixed(2) : 0;
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${userData.user.username} (${userData.user.empId || 'N/A'})</td>
+          <td class="highlight-good">${userData.presentDays}</td>
+          <td class="highlight-bad">${userData.absentDays}</td>
+          <td>${userData.leaveDays}</td>
+          <td>${userData.totalHours.toFixed(2)}h</td>
+          <td>${avgHours}h</td>
+          <td>${attendanceRate}%</td>
+          <td>${userData.overtimeHours.toFixed(2)}h</td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      if (tbody.children.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="no-data">
+              <div>No data available for the selected period</div>
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Display detailed report
+    function displayDetailedReport(data) {
+      const tbody = document.getElementById('detailedTableBody');
+      tbody.innerHTML = '';
+
+      data.detailed.forEach(record => {
+        const user = allUsers.find(u => u.id === record.userId);
+        const userName = user ? `${user.username} (${user.empId || 'N/A'})` : 'Unknown';
+
+        // Calculate hours
+        let workingHours = '-';
+        let netHours = '-';
+        let breakTime = '-';
+        let status = 'present';
+
+        if (record.loginTime && record.logoutTime) {
+          try {
+            const loginTime = parseTimeString(record.loginTime, record.date);
+            const logoutTime = parseTimeString(record.logoutTime, record.date);
+            
+            if (loginTime && logoutTime) {
+              const totalMs = logoutTime - loginTime;
+              const totalHours = totalMs / (1000 * 60 * 60);
+              
+              let breakMs = 0;
+              if (record.breaks && Array.isArray(record.breaks)) {
+                record.breaks.forEach(breakRecord => {
+                  if (breakRecord.breakOut && breakRecord.breakIn) {
+                    const breakOut = parseTimeString(breakRecord.breakOut, record.date);
+                    const breakIn = parseTimeString(breakRecord.breakIn, record.date);
+                    if (breakOut && breakIn) {
+                      breakMs += (breakIn - breakOut);
+                    }
+                  }
+                });
+              }
+              
+              const breakHours = breakMs / (1000 * 60 * 60);
+              const netHoursValue = totalHours - breakHours;
+              
+              workingHours = totalHours.toFixed(2) + 'h';
+              breakTime = breakHours > 0 ? breakHours.toFixed(2) + 'h' : '-';
+              netHours = netHoursValue.toFixed(2) + 'h';
+            }
+          } catch (error) {
+            console.error('Error calculating hours:', error);
+          }
+        } else if (record.loginTime && !record.logoutTime) {
+          status = 'working';
+        } else {
+          status = record.status || 'absent';
+        }
+
+        // Create status badge
+        let statusBadge = '';
+        switch (status) {
+          case 'present':
+          case 'working':
+            statusBadge = `<span class="status-present">Present</span>`;
+            break;
+          case 'absent':
+            statusBadge = `<span class="status-absent">Absent</span>`;
+            break;
+          case 'leave':
+            statusBadge = `<span class="status-leave">On Leave</span>`;
+            break;
+          case 'holiday':
+            statusBadge = `<span class="status-holiday">Holiday</span>`;
+            break;
+        }
+
+        const dateObj = new Date(record.date);
+        const formattedDate = dateObj.toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'short', 
+          day: 'numeric' 
+        });
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${formattedDate}</td>
+          <td>${userName}</td>
+          <td>${record.loginTime || '-'}</td>
+          <td>${record.logoutTime || '-'}</td>
+          <td>${workingHours}</td>
+          <td>${breakTime}</td>
+          <td>${netHours}</td>
+          <td>${statusBadge}</td>
+          <td>${record.remarks || '-'}</td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      if (tbody.children.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" class="no-data">
+              <div>No data available for the selected period</div>
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Display comparison report (Admin only)
+    function displayComparisonReport(data) {
+      const thead = document.querySelector('#comparisonReport thead tr');
+      const tbody = document.getElementById('comparisonTableBody');
+      
+      // Clear existing content
+      thead.innerHTML = '<th>Employee</th>';
+      tbody.innerHTML = '';
+
+      // Get all dates in the range
+      const dates = [];
+      const start = new Date(data.dateRange.start);
+      const end = new Date(data.dateRange.end);
+      
+      for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        // Skip weekends
+        if (date.getDay() !== 0 && date.getDay() !== 6) {
+          dates.push(new Date(date).toISOString().split('T')[0]);
+        }
+      }
+
+      // Add date columns to header
+      dates.forEach(date => {
+        const dateObj = new Date(date);
+        const formattedDate = dateObj.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric' 
+        });
+        const th = document.createElement('th');
+        th.textContent = formattedDate;
+        thead.appendChild(th);
+      });
+
+      // Add summary columns
+      ['Present', 'Absent', 'Hours', 'Late'].forEach(col => {
+        const th = document.createElement('th');
+        th.textContent = col;
+        th.style.background = '#34495e';
+        thead.appendChild(th);
+      });
+
+      // Add data rows
+      Object.values(data.summary).forEach(userData => {
+        if (userData.records.length === 0) return;
+
+        const row = document.createElement('tr');
+        
+        // Employee name
+        const nameCell = document.createElement('td');
+        nameCell.textContent = `${userData.user.username} (${userData.user.empId || 'N/A'})`;
+        nameCell.style.fontWeight = '600';
+        row.appendChild(nameCell);
+
+        // Daily status
+        let presentCount = 0;
+        let absentCount = 0;
+        let totalHours = 0;
+        let lateCount = 0;
+
+        dates.forEach(date => {
+          const record = userData.records.find(r => r.date === date);
+          const cell = document.createElement('td');
+          
+          if (record) {
+            if (record.loginTime) {
+              presentCount++;
+              cell.innerHTML = '<span class="status-present">P</span>';
+              
+              // Check if late (login after 9:30 AM)
+              const loginTime = parseTimeString(record.loginTime, date);
+              if (loginTime) {
+                const nineThirty = new Date(date + 'T09:30:00');
+                if (loginTime > nineThirty) {
+                  lateCount++;
+                  cell.innerHTML = '<span class="status-present" style="background: #ffc107; color: #000;">L</span>';
+                }
+              }
+
+              // Calculate hours
+              if (record.loginTime && record.logoutTime) {
+                const loginTime = parseTimeString(record.loginTime, date);
+                const logoutTime = parseTimeString(record.logoutTime, date);
+                if (loginTime && logoutTime) {
+                  const hours = (logoutTime - loginTime) / (1000 * 60 * 60);
+                  totalHours += hours;
+                }
+              }
+            } else if (record.status === 'leave') {
+              cell.innerHTML = '<span class="status-leave">L</span>';
+            } else if (record.status === 'holiday') {
+              cell.innerHTML = '<span class="status-holiday">H</span>';
+            } else {
+              absentCount++;
+              cell.innerHTML = '<span class="status-absent">A</span>';
+            }
+          } else {
+            absentCount++;
+            cell.innerHTML = '<span class="status-absent">A</span>';
+          }
+          
+          row.appendChild(cell);
+        });
+
+        // Summary cells
+        const presentCell = document.createElement('td');
+        presentCell.textContent = presentCount;
+        presentCell.className = 'highlight-good';
+        row.appendChild(presentCell);
+
+        const absentCell = document.createElement('td');
+        absentCell.textContent = absentCount;
+        absentCell.className = 'highlight-bad';
+        row.appendChild(absentCell);
+
+        const hoursCell = document.createElement('td');
+        hoursCell.textContent = totalHours.toFixed(1) + 'h';
+        row.appendChild(hoursCell);
+
+        const lateCell = document.createElement('td');
+        lateCell.textContent = lateCount;
+        row.appendChild(lateCell);
+
+        tbody.appendChild(row);
+      });
+
+      if (tbody.children.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="${dates.length + 5}" class="no-data">
+              <div>No data available for comparison</div>
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Update statistics
+    function updateStatistics(data) {
+      const totalEmployees = allUsers.length;
+      
+      // Calculate working days in period
+      const start = new Date(data.dateRange.start);
+      const end = new Date(data.dateRange.end);
+      let workingDays = 0;
+      
+      for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        if (date.getDay() !== 0 && date.getDay() !== 6) {
+          workingDays++;
+        }
+      }
+
+      // Calculate average attendance and hours
+      let totalPresent = 0;
+      let totalHours = 0;
+      let userCount = 0;
+
+      Object.values(data.summary).forEach(userData => {
+        if (userData.records.length > 0) {
+          totalPresent += userData.presentDays;
+          totalHours += userData.totalHours;
+          userCount++;
+        }
+      });
+
+      const avgAttendance = userCount > 0 ? Math.round((totalPresent / (userCount * workingDays)) * 100) : 0;
+      const avgHours = userCount > 0 ? (totalHours / totalPresent).toFixed(1) : 0;
+
+      document.getElementById('totalDays').textContent = workingDays;
+      document.getElementById('avgAttendance').textContent = avgAttendance + '%';
+      document.getElementById('avgHours').textContent = avgHours + 'h';
+    }
+
+    // Initialize charts
+    function initializeCharts() {
+      // Attendance Distribution Chart
+      const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
+      attendanceChart = new Chart(attendanceCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Present', 'Absent', 'Leave', 'Holiday'],
+          datasets: [{
+            data: [65, 15, 10, 10],
+            backgroundColor: ['#27ae60', '#e74c3c', '#f39c12', '#3498db'],
+            borderWidth: 2,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom'
+            }
+          }
+        }
+      });
+
+      // Trend Chart
+      const trendCtx = document.getElementById('trendChart').getContext('2d');
+      trendChart = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+          labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+          datasets: [{
+            label: 'Attendance Rate',
+            data: [85, 88, 92, 90],
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              min: 0,
+              max: 100,
+              ticks: {
+                callback: function(value) {
+                  return value + '%';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Update charts with real data
+    function updateCharts(data) {
+      if (!attendanceChart || !trendChart) return;
+
+      // Update attendance distribution
+      let present = 0, absent = 0, leave = 0, holiday = 0;
+      
+      data.detailed.forEach(record => {
+        if (record.loginTime) {
+          present++;
+        } else if (record.status === 'leave') {
+          leave++;
+        } else if (record.status === 'holiday') {
+          holiday++;
+        } else {
+          absent++;
+        }
+      });
+
+      attendanceChart.data.datasets[0].data = [present, absent, leave, holiday];
+      attendanceChart.update();
+
+      // Update trend chart (simplified - you can enhance this with real weekly data)
+      const weeklyData = calculateWeeklyTrend(data);
+      trendChart.data.datasets[0].data = weeklyData;
+      trendChart.update();
+    }
+
+    // Calculate weekly trend (simplified)
+    function calculateWeeklyTrend(data) {
+      // This is a simplified version - you can enhance it with actual weekly calculations
+      const weeks = [0, 0, 0, 0];
+      let weekIndex = 0;
+      
+      data.detailed.forEach(record => {
+        if (record.loginTime) {
+          weeks[weekIndex % 4]++;
+        }
+        weekIndex++;
+      });
+
+      const maxDays = Math.max(...weeks);
+      return weeks.map(days => Math.round((days / maxDays) * 100));
+    }
+
+    // Helper function to parse time strings
+    function parseTimeString(timeStr, baseDate) {
+      if (!timeStr) return null;
+      
+      try {
+        let timePart = timeStr;
+        let period = '';
+        
+        if (timeStr.includes(' ')) {
+          [timePart, period] = timeStr.split(' ');
+        }
+        
+        const [hours, minutes] = timePart.split(':').map(Number);
+        
+        const date = new Date(baseDate);
+        let hours24 = hours;
+        
+        if (period === 'PM' && hours24 !== 12) {
+          hours24 += 12;
+        } else if (period === 'AM' && hours24 === 12) {
+          hours24 = 0;
+        }
+        
+        date.setHours(hours24, minutes, 0, 0);
+        return date;
+      } catch (error) {
+        console.error("Error parsing time string:", timeStr, error);
+        return null;
+      }
+    }
+
+    // Export to Excel
+    function exportToExcel() {
+      if (!currentReportData) {
+        showToast('Please generate a report first', 'warning');
+        return;
+      }
+
+      try {
+        const reportType = document.getElementById('reportType').value;
+        let dataToExport = [];
+
+        switch (reportType) {
+          case 'summary':
+            dataToExport = prepareSummaryDataForExport(currentReportData);
+            break;
+          case 'detailed':
+            dataToExport = prepareDetailedDataForExport(currentReportData);
+            break;
+          case 'comparison':
+            dataToExport = prepareComparisonDataForExport(currentReportData);
+            break;
+        }
+
+        const ws = XLSX.utils.json_to_sheet(dataToExport);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Attendance Report');
+        
+        const fileName = `attendance_report_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+        
+        showToast('Excel file downloaded successfully!', 'success');
+      } catch (error) {
+        console.error('Error exporting to Excel:', error);
+        showToast('Error exporting to Excel', 'error');
+      }
+    }
+
+    // Prepare summary data for Excel export
+    function prepareSummaryDataForExport(data) {
+      const exportData = [];
+      
+      Object.values(data.summary).forEach(userData => {
+        if (userData.records.length === 0 && userData.user.id !== currentUser) return;
+
+        const totalDays = userData.presentDays + userData.absentDays + userData.leaveDays;
+        const attendanceRate = totalDays > 0 ? Math.round((userData.presentDays / totalDays) * 100) : 0;
+        const avgHours = userData.presentDays > 0 ? (userData.totalHours / userData.presentDays).toFixed(2) : 0;
+
+        exportData.push({
+          'Employee Name': userData.user.username,
+          'Employee ID': userData.user.empId || 'N/A',
+          'Present Days': userData.presentDays,
+          'Absent Days': userData.absentDays,
+          'Leave Days': userData.leaveDays,
+          'Total Hours': userData.totalHours.toFixed(2),
+          'Average Hours/Day': avgHours,
+          'Attendance Rate': attendanceRate + '%',
+          'Overtime Hours': userData.overtimeHours.toFixed(2)
+        });
+      });
+
+      return exportData;
+    }
+
+    // Prepare detailed data for Excel export
+    function prepareDetailedDataForExport(data) {
+      const exportData = [];
+      
+      data.detailed.forEach(record => {
+        const user = allUsers.find(u => u.id === record.userId);
+        
+        let workingHours = '-';
+        let netHours = '-';
+        let breakTime = '-';
+
+        if (record.loginTime && record.logoutTime) {
+          try {
+            const loginTime = parseTimeString(record.loginTime, record.date);
+            const logoutTime = parseTimeString(record.logoutTime, record.date);
+            
+            if (loginTime && logoutTime) {
+              const totalMs = logoutTime - loginTime;
+              const totalHours = totalMs / (1000 * 60 * 60);
+              
+              let breakMs = 0;
+              if (record.breaks && Array.isArray(record.breaks)) {
+                record.breaks.forEach(breakRecord => {
+                  if (breakRecord.breakOut && breakRecord.breakIn) {
+                    const breakOut = parseTimeString(breakRecord.breakOut, record.date);
+                    const breakIn = parseTimeString(breakRecord.breakIn, record.date);
+                    if (breakOut && breakIn) {
+                      breakMs += (breakIn - breakOut);
+                    }
+                  }
+                });
+              }
+              
+              const breakHours = breakMs / (1000 * 60 * 60);
+              const netHoursValue = totalHours - breakHours;
+              
+              workingHours = totalHours.toFixed(2);
+              breakTime = breakHours > 0 ? breakHours.toFixed(2) : '0';
+              netHours = netHoursValue.toFixed(2);
+            }
+          } catch (error) {
+            console.error('Error calculating hours:', error);
+          }
+        }
+
+        let status = 'Present';
+        if (!record.loginTime) {
+          status = record.status || 'Absent';
+        } else if (!record.logoutTime) {
+          status = 'Working';
+        }
+
+        exportData.push({
+          'Date': record.date,
+          'Employee Name': user ? user.username : 'Unknown',
+          'Employee ID': user ? (user.empId || 'N/A') : 'N/A',
+          'Check In': record.loginTime || '-',
+          'Check Out': record.logoutTime || '-',
+          'Working Hours': workingHours,
+          'Break Time': breakTime,
+          'Net Hours': netHours,
+          'Status': status,
+          'Remarks': record.remarks || '-'
+        });
+      });
+
+      return exportData;
+    }
+
+    // Prepare comparison data for Excel export
+    function prepareComparisonDataForExport(data) {
+      // This would require a more complex structure for Excel
+      // For simplicity, we'll export summary data instead
+      return prepareSummaryDataForExport(data);
+    }
+
+    // Export to PDF
+    function exportToPDF() {
+      if (!currentReportData) {
+        showToast('Please generate a report first', 'warning');
+        return;
+      }
+
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Add title
+        doc.setFontSize(20);
+        doc.setTextColor(40, 40, 40);
+        doc.text('Attendance Report', 105, 15, { align: 'center' });
+        
+        // Add date range
+        doc.setFontSize(12);
+        doc.setTextColor(100, 100, 100);
+        const dateRange = `From ${currentReportData.dateRange.start} to ${currentReportData.dateRange.end}`;
+        doc.text(dateRange, 105, 25, { align: 'center' });
+        
+        // Add summary table
+        doc.autoTable({
+          startY: 35,
+          head: [['Employee', 'Present', 'Absent', 'Leave', 'Total Hours', 'Attendance %']],
+          body: preparePDFSummaryData(currentReportData),
+          theme: 'grid',
+          headStyles: {
+            fillColor: [102, 126, 234],
+            textColor: 255
+          },
+          styles: {
+            fontSize: 10
+          }
+        });
+        
+        const fileName = `attendance_report_${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(fileName);
+        
+        showToast('PDF file downloaded successfully!', 'success');
+      } catch (error) {
+        console.error('Error exporting to PDF:', error);
+        showToast('Error exporting to PDF', 'error');
+      }
+    }
+
+    // Prepare data for PDF export
+    function preparePDFSummaryData(data) {
+      const pdfData = [];
+      
+      Object.values(data.summary).forEach(userData => {
+        if (userData.records.length === 0 && userData.user.id !== currentUser) return;
+
+        const totalDays = userData.presentDays + userData.absentDays + userData.leaveDays;
+        const attendanceRate = totalDays > 0 ? Math.round((userData.presentDays / totalDays) * 100) : 0;
+
+        pdfData.push([
+          userData.user.username,
+          userData.presentDays.toString(),
+          userData.absentDays.toString(),
+          userData.leaveDays.toString(),
+          userData.totalHours.toFixed(2),
+          attendanceRate + '%'
+        ]);
+      });
+
+      return pdfData;
+    }
+
+    // Sidebar functionality for mobile
+    document.getElementById('sidebarToggle').addEventListener('click', function() {
+      document.getElementById('sidebar').classList.toggle('visible');
+    });
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(e) {
+      const sidebar = document.getElementById('sidebar');
+      const toggle = document.getElementById('sidebarToggle');
+      
+      if (window.innerWidth <= 768 && 
+          sidebar.classList.contains('visible') && 
+          !sidebar.contains(e.target) && 
+          !toggle.contains(e.target)) {
+        sidebar.classList.remove('visible');
+      }
+    });
+
+    // Initialize the app when DOM is loaded
+    document.addEventListener('DOMContentLoaded', initializeApp);
+  </script>
+</body>
+</html>
