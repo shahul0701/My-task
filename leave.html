@@ -201,6 +201,16 @@
             z-index: 10000;
         }
         
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        
         @media (max-width: 768px) {
             .stats-number {
                 font-size: 2rem;
@@ -209,6 +219,10 @@
             .nav-tabs .nav-link {
                 padding: 10px 15px;
                 font-size: 0.9rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
             }
         }
     </style>
@@ -867,6 +881,9 @@
                 currentUser = userQuery.docs[0].id;
                 userRole = userData.role || 'User';
 
+                console.log('User loaded:', userData);
+                console.log('User ID:', currentUser);
+
                 // Load user data
                 await loadUserData();
                 
@@ -999,6 +1016,8 @@
         // Load my leaves
         async function loadMyLeaves() {
             try {
+                console.log('Loading leaves for user:', currentUser);
+                
                 const leavesQuery = await db.collection("leaves")
                     .where("userId", "==", currentUser)
                     .orderBy("appliedDate", "desc")
@@ -1007,6 +1026,8 @@
                 const tbody = document.getElementById('myLeavesTableBody');
                 tbody.innerHTML = '';
 
+                console.log('Found leaves:', leavesQuery.size);
+
                 if (leavesQuery.empty) {
                     tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">No leave records found</td></tr>';
                     return;
@@ -1014,13 +1035,14 @@
 
                 leavesQuery.forEach(doc => {
                     const leave = doc.data();
+                    console.log('Leave data:', leave);
                     const row = createMyLeaveRow(leave, doc.id);
                     tbody.appendChild(row);
                 });
 
             } catch (error) {
                 console.error("Error loading my leaves:", error);
-                showToast('Error loading leave data', 'error');
+                showToast('Error loading leave data: ' + error.message, 'error');
             }
         }
 
@@ -1062,18 +1084,22 @@
             let actionButtons = '';
             if (leave.status === 'pending') {
                 actionButtons = `
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editLeave('${leaveId}')">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteLeave('${leaveId}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline-primary" onclick="editLeave('${leaveId}')" title="Edit Leave">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteLeave('${leaveId}')" title="Delete Leave">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 `;
             } else {
                 actionButtons = `
-                    <button class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-eye"></i>
-                    </button>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="viewLeave('${leaveId}')" title="View Leave">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 `;
             }
             
@@ -1088,6 +1114,11 @@
             `;
 
             return row;
+        }
+
+        // View leave details
+        function viewLeave(leaveId) {
+            showToast('Viewing leave details - View functionality to be implemented', 'info');
         }
 
         // Load team leaves (for managers)
@@ -1160,12 +1191,14 @@
                 <td>${duration} Days</td>
                 <td><span class="status-pending">Pending</span></td>
                 <td>
-                    <button class="btn btn-sm btn-success me-1" onclick="approveLeave('${leaveId}')">
-                        <i class="fas fa-check"></i>
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="rejectLeave('${leaveId}')">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-success" onclick="approveLeave('${leaveId}')" title="Approve Leave">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="rejectLeave('${leaveId}')" title="Reject Leave">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
                 </td>
             `;
 
@@ -1286,17 +1319,30 @@
             const reason = document.getElementById('reason').value;
             const contactNumber = document.getElementById('contactNumber').value;
 
-            // Calculate duration
+            // Validate dates
+            if (!fromDate || !toDate) {
+                showToast('Please select both from and to dates', 'error');
+                return;
+            }
+
             const from = new Date(fromDate);
             const to = new Date(toDate);
+            
+            if (from > to) {
+                showToast('To date must be after from date', 'error');
+                return;
+            }
+
             const duration = Math.ceil((to - from) / (1000 * 60 * 60 * 24)) + 1;
 
             try {
+                console.log('Submitting leave application...');
+                
                 // Create leave record
                 const leaveData = {
                     userId: currentUser,
                     username: userData.username,
-                    empId: userData.empId,
+                    empId: userData.empId || 'N/A',
                     type: leaveType,
                     fromDate: fromDate,
                     toDate: toDate,
@@ -1308,11 +1354,17 @@
                     manager: userData.manager || 'Not assigned'
                 };
 
-                await db.collection("leaves").add(leaveData);
+                console.log('Leave data to submit:', leaveData);
+
+                // Add to Firestore
+                const docRef = await db.collection("leaves").add(leaveData);
+                console.log('Leave application submitted with ID:', docRef.id);
                 
                 // Close modal and reset form
-                bootstrap.Modal.getInstance(document.getElementById('applyLeaveModal')).hide();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('applyLeaveModal'));
+                modal.hide();
                 form.reset();
+                document.getElementById('duration').value = '0 Days';
                 
                 // Show success message
                 showToast('Leave application submitted successfully!');
@@ -1323,7 +1375,7 @@
 
             } catch (error) {
                 console.error("Error applying for leave:", error);
-                showToast('Error submitting leave application', 'error');
+                showToast('Error submitting leave application: ' + error.message, 'error');
             }
         });
 
@@ -1337,6 +1389,13 @@
                 }
 
                 const leave = leaveDoc.data();
+                
+                // Check if leave is still pending
+                if (leave.status !== 'pending') {
+                    showToast('Cannot edit leave that is already ' + leave.status, 'error');
+                    return;
+                }
+
                 currentLeaveId = leaveId;
 
                 // Populate edit form
@@ -1429,6 +1488,16 @@
             }
 
             try {
+                // Check if leave is still pending before deleting
+                const leaveDoc = await db.collection("leaves").doc(leaveId).get();
+                if (leaveDoc.exists) {
+                    const leave = leaveDoc.data();
+                    if (leave.status !== 'pending') {
+                        showToast('Cannot delete leave that is already ' + leave.status, 'error');
+                        return;
+                    }
+                }
+
                 await db.collection("leaves").doc(leaveId).delete();
                 showToast('Leave request deleted successfully!');
                 await loadMyLeaves();
@@ -1451,6 +1520,7 @@
                 showToast('Leave request approved!');
                 await loadTeamLeaves();
                 await loadLeaveRegister();
+                await loadMyLeaves(); // Reload my leaves to update status
             } catch (error) {
                 console.error("Error approving leave:", error);
                 showToast('Error approving leave request', 'error');
@@ -1469,6 +1539,7 @@
                 showToast('Leave request rejected!');
                 await loadTeamLeaves();
                 await loadLeaveRegister();
+                await loadMyLeaves(); // Reload my leaves to update status
             } catch (error) {
                 console.error("Error rejecting leave:", error);
                 showToast('Error rejecting leave request', 'error');
