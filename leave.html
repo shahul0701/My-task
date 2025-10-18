@@ -14,6 +14,7 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* Your existing CSS styles remain the same */
         :root {
             --primary: #4361ee;
             --secondary: #3f37c9;
@@ -157,50 +158,6 @@
             background-color: transparent;
         }
         
-        .calendar-day {
-            text-align: center;
-            padding: 10px;
-            border-radius: 8px;
-            margin: 2px;
-            cursor: pointer;
-        }
-        
-        .calendar-day.leave {
-            background-color: rgba(247, 37, 133, 0.2);
-            color: var(--warning);
-            font-weight: 600;
-        }
-        
-        .calendar-day:hover {
-            background-color: rgba(67, 97, 238, 0.1);
-        }
-        
-        .holiday {
-            background-color: rgba(255, 193, 7, 0.2);
-            color: #ffc107;
-            font-weight: 600;
-        }
-        
-        .modal-header {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            border-radius: 15px 15px 0 0;
-        }
-        
-        footer {
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 20px 0;
-            margin-top: 40px;
-            border-radius: 15px 15px 0 0;
-        }
-        
-        .toast {
-            position: fixed;
-            top: 90px;
-            right: 20px;
-            z-index: 10000;
-        }
-        
         .action-buttons {
             display: flex;
             gap: 5px;
@@ -211,31 +168,13 @@
             font-size: 0.875rem;
         }
         
-        .permission-denied {
-            text-align: center;
-            padding: 40px 20px;
-            color: #6c757d;
-        }
-        
-        .permission-denied i {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            color: #dc3545;
-        }
-        
-        @media (max-width: 768px) {
-            .stats-number {
-                font-size: 2rem;
-            }
-            
-            .nav-tabs .nav-link {
-                padding: 10px 15px;
-                font-size: 0.9rem;
-            }
-            
-            .action-buttons {
-                flex-direction: column;
-            }
+        .debug-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -291,6 +230,11 @@
 
     <!-- Main Content -->
     <div class="container my-4">
+        <!-- Debug Info Panel (Remove in production) -->
+        <div class="debug-info" id="debugInfo">
+            Debug: Loading...
+        </div>
+
         <!-- Page Header -->
         <div class="row mb-4">
             <div class="col">
@@ -369,10 +313,10 @@
                         <button class="btn btn-primary w-100 mb-3" data-bs-toggle="modal" data-bs-target="#applyLeaveModal">
                             <i class="fas fa-plus me-2"></i> Apply for Leave
                         </button>
-                        <button class="btn btn-outline-primary w-100 mb-3" data-bs-toggle="modal" data-bs-target="#bulkLeaveModal">
+                        <button class="btn btn-outline-primary w-100 mb-3">
                             <i class="fas fa-users me-2"></i> Bulk Leave Request
                         </button>
-                        <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#leaveCalendarModal">
+                        <button class="btn btn-outline-primary w-100">
                             <i class="fas fa-calendar me-2"></i> View Leave Calendar
                         </button>
                     </div>
@@ -396,16 +340,6 @@
                                     <i class="fas fa-users me-2"></i> Team Leaves
                                 </button>
                             </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="leave-register-tab" data-bs-toggle="tab" data-bs-target="#leave-register" type="button">
-                                    <i class="fas fa-clipboard-list me-2"></i> Leave Register
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button">
-                                    <i class="fas fa-chart-bar me-2"></i> Reports
-                                </button>
-                            </li>
                         </ul>
                     </div>
                     <div class="tab-content" id="leaveTabsContent">
@@ -425,7 +359,9 @@
                                         </tr>
                                     </thead>
                                     <tbody id="myLeavesTableBody">
-                                        <!-- My leaves will be loaded here -->
+                                        <tr>
+                                            <td colspan="7" class="text-center py-4">Loading leaves...</td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -433,75 +369,25 @@
                         
                         <!-- Team Leaves Tab -->
                         <div class="tab-pane fade" id="team-leaves" role="tabpanel">
-                            <div id="teamLeavesContent">
-                                <!-- Team leaves content will be loaded here based on role -->
-                            </div>
-                        </div>
-                        
-                        <!-- Leave Register Tab -->
-                        <div class="tab-pane fade" id="leave-register" role="tabpanel">
-                            <div id="leaveRegisterContent">
-                                <!-- Leave register content will be loaded here based on role -->
-                            </div>
-                        </div>
-                        
-                        <!-- Reports Tab -->
-                        <div class="tab-pane fade" id="reports" role="tabpanel">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <i class="fas fa-chart-bar me-2"></i> Leave Utilization Trend
-                                        </div>
-                                        <div class="card-body">
-                                            <canvas id="leaveTrendChart" height="250"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <i class="fas fa-chart-pie me-2"></i> Leave Type Distribution
-                                        </div>
-                                        <div class="card-body">
-                                            <canvas id="leaveTypeChart" height="250"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row mt-4">
-                                <div class="col-12">
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <i class="fas fa-download me-2"></i> Export Reports
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <div class="col-md-4 mb-3">
-                                                    <div class="d-grid">
-                                                        <button class="btn btn-outline-primary">
-                                                            <i class="fas fa-file-pdf me-2"></i> Export as PDF
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-4 mb-3">
-                                                    <div class="d-grid">
-                                                        <button class="btn btn-outline-success">
-                                                            <i class="fas fa-file-excel me-2"></i> Export as Excel
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-4 mb-3">
-                                                    <div class="d-grid">
-                                                        <button class="btn btn-outline-info">
-                                                            <i class="fas fa-print me-2"></i> Print Report
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Employee</th>
+                                            <th>Leave Type</th>
+                                            <th>From Date</th>
+                                            <th>To Date</th>
+                                            <th>Duration</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="teamLeavesTableBody">
+                                        <tr>
+                                            <td colspan="7" class="text-center py-4">No team leaves to display</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -528,13 +414,11 @@
                                     <option value="sick">Sick Leave</option>
                                     <option value="casual">Casual Leave</option>
                                     <option value="earned">Earned Leave</option>
-                                    <option value="maternity">Maternity Leave</option>
-                                    <option value="paternity">Paternity Leave</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Available Balance</label>
-                                <input type="text" class="form-control" id="availableBalance" value="Loading..." disabled>
+                                <input type="text" class="form-control" id="availableBalance" value="Select leave type" disabled>
                             </div>
                         </div>
                         <div class="row">
@@ -565,79 +449,11 @@
                             <label class="form-label">Contact Number During Leave</label>
                             <input type="text" class="form-control" id="contactNumber" placeholder="Enter your contact number" required>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Upload Supporting Document (Optional)</label>
-                            <input type="file" class="form-control" id="supportingDoc">
-                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" id="submitLeaveBtn">Submit Leave Request</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Leave Modal -->
-    <div class="modal fade" id="editLeaveModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title text-white"><i class="fas fa-edit me-2"></i> Edit Leave Request</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editLeaveForm">
-                        <input type="hidden" id="editLeaveId">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Leave Type</label>
-                                <select class="form-select" id="editLeaveTypeSelect" required>
-                                    <option value="" selected disabled>Select Leave Type</option>
-                                    <option value="sick">Sick Leave</option>
-                                    <option value="casual">Casual Leave</option>
-                                    <option value="earned">Earned Leave</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Available Balance</label>
-                                <input type="text" class="form-control" id="editAvailableBalance" value="Loading..." disabled>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">From Date</label>
-                                <input type="date" class="form-control" id="editFromDate" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">To Date</label>
-                                <input type="date" class="form-control" id="editToDate" required>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Duration</label>
-                                <input type="text" class="form-control" id="editDuration" value="0 Days" disabled>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Reporting Manager</label>
-                                <input type="text" class="form-control" id="editReportingManager" value="Loading..." disabled>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Reason for Leave</label>
-                            <textarea class="form-control" id="editReason" rows="4" placeholder="Please provide a reason for your leave" required></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Contact Number During Leave</label>
-                            <input type="text" class="form-control" id="editContactNumber" placeholder="Enter your contact number" required>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="updateLeaveBtn">Update Leave Request</button>
                 </div>
             </div>
         </div>
@@ -687,7 +503,6 @@
         let currentUser = null;
         let userData = null;
         let userRole = null;
-        let currentLeaveId = null;
 
         // Toast notification function
         function showToast(message, type = 'success') {
@@ -701,8 +516,16 @@
             bsToast.show();
         }
 
+        // Update debug info
+        function updateDebugInfo(message) {
+            document.getElementById('debugInfo').textContent = 'Debug: ' + message;
+            console.log('DEBUG:', message);
+        }
+
         // Initialize the application
         async function initializeApp() {
+            updateDebugInfo('Starting initialization...');
+            
             // Get user from session storage
             const username = sessionStorage.getItem("username");
             if (!username) {
@@ -712,14 +535,17 @@
             }
 
             document.getElementById('currentUserName').textContent = username;
+            updateDebugInfo('User from session: ' + username);
 
             // Find user in Firestore
             try {
+                updateDebugInfo('Searching for user in Firestore...');
                 const userQuery = await db.collection("users")
                     .where("username", "==", username)
                     .get();
 
                 if (userQuery.empty) {
+                    updateDebugInfo('User not found in Firestore');
                     showToast('User not found in system', 'error');
                     return;
                 }
@@ -728,33 +554,30 @@
                 currentUser = userQuery.docs[0].id;
                 userRole = userData.role || 'employee';
 
-                console.log('User loaded:', userData);
-                console.log('User Role:', userRole);
-                console.log('User ID:', currentUser);
+                updateDebugInfo(`User loaded: ${userData.username}, Role: ${userRole}, ID: ${currentUser}`);
 
                 // Load user data
                 await loadUserData();
                 
                 // Load leaves data
                 await loadMyLeaves();
-                await loadTeamLeaves();
-                await loadLeaveRegister();
                 
-                // Initialize charts
-                initializeCharts();
+                updateDebugInfo('App initialized successfully');
 
             } catch (error) {
+                updateDebugInfo('Error: ' + error.message);
                 console.error("Error initializing app:", error);
-                showToast('Error loading user data: ' + error.message, 'error');
+                showToast('Error loading application: ' + error.message, 'error');
             }
         }
 
         // Load user data including leave balances
         async function loadUserData() {
             try {
+                updateDebugInfo('Loading user data...');
+                
                 // Set user info in the form
                 document.getElementById('reportingManager').value = userData.manager || 'Not assigned';
-                document.getElementById('editReportingManager').value = userData.manager || 'Not assigned';
                 
                 // Load leave balances
                 const leaveBalanceQuery = await db.collection("leaveBalances")
@@ -763,17 +586,17 @@
 
                 if (!leaveBalanceQuery.empty) {
                     const leaveBalances = leaveBalanceQuery.docs[0].data();
+                    updateDebugInfo('Leave balances loaded: ' + JSON.stringify(leaveBalances));
                     updateLeaveBalancesUI(leaveBalances);
                 } else {
+                    updateDebugInfo('No leave balances found, creating default...');
                     // Create default leave balances if not exists
                     const defaultBalances = {
                         userId: currentUser,
                         username: userData.username,
                         sick: 12,
                         casual: 10,
-                        earned: 15,
-                        maternity: 180,
-                        paternity: 15
+                        earned: 15
                     };
                     
                     await db.collection("leaveBalances").add(defaultBalances);
@@ -784,8 +607,8 @@
                 await updateLeaveStatistics();
 
             } catch (error) {
+                updateDebugInfo('Error loading user data: ' + error.message);
                 console.error("Error loading user data:", error);
-                showToast('Error loading user data', 'error');
             }
         }
 
@@ -834,6 +657,8 @@
         // Update leave statistics
         async function updateLeaveStatistics() {
             try {
+                updateDebugInfo('Updating leave statistics...');
+                
                 // Count approved leaves
                 const approvedQuery = await db.collection("leaves")
                     .where("userId", "==", currentUser)
@@ -850,10 +675,13 @@
                 
                 document.getElementById('pendingLeaves').textContent = pendingQuery.size;
                 
+                updateDebugInfo(`Statistics - Approved: ${approvedQuery.size}, Pending: ${pendingQuery.size}`);
+                
                 // Count upcoming holidays (dummy data for now)
                 document.getElementById('upcomingHolidays').textContent = "3";
                 
             } catch (error) {
+                updateDebugInfo('Error updating statistics: ' + error.message);
                 console.error("Error updating statistics:", error);
             }
         }
@@ -861,7 +689,7 @@
         // Load my leaves - Shows all leaves applied by current user
         async function loadMyLeaves() {
             try {
-                console.log('Loading leaves for user:', currentUser);
+                updateDebugInfo('Loading my leaves...');
                 
                 const leavesQuery = await db.collection("leaves")
                     .where("userId", "==", currentUser)
@@ -871,23 +699,28 @@
                 const tbody = document.getElementById('myLeavesTableBody');
                 tbody.innerHTML = '';
 
-                console.log('Found leaves:', leavesQuery.size);
+                updateDebugInfo(`Found ${leavesQuery.size} leaves in Firestore`);
 
                 if (leavesQuery.empty) {
                     tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">No leave records found</td></tr>';
+                    updateDebugInfo('No leaves found for user');
                     return;
                 }
 
                 leavesQuery.forEach(doc => {
                     const leave = doc.data();
-                    console.log('Leave data:', leave);
+                    updateDebugInfo(`Processing leave: ${leave.type} - ${leave.status}`);
                     const row = createMyLeaveRow(leave, doc.id);
                     tbody.appendChild(row);
                 });
 
+                updateDebugInfo('Leaves loaded successfully into table');
+
             } catch (error) {
+                updateDebugInfo('Error loading leaves: ' + error.message);
                 console.error("Error loading my leaves:", error);
-                showToast('Error loading leave data: ' + error.message, 'error');
+                const tbody = document.getElementById('myLeavesTableBody');
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger">Error loading leaves: ' + error.message + '</td></tr>';
             }
         }
 
@@ -915,14 +748,14 @@
                 statusBadge = '<span class="status-rejected">Rejected</span>';
             }
             
-            // Get leave type icon
-            let typeIcon = '';
+            // Get leave type display
+            let typeDisplay = '';
             if (leave.type === 'sick') {
-                typeIcon = '<i class="fas fa-stethoscope text-success me-2"></i> Sick Leave';
+                typeDisplay = '<i class="fas fa-stethoscope text-success me-2"></i> Sick Leave';
             } else if (leave.type === 'casual') {
-                typeIcon = '<i class="fas fa-umbrella-beach text-info me-2"></i> Casual Leave';
+                typeDisplay = '<i class="fas fa-umbrella-beach text-info me-2"></i> Casual Leave';
             } else {
-                typeIcon = '<i class="fas fa-plane text-warning me-2"></i> Earned Leave';
+                typeDisplay = '<i class="fas fa-plane text-warning me-2"></i> Earned Leave';
             }
             
             // Action buttons - only show for pending leaves
@@ -941,7 +774,7 @@
             } else {
                 actionButtons = `
                     <div class="action-buttons">
-                        <button class="btn btn-sm btn-outline-secondary" onclick="viewLeave('${leaveId}')" title="View Leave">
+                        <button class="btn btn-sm btn-outline-secondary" title="View Leave">
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
@@ -949,7 +782,7 @@
             }
             
             row.innerHTML = `
-                <td>${typeIcon}</td>
+                <td>${typeDisplay}</td>
                 <td>${fromDate}</td>
                 <td>${toDate}</td>
                 <td>${duration} Days</td>
@@ -959,289 +792,6 @@
             `;
 
             return row;
-        }
-
-        // Load team leaves - Only for admin/manager roles
-        async function loadTeamLeaves() {
-            const teamLeavesContent = document.getElementById('teamLeavesContent');
-            
-            // Check if user has permission (admin or manager)
-            if (userRole !== 'admin' && userRole !== 'manager') {
-                teamLeavesContent.innerHTML = `
-                    <div class="permission-denied">
-                        <i class="fas fa-ban"></i>
-                        <h4>Access Denied</h4>
-                        <p>You don't have permission to view team leaves.</p>
-                        <p class="text-muted">Only administrators and managers can access this section.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            try {
-                // For admin/manager, show all pending leaves
-                const leavesQuery = await db.collection("leaves")
-                    .where("status", "==", "pending")
-                    .orderBy("appliedDate", "desc")
-                    .get();
-
-                let content = `
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Employee</th>
-                                    <th>Leave Type</th>
-                                    <th>From Date</th>
-                                    <th>To Date</th>
-                                    <th>Duration</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="teamLeavesTableBody">
-                `;
-
-                if (leavesQuery.empty) {
-                    content += `
-                                <tr>
-                                    <td colspan="7" class="text-center py-4">No pending leave requests</td>
-                                </tr>
-                    `;
-                } else {
-                    leavesQuery.forEach(doc => {
-                        const leave = doc.data();
-                        const row = createTeamLeaveRow(leave, doc.id);
-                        content += row;
-                    });
-                }
-
-                content += `
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-
-                teamLeavesContent.innerHTML = content;
-
-            } catch (error) {
-                console.error("Error loading team leaves:", error);
-                teamLeavesContent.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Error loading team leaves: ${error.message}
-                    </div>
-                `;
-            }
-        }
-
-        // Create row for team leaves table
-        function createTeamLeaveRow(leave, leaveId) {
-            // Format dates
-            const fromDate = new Date(leave.fromDate).toLocaleDateString('en-US');
-            const toDate = new Date(leave.toDate).toLocaleDateString('en-US');
-            
-            // Calculate duration
-            const from = new Date(leave.fromDate);
-            const to = new Date(leave.toDate);
-            const duration = Math.ceil((to - from) / (1000 * 60 * 60 * 24)) + 1;
-            
-            // Get leave type
-            let leaveType = '';
-            if (leave.type === 'sick') {
-                leaveType = 'Sick Leave';
-            } else if (leave.type === 'casual') {
-                leaveType = 'Casual Leave';
-            } else {
-                leaveType = 'Earned Leave';
-            }
-            
-            return `
-                <tr>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <img src="https://i.pravatar.cc/40?img=1" class="rounded-circle me-2" alt="Avatar">
-                            <div>${leave.username}</div>
-                        </div>
-                    </td>
-                    <td>${leaveType}</td>
-                    <td>${fromDate}</td>
-                    <td>${toDate}</td>
-                    <td>${duration} Days</td>
-                    <td><span class="status-pending">Pending</span></td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn btn-sm btn-success" onclick="approveLeave('${leaveId}')" title="Approve Leave">
-                                <i class="fas fa-check"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger" onclick="rejectLeave('${leaveId}')" title="Reject Leave">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }
-
-        // Load leave register - Different views based on role
-        async function loadLeaveRegister() {
-            const leaveRegisterContent = document.getElementById('leaveRegisterContent');
-            
-            let content = '';
-
-            // Add filters for admin/manager
-            if (userRole === 'admin' || userRole === 'manager') {
-                content += `
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <select class="form-select" id="employeeFilter">
-                                <option value="all">All Employees</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <select class="form-select" id="leaveTypeFilter">
-                                <option value="all">All Leave Types</option>
-                                <option value="sick">Sick Leave</option>
-                                <option value="casual">Casual Leave</option>
-                                <option value="earned">Earned Leave</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <select class="form-select" id="statusFilter">
-                                <option value="all">All Status</option>
-                                <option value="approved">Approved</option>
-                                <option value="pending">Pending</option>
-                                <option value="rejected">Rejected</option>
-                            </select>
-                        </div>
-                    </div>
-                `;
-            }
-
-            try {
-                let leavesQuery;
-                
-                if (userRole === 'admin' || userRole === 'manager') {
-                    // Admins and managers can see all leaves
-                    leavesQuery = await db.collection("leaves")
-                        .orderBy("appliedDate", "desc")
-                        .get();
-                } else {
-                    // Regular users can only see their own leaves
-                    leavesQuery = await db.collection("leaves")
-                        .where("userId", "==", currentUser)
-                        .orderBy("appliedDate", "desc")
-                        .get();
-                }
-
-                content += `
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Employee ID</th>
-                                    <th>Employee Name</th>
-                                    <th>Leave Type</th>
-                                    <th>From Date</th>
-                                    <th>To Date</th>
-                                    <th>Duration</th>
-                                    <th>Status</th>
-                                    <th>Approved By</th>
-                                </tr>
-                            </thead>
-                            <tbody id="leaveRegisterTableBody">
-                `;
-
-                if (leavesQuery.empty) {
-                    content += `
-                                <tr>
-                                    <td colspan="8" class="text-center py-4">No leave records found</td>
-                                </tr>
-                    `;
-                } else {
-                    leavesQuery.forEach(doc => {
-                        const leave = doc.data();
-                        const row = createLeaveRegisterRow(leave);
-                        content += row;
-                    });
-                }
-
-                content += `
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-
-                leaveRegisterContent.innerHTML = content;
-
-                // Update employee filter if user is admin/manager
-                if (userRole === 'admin' || userRole === 'manager') {
-                    const employeeFilter = document.getElementById('employeeFilter');
-                    const employees = new Set();
-                    leavesQuery.forEach(doc => {
-                        const leave = doc.data();
-                        employees.add(leave.username);
-                    });
-                    
-                    employees.forEach(employee => {
-                        employeeFilter.innerHTML += `<option value="${employee}">${employee}</option>`;
-                    });
-                }
-
-            } catch (error) {
-                console.error("Error loading leave register:", error);
-                leaveRegisterContent.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Error loading leave register: ${error.message}
-                    </div>
-                `;
-            }
-        }
-
-        // Create row for leave register table
-        function createLeaveRegisterRow(leave) {
-            // Format dates
-            const fromDate = new Date(leave.fromDate).toLocaleDateString('en-US');
-            const toDate = new Date(leave.toDate).toLocaleDateString('en-US');
-            
-            // Calculate duration
-            const from = new Date(leave.fromDate);
-            const to = new Date(leave.toDate);
-            const duration = Math.ceil((to - from) / (1000 * 60 * 60 * 24)) + 1;
-            
-            // Get status badge
-            let statusBadge = '';
-            if (leave.status === 'pending') {
-                statusBadge = '<span class="status-pending">Pending</span>';
-            } else if (leave.status === 'approved') {
-                statusBadge = '<span class="status-approved">Approved</span>';
-            } else {
-                statusBadge = '<span class="status-rejected">Rejected</span>';
-            }
-            
-            // Get leave type
-            let leaveType = '';
-            if (leave.type === 'sick') {
-                leaveType = 'Sick Leave';
-            } else if (leave.type === 'casual') {
-                leaveType = 'Casual Leave';
-            } else {
-                leaveType = 'Earned Leave';
-            }
-            
-            return `
-                <tr>
-                    <td>${leave.empId || 'N/A'}</td>
-                    <td>${leave.username}</td>
-                    <td>${leaveType}</td>
-                    <td>${fromDate}</td>
-                    <td>${toDate}</td>
-                    <td>${duration} Days</td>
-                    <td>${statusBadge}</td>
-                    <td>${leave.approvedBy || '-'}</td>
-                </tr>
-            `;
         }
 
         // Apply for leave
@@ -1275,7 +825,7 @@
             const duration = Math.ceil((to - from) / (1000 * 60 * 60 * 24)) + 1;
 
             try {
-                console.log('Submitting leave application...');
+                updateDebugInfo('Submitting leave application...');
                 
                 // Create leave record
                 const leaveData = {
@@ -1293,11 +843,11 @@
                     manager: userData.manager || 'Not assigned'
                 };
 
-                console.log('Leave data to submit:', leaveData);
+                updateDebugInfo('Leave data: ' + JSON.stringify(leaveData));
 
                 // Add to Firestore
                 const docRef = await db.collection("leaves").add(leaveData);
-                console.log('Leave application submitted with ID:', docRef.id);
+                updateDebugInfo('Leave submitted with ID: ' + docRef.id);
                 
                 // Close modal and reset form
                 const modal = bootstrap.Modal.getInstance(document.getElementById('applyLeaveModal'));
@@ -1313,110 +863,9 @@
                 await updateLeaveStatistics();
 
             } catch (error) {
+                updateDebugInfo('Error submitting leave: ' + error.message);
                 console.error("Error applying for leave:", error);
                 showToast('Error submitting leave application: ' + error.message, 'error');
-            }
-        });
-
-        // Edit leave
-        async function editLeave(leaveId) {
-            try {
-                const leaveDoc = await db.collection("leaves").doc(leaveId).get();
-                if (!leaveDoc.exists) {
-                    showToast('Leave request not found', 'error');
-                    return;
-                }
-
-                const leave = leaveDoc.data();
-                
-                // Check if leave is still pending
-                if (leave.status !== 'pending') {
-                    showToast('Cannot edit leave that is already ' + leave.status, 'error');
-                    return;
-                }
-
-                currentLeaveId = leaveId;
-
-                // Populate edit form
-                document.getElementById('editLeaveId').value = leaveId;
-                document.getElementById('editLeaveTypeSelect').value = leave.type;
-                document.getElementById('editFromDate').value = leave.fromDate;
-                document.getElementById('editToDate').value = leave.toDate;
-                document.getElementById('editDuration').value = leave.duration + ' Days';
-                document.getElementById('editReason').value = leave.reason;
-                document.getElementById('editContactNumber').value = leave.contactNumber;
-
-                // Load available balance for the selected leave type
-                const balanceQuery = await db.collection("leaveBalances")
-                    .where("userId", "==", currentUser)
-                    .get();
-
-                if (!balanceQuery.empty) {
-                    const balances = balanceQuery.docs[0].data();
-                    let availableBalance = 0;
-                    
-                    if (leave.type === 'sick') availableBalance = balances.sick;
-                    else if (leave.type === 'casual') availableBalance = balances.casual;
-                    else if (leave.type === 'earned') availableBalance = balances.earned;
-                    
-                    document.getElementById('editAvailableBalance').value = availableBalance + ' Days';
-                }
-
-                // Show edit modal
-                const editModal = new bootstrap.Modal(document.getElementById('editLeaveModal'));
-                editModal.show();
-
-            } catch (error) {
-                console.error("Error loading leave for edit:", error);
-                showToast('Error loading leave details', 'error');
-            }
-        }
-
-        // Update leave
-        document.getElementById('updateLeaveBtn').addEventListener('click', async function() {
-            const form = document.getElementById('editLeaveForm');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
-            const leaveType = document.getElementById('editLeaveTypeSelect').value;
-            const fromDate = document.getElementById('editFromDate').value;
-            const toDate = document.getElementById('editToDate').value;
-            const reason = document.getElementById('editReason').value;
-            const contactNumber = document.getElementById('editContactNumber').value;
-
-            // Calculate duration
-            const from = new Date(fromDate);
-            const to = new Date(toDate);
-            const duration = Math.ceil((to - from) / (1000 * 60 * 60 * 24)) + 1;
-
-            try {
-                // Update leave record
-                const updateData = {
-                    type: leaveType,
-                    fromDate: fromDate,
-                    toDate: toDate,
-                    duration: duration,
-                    reason: reason,
-                    contactNumber: contactNumber,
-                    lastUpdated: new Date().toISOString()
-                };
-
-                await db.collection("leaves").doc(currentLeaveId).update(updateData);
-                
-                // Close modal
-                bootstrap.Modal.getInstance(document.getElementById('editLeaveModal')).hide();
-                
-                // Show success message
-                showToast('Leave request updated successfully!');
-                
-                // Reload data
-                await loadMyLeaves();
-
-            } catch (error) {
-                console.error("Error updating leave:", error);
-                showToast('Error updating leave request', 'error');
             }
         });
 
@@ -1427,130 +876,16 @@
             }
 
             try {
-                // Check if leave is still pending before deleting
-                const leaveDoc = await db.collection("leaves").doc(leaveId).get();
-                if (leaveDoc.exists) {
-                    const leave = leaveDoc.data();
-                    if (leave.status !== 'pending') {
-                        showToast('Cannot delete leave that is already ' + leave.status, 'error');
-                        return;
-                    }
-                }
-
+                updateDebugInfo('Deleting leave: ' + leaveId);
                 await db.collection("leaves").doc(leaveId).delete();
                 showToast('Leave request deleted successfully!');
                 await loadMyLeaves();
                 await updateLeaveStatistics();
             } catch (error) {
+                updateDebugInfo('Error deleting leave: ' + error.message);
                 console.error("Error deleting leave:", error);
                 showToast('Error deleting leave request', 'error');
             }
-        }
-
-        // View leave details
-        function viewLeave(leaveId) {
-            showToast('Viewing leave details - View functionality to be implemented', 'info');
-        }
-
-        // Approve leave (for managers/admin)
-        async function approveLeave(leaveId) {
-            try {
-                await db.collection("leaves").doc(leaveId).update({
-                    status: 'approved',
-                    approvedBy: userData.username,
-                    approvedDate: new Date().toISOString()
-                });
-                
-                showToast('Leave request approved!');
-                await loadTeamLeaves();
-                await loadLeaveRegister();
-                await loadMyLeaves(); // Reload my leaves to update status
-            } catch (error) {
-                console.error("Error approving leave:", error);
-                showToast('Error approving leave request', 'error');
-            }
-        }
-
-        // Reject leave (for managers/admin)
-        async function rejectLeave(leaveId) {
-            try {
-                await db.collection("leaves").doc(leaveId).update({
-                    status: 'rejected',
-                    approvedBy: userData.username,
-                    approvedDate: new Date().toISOString()
-                });
-                
-                showToast('Leave request rejected!');
-                await loadTeamLeaves();
-                await loadLeaveRegister();
-                await loadMyLeaves(); // Reload my leaves to update status
-            } catch (error) {
-                console.error("Error rejecting leave:", error);
-                showToast('Error rejecting leave request', 'error');
-            }
-        }
-
-        // Initialize charts
-        function initializeCharts() {
-            // Leave Trend Chart
-            const trendCtx = document.getElementById('leaveTrendChart').getContext('2d');
-            const trendChart = new Chart(trendCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
-                    datasets: [{
-                        label: 'Leaves Taken',
-                        data: [2, 3, 1, 4, 2, 3, 2, 1, 3, 2],
-                        borderColor: '#4361ee',
-                        backgroundColor: 'rgba(67, 97, 238, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Number of Leaves'
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Leave Type Chart
-            const typeCtx = document.getElementById('leaveTypeChart').getContext('2d');
-            const typeChart = new Chart(typeCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Sick Leave', 'Casual Leave', 'Earned Leave'],
-                    datasets: [{
-                        data: [40, 35, 25],
-                        backgroundColor: [
-                            '#4cc9f0',
-                            '#4895ef',
-                            '#f72585'
-                        ],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                        }
-                    }
-                }
-            });
         }
 
         // Logout function
@@ -1562,8 +897,6 @@
         // Calculate duration when dates change
         document.getElementById('fromDate').addEventListener('change', calculateDuration);
         document.getElementById('toDate').addEventListener('change', calculateDuration);
-        document.getElementById('editFromDate').addEventListener('change', calculateEditDuration);
-        document.getElementById('editToDate').addEventListener('change', calculateEditDuration);
 
         function calculateDuration() {
             const fromDate = new Date(document.getElementById('fromDate').value);
@@ -1576,20 +909,8 @@
             }
         }
 
-        function calculateEditDuration() {
-            const fromDate = new Date(document.getElementById('editFromDate').value);
-            const toDate = new Date(document.getElementById('editToDate').value);
-            
-            if (fromDate && toDate && fromDate <= toDate) {
-                const diffTime = Math.abs(toDate - fromDate);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                document.getElementById('editDuration').value = diffDays + ' Days';
-            }
-        }
-
         // Update available balance when leave type changes
         document.getElementById('leaveTypeSelect').addEventListener('change', updateAvailableBalance);
-        document.getElementById('editLeaveTypeSelect').addEventListener('change', updateEditAvailableBalance);
 
         async function updateAvailableBalance() {
             const leaveType = document.getElementById('leaveTypeSelect').value;
@@ -1607,34 +928,8 @@
                     if (leaveType === 'sick') availableBalance = balances.sick;
                     else if (leaveType === 'casual') availableBalance = balances.casual;
                     else if (leaveType === 'earned') availableBalance = balances.earned;
-                    else if (leaveType === 'maternity') availableBalance = balances.maternity;
-                    else if (leaveType === 'paternity') availableBalance = balances.paternity;
                     
                     document.getElementById('availableBalance').value = availableBalance + ' Days';
-                }
-            } catch (error) {
-                console.error("Error loading balance:", error);
-            }
-        }
-
-        async function updateEditAvailableBalance() {
-            const leaveType = document.getElementById('editLeaveTypeSelect').value;
-            if (!leaveType) return;
-
-            try {
-                const balanceQuery = await db.collection("leaveBalances")
-                    .where("userId", "==", currentUser)
-                    .get();
-
-                if (!balanceQuery.empty) {
-                    const balances = balanceQuery.docs[0].data();
-                    let availableBalance = 0;
-                    
-                    if (leaveType === 'sick') availableBalance = balances.sick;
-                    else if (leaveType === 'casual') availableBalance = balances.casual;
-                    else if (leaveType === 'earned') availableBalance = balances.earned;
-                    
-                    document.getElementById('editAvailableBalance').value = availableBalance + ' Days';
                 }
             } catch (error) {
                 console.error("Error loading balance:", error);
