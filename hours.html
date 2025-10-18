@@ -224,6 +224,12 @@
             font-weight: 600;
             font-size: 1.2rem;
         }
+        
+        .debug-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -286,6 +292,14 @@
         <!-- Debug Info Panel -->
         <div class="debug-info" id="debugInfo">
             Debug: Loading...
+        </div>
+        <div class="debug-actions">
+            <button class="btn btn-sm btn-outline-primary" onclick="generateSampleData()">
+                <i class="fas fa-vial me-1"></i> Add Test Data
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="loadAttendanceData()">
+                <i class="fas fa-sync-alt me-1"></i> Reload Data
+            </button>
         </div>
 
         <!-- Page Header -->
@@ -753,7 +767,14 @@
 
         // Update debug info
         function updateDebugInfo(message) {
-            document.getElementById('debugInfo').textContent = 'Debug: ' + message;
+            const debugInfo = document.getElementById('debugInfo');
+            const timestamp = new Date().toLocaleTimeString();
+            debugInfo.innerHTML = `
+                <div><strong>Debug Info (${timestamp}):</strong> ${message}</div>
+                <div><strong>Current User:</strong> ${currentUser || 'Not loaded'}</div>
+                <div><strong>User Role:</strong> ${userRole || 'Not loaded'}</div>
+                <div><strong>Attendance Records:</strong> ${attendanceData ? attendanceData.length : 0} loaded</div>
+            `;
             console.log('DEBUG:', message);
         }
 
@@ -936,7 +957,8 @@
             myAttendance.sort((a, b) => new Date(b.date) - new Date(a.date));
 
             myAttendance.forEach(record => {
-                const row = createAttendanceRow(record, 'my');                tbody.appendChild(row);
+                const row = createAttendanceRow(record, 'my');
+                tbody.appendChild(row);
             });
         }
 
@@ -994,7 +1016,7 @@
             const row = document.createElement('tr');
             
             // Format date and day
-            const dateObj = new Date(record.date);
+            const dateObj = new Date(record.date + 'T00:00:00'); // Add time to avoid timezone issues
             const formattedDate = dateObj.toLocaleDateString('en-US', { 
                 year: 'numeric', 
                 month: 'short', 
@@ -1002,42 +1024,49 @@
             });
             const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
             
-            // Calculate working hours
-            let workingHours = 'N/A';
-            let netHours = 'N/A';
-            let breakTime = 'N/A';
+            // Calculate working hours with better error handling
+            let workingHours = '-';
+            let netHours = '-';
+            let breakTime = '-';
             
             if (record.checkIn && record.checkOut) {
-                const checkInTime = new Date(`${record.date}T${record.checkIn}`);
-                const checkOutTime = new Date(`${record.date}T${record.checkOut}`);
-                
-                // Calculate total working hours in hours
-                const totalMs = checkOutTime - checkInTime;
-                const totalHours = totalMs / (1000 * 60 * 60);
-                
-                // Calculate break time if available
-                let breakMs = 0;
-                if (record.breakStart && record.breakEnd) {
-                    const breakStartTime = new Date(`${record.date}T${record.breakStart}`);
-                    const breakEndTime = new Date(`${record.date}T${record.breakEnd}`);
-                    breakMs = breakEndTime - breakStartTime;
-                }
-                
-                const breakHours = breakMs / (1000 * 60 * 60);
-                const netHoursValue = totalHours - breakHours;
-                
-                // Format times
-                workingHours = totalHours.toFixed(2) + 'h';
-                breakTime = breakHours.toFixed(2) + 'h';
-                netHours = netHoursValue.toFixed(2) + 'h';
-                
-                // Add overtime/undertime indicators
-                if (netHoursValue > 8) {
-                    netHours = `<span class="overtime">${netHours} (+${(netHoursValue - 8).toFixed(2)}h)</span>`;
-                } else if (netHoursValue < 8 && record.status === 'present') {
-                    netHours = `<span class="undertime">${netHours} (-${(8 - netHoursValue).toFixed(2)}h)</span>`;
-                } else {
-                    netHours = `<span class="working-hours">${netHours}</span>`;
+                try {
+                    const checkInTime = new Date(`${record.date}T${record.checkIn}`);
+                    const checkOutTime = new Date(`${record.date}T${record.checkOut}`);
+                    
+                    // Calculate total working hours in hours
+                    const totalMs = checkOutTime - checkInTime;
+                    const totalHours = totalMs / (1000 * 60 * 60);
+                    
+                    // Calculate break time if available
+                    let breakMs = 0;
+                    if (record.breakStart && record.breakEnd) {
+                        const breakStartTime = new Date(`${record.date}T${record.breakStart}`);
+                        const breakEndTime = new Date(`${record.date}T${record.breakEnd}`);
+                        breakMs = breakEndTime - breakStartTime;
+                    }
+                    
+                    const breakHours = breakMs / (1000 * 60 * 60);
+                    const netHoursValue = totalHours - breakHours;
+                    
+                    // Format times
+                    workingHours = totalHours.toFixed(2) + 'h';
+                    breakTime = breakHours > 0 ? breakHours.toFixed(2) + 'h' : '-';
+                    netHours = netHoursValue.toFixed(2) + 'h';
+                    
+                    // Add overtime/undertime indicators
+                    if (netHoursValue > 8) {
+                        netHours = `<span class="overtime">${netHours} (+${(netHoursValue - 8).toFixed(2)}h)</span>`;
+                    } else if (netHoursValue < 8 && record.status === 'present') {
+                        netHours = `<span class="undertime">${netHours} (-${(8 - netHoursValue).toFixed(2)}h)</span>`;
+                    } else {
+                        netHours = `<span class="working-hours">${netHours}</span>`;
+                    }
+                } catch (error) {
+                    console.error('Error calculating hours:', error);
+                    workingHours = 'Error';
+                    netHours = 'Error';
+                    breakTime = 'Error';
                 }
             }
 
@@ -1228,6 +1257,45 @@
             `;
         }
 
+        // Generate sample data for testing
+        async function generateSampleData() {
+            try {
+                const today = new Date();
+                const sampleDate = today.toISOString().split('T')[0];
+                
+                const sampleData = {
+                    userId: currentUser,
+                    username: userData.username,
+                    date: sampleDate,
+                    checkIn: "09:00",
+                    checkOut: "17:00",
+                    breakStart: "12:00",
+                    breakEnd: "13:00",
+                    status: "present",
+                    remarks: "Sample attendance record",
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                // Check if sample data already exists
+                const existingQuery = await db.collection("attendance")
+                    .where("userId", "==", currentUser)
+                    .where("date", "==", sampleDate)
+                    .get();
+
+                if (existingQuery.empty) {
+                    await db.collection("attendance").add(sampleData);
+                    showToast('Sample data created successfully!');
+                    await loadAttendanceData();
+                } else {
+                    showToast('Sample data already exists for today', 'info');
+                }
+            } catch (error) {
+                console.error("Error creating sample data:", error);
+                showToast('Error creating sample data', 'error');
+            }
+        }
+
         // Mark attendance function
         document.getElementById('submitAttendanceBtn').addEventListener('click', async function() {
             try {
@@ -1347,7 +1415,7 @@
                 console.error("Error in bulk hours update:", error);
                 showToast('Error in bulk hours update: ' + error.message, 'error');
             }
-        });
+        }
 
         // Edit attendance function
         async function editAttendance(attendanceId) {
