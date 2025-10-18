@@ -1,1542 +1,1381 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hours Management - Leave Management System</title>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #4361ee;
-            --secondary: #3f37c9;
-            --success: #4cc9f0;
-            --info: #4895ef;
-            --warning: #f72585;
-            --light: #f8f9fa;
-            --dark: #212529;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-        
-        .navbar-brand {
-            font-weight: 700;
-            color: var(--primary) !important;
-        }
-        
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s;
-            margin-bottom: 20px;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .card-header {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            border-radius: 15px 15px 0 0 !important;
-            padding: 15px 20px;
-            font-weight: 600;
-        }
-        
-        .stats-card {
-            text-align: center;
-            padding: 20px 15px;
-        }
-        
-        .stats-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 10px 0;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border: none;
-            border-radius: 8px;
-            padding: 10px 20px;
-            font-weight: 600;
-        }
-        
-        .btn-primary:hover {
-            background: linear-gradient(135deg, var(--secondary), var(--primary));
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .table th {
-            background-color: rgba(67, 97, 238, 0.1);
-            color: var(--primary);
-            font-weight: 600;
-        }
-        
-        .table td {
-            vertical-align: middle;
-        }
-        
-        .status-present {
-            background-color: #d1edff;
-            color: #0c5460;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-        
-        .status-absent {
-            background-color: #f8d7da;
-            color: #721c24;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-        
-        .status-leave {
-            background-color: #fff3cd;
-            color: #856404;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-        
-        .status-holiday {
-            background-color: #d4edda;
-            color: #155724;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-        
-        .attendance-badge {
-            font-size: 0.75rem;
-            padding: 4px 8px;
-            border-radius: 10px;
-        }
-        
-        .badge-present {
-            background-color: #28a745;
-            color: white;
-        }
-        
-        .badge-absent {
-            background-color: #dc3545;
-            color: white;
-        }
-        
-        .badge-leave {
-            background-color: #ffc107;
-            color: #212529;
-        }
-        
-        .badge-holiday {
-            background-color: #17a2b8;
-            color: white;
-        }
-        
-        .working-hours {
-            font-weight: 600;
-            color: var(--primary);
-        }
-        
-        .overtime {
-            color: #28a745;
-            font-weight: 600;
-        }
-        
-        .undertime {
-            color: #dc3545;
-            font-weight: 600;
-        }
-        
-        .admin-actions {
-            display: flex;
-            gap: 5px;
-        }
-        
-        .debug-info {
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            font-family: monospace;
-            font-size: 12px;
-        }
-        
-        .filter-section {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .attendance-summary {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 15px;
-        }
-        
-        .summary-item {
-            background: white;
-            padding: 10px 15px;
-            border-radius: 8px;
-            border-left: 4px solid var(--primary);
-            flex: 1;
-            min-width: 120px;
-        }
-        
-        .summary-label {
-            font-size: 0.8rem;
-            color: #6c757d;
-        }
-        
-        .summary-value {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hours Management - Attendance System</title>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
 
-        .current-month-display {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            padding: 10px 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 1.2rem;
-        }
-        
-        .debug-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-    </style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #2c3e50;
+    }
+
+    /* Topbar */
+    .topbar {
+      height: 70px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 30px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 100;
+    }
+
+    .topbar .left {
+      display: flex;
+      align-items: center;
+      gap: 25px;
+    }
+
+    .topbar .left a {
+      color: #2c3e50;
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 16px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      transition: all 0.3s ease;
+    }
+
+    .topbar .left a:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    #dateTime {
+      font-weight: 600;
+      font-size: 16px;
+      color: #2c3e50;
+    }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .profile img {
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .profile-name {
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      top: 70px;
+      left: 0;
+      width: 250px;
+      height: calc(100vh - 70px);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      padding: 20px 0;
+      z-index: 99;
+      overflow-y: auto;
+    }
+
+    .sidebar-toggle {
+      position: fixed;
+      top: 80px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      z-index: 101;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: none;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .sidebar li {
+      margin-bottom: 5px;
+    }
+
+    .sidebar a {
+      display: block;
+      padding: 15px 25px;
+      color: #2c3e50;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      border-left: 4px solid transparent;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      background: rgba(102, 126, 234, 0.1);
+      border-left-color: #667eea;
+      color: #667eea;
+    }
+
+    .admin-only {
+      display: none;
+      background: rgba(255, 193, 7, 0.1);
+      border-left: 4px solid #ffc107;
+    }
+
+    .admin-only.visible {
+      display: block;
+    }
+
+    /* Main Content */
+    .main-content {
+      margin: 90px 30px 30px 280px;
+      padding: 30px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+      min-height: calc(100vh - 120px);
+      transition: margin-left 0.3s ease;
+    }
+
+    /* Page Header */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .page-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2c3e50;
+    }
+
+    .page-subtitle {
+      color: #7f8c8d;
+      margin-top: 5px;
+    }
+
+    /* Filter Section */
+    .filter-section {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      align-items: end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .filter-label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #2c3e50;
+    }
+
+    .filter-select, .filter-input {
+      padding: 12px;
+      border: 2px solid #e9ecef;
+      border-radius: 10px;
+      font-size: 14px;
+      transition: border-color 0.3s ease;
+    }
+
+    .filter-select:focus, .filter-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .filter-btn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .filter-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+      border-left: 5px solid #667eea;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .stat-icon {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: #7f8c8d;
+      font-weight: 600;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: white;
+      border-radius: 15px 15px 0 0;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 0;
+    }
+
+    .tab {
+      padding: 15px 25px;
+      background: none;
+      border: none;
+      font-weight: 600;
+      color: #7f8c8d;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-bottom: 3px solid transparent;
+    }
+
+    .tab.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+
+    .tab-content {
+      display: none;
+      background: white;
+      padding: 0;
+      border-radius: 0 0 15px 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Table Styles */
+    .table-container {
+      overflow-x: auto;
+      border-radius: 0 0 15px 15px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    table th {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      font-weight: 600;
+      padding: 15px 12px;
+      text-align: left;
+      position: sticky;
+      top: 0;
+    }
+
+    table td {
+      padding: 12px;
+      border-bottom: 1px solid #f1f3f4;
+    }
+
+    table tbody tr:hover {
+      background: #f8f9ff;
+    }
+
+    .status-present {
+      background: #d4edda;
+      color: #155724;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-absent {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-leave {
+      background: #fff3cd;
+      color: #856404;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-holiday {
+      background: #cce7ff;
+      color: #004085;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .overtime {
+      color: #28a745;
+      font-weight: 600;
+    }
+
+    .undertime {
+      color: #dc3545;
+      font-weight: 600;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 5px;
+    }
+
+    .btn-edit, .btn-delete {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-edit {
+      background: #17a2b8;
+      color: white;
+    }
+
+    .btn-delete {
+      background: #dc3545;
+      color: white;
+    }
+
+    .btn-edit:hover, .btn-delete:hover {
+      transform: translateY(-1px);
+    }
+
+    /* Charts Section */
+    .charts-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    .chart-container {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .chart-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      top: 90px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      z-index: 10000;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      max-width: 300px;
+      transform: translateX(150%);
+    }
+
+    .toast.show {
+      transform: translateX(0);
+    }
+
+    .toast.success { background: #27ae60; }
+    .toast.error { background: #e74c3c; }
+    .toast.warning { background: #f39c12; }
+    .toast.info { background: #3498db; }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+      .charts-section {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar-toggle {
+        display: block;
+      }
+
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+
+      .sidebar.visible {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin: 90px 15px 15px 15px;
+        padding: 20px;
+      }
+
+      .filter-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .tabs {
+        flex-direction: column;
+      }
+
+      .tab {
+        border-bottom: none;
+        border-left: 3px solid transparent;
+      }
+
+      .tab.active {
+        border-left-color: #667eea;
+        border-bottom: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        padding: 0 15px;
+      }
+
+      .topbar .left {
+        gap: 10px;
+      }
+
+      .topbar .left a {
+        font-size: 14px;
+        padding: 8px 12px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-clock me-2"></i>Hours Management
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="attendance.html">
-                            <i class="fas fa-user-clock me-1"></i> Attendance
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="leave.html">
-                            <i class="fas fa-umbrella-beach me-1"></i> Leave
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="holiday.html">
-                            <i class="fas fa-calendar-day me-1"></i> Holiday
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#">
-                            <i class="fas fa-clock me-1"></i> Hours
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user me-1"></i> <span id="currentUserName">Loading...</span>
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Settings</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="left">
+      <a href="#" id="homeButton">🏠 Home</a>
+    </div>
+    <div id="dateTime">Loading...</div>
+    <div class="profile">
+      <img src="https://i.pravatar.cc/45" alt="User" />
+      <span class="profile-name" id="profileName">User</span>
+    </div>
+  </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="toast align-items-center text-white bg-success border-0" role="alert">
-        <div class="d-flex">
-            <div class="toast-body" id="toastMessage">Success!</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
+  <!-- Sidebar Toggle -->
+  <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <ul>
+      <li><a href="Leave.html">📋 Leave</a></li>
+      <li><a href="Holiday.html">🎄 Holiday</a></li>
+      <li><a href="Attendance.html">⏱️ Attendance Tracker</a></li>
+      <li><a href="Hours.html" class="active">🕒 Hours</a></li>
+      <li><a href="Reports.html">📊 Reports</a></li>
+      <!-- Admin Only Menu -->
+      <li class="admin-only" id="adminMenu">
+        <a href="AllData.html">🔍 Detailed View</a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content" id="mainContent">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Hours Management</h1>
+        <p class="page-subtitle">Track and manage employee working hours</p>
+      </div>
+      <div id="currentMonthDisplay" class="current-month-display">
+        Loading current month...
+      </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="container my-4">
-        <!-- Debug Info Panel -->
-        <div class="debug-info" id="debugInfo">
-            Debug: Loading...
+    <!-- Filter Section -->
+    <div class="filter-section">
+      <div class="filter-grid">
+        <div class="filter-group">
+          <label class="filter-label">Select Month</label>
+          <input type="month" class="filter-input" id="monthFilter">
         </div>
-        <div class="debug-actions">
-            <button class="btn btn-sm btn-outline-primary" onclick="generateSampleData()">
-                <i class="fas fa-vial me-1"></i> Add Test Data
-            </button>
-            <button class="btn btn-sm btn-outline-secondary" onclick="loadAttendanceData()">
-                <i class="fas fa-sync-alt me-1"></i> Reload Data
-            </button>
+        <div class="filter-group">
+          <label class="filter-label">Select Employee</label>
+          <select class="filter-select" id="employeeFilter">
+            <option value="all">All Employees</option>
+          </select>
         </div>
-
-        <!-- Page Header -->
-        <div class="row mb-4">
-            <div class="col">
-                <h2 class="text-white">Hours Management</h2>
-                <p class="text-light">Track and manage employee working hours</p>
-            </div>
-            <div class="col-auto">
-                <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#markAttendanceModal" id="markAttendanceBtn">
-                    <i class="fas fa-check-circle me-2"></i> Mark Hours
-                </button>
-                <button class="btn btn-light ms-2" data-bs-toggle="modal" data-bs-target="#bulkAttendanceModal" id="bulkAttendanceBtn" style="display: none;">
-                    <i class="fas fa-users me-2"></i> Bulk Update
-                </button>
-            </div>
+        <div class="filter-group">
+          <label class="filter-label">Status Filter</label>
+          <select class="filter-select" id="statusFilter">
+            <option value="all">All Status</option>
+            <option value="present">Present</option>
+            <option value="absent">Absent</option>
+            <option value="leave">On Leave</option>
+            <option value="holiday">Holiday</option>
+          </select>
         </div>
-
-        <!-- Current Month Display -->
-        <div class="current-month-display" id="currentMonthDisplay">
-            Loading current month...
+        <div class="filter-group">
+          <button class="filter-btn" onclick="loadHoursData()">
+            <span>🔍 Apply Filters</span>
+          </button>
         </div>
-
-        <!-- Stats Cards -->
-        <div class="row">
-            <div class="col-md-3">
-                <div class="card stats-card">
-                    <div class="card-body">
-                        <i class="fas fa-user-check fa-2x text-success mb-2"></i>
-                        <h5 class="card-title">Present Today</h5>
-                        <div class="stats-number text-success" id="presentToday">0</div>
-                        <p class="card-text">Employees</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card">
-                    <div class="card-body">
-                        <i class="fas fa-user-times fa-2x text-danger mb-2"></i>
-                        <h5 class="card-title">Absent Today</h5>
-                        <div class="stats-number text-danger" id="absentToday">0</div>
-                        <p class="card-text">Employees</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card">
-                    <div class="card-body">
-                        <i class="fas fa-umbrella-beach fa-2x text-warning mb-2"></i>
-                        <h5 class="card-title">On Leave</h5>
-                        <div class="stats-number text-warning" id="onLeaveToday">0</div>
-                        <p class="card-text">Employees</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card">
-                    <div class="card-body">
-                        <i class="fas fa-calendar-alt fa-2x text-info mb-2"></i>
-                        <h5 class="card-title">Attendance Rate</h5>
-                        <div class="stats-number text-info" id="attendanceRate">0%</div>
-                        <p class="card-text">This Month</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Filters and Summary -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="filter-section">
-                    <div class="row align-items-center">
-                        <div class="col-md-3">
-                            <label class="form-label">Select Month</label>
-                            <input type="month" class="form-control" id="monthFilter">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Select Employee</label>
-                            <select class="form-select" id="employeeFilter">
-                                <option value="all">All Employees</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Status Filter</label>
-                            <select class="form-select" id="statusFilter">
-                                <option value="all">All Status</option>
-                                <option value="present">Present</option>
-                                <option value="absent">Absent</option>
-                                <option value="leave">On Leave</option>
-                                <option value="holiday">Holiday</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">&nbsp;</label>
-                            <button class="btn btn-primary w-100" onclick="loadAttendanceData()">
-                                <i class="fas fa-filter me-2"></i> Apply Filters
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Summary Cards -->
-                    <div class="attendance-summary mt-3" id="attendanceSummary">
-                        <!-- Summary will be loaded here -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tabs Section -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header p-0">
-                        <ul class="nav nav-tabs" id="attendanceTabs" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="my-attendance-tab" data-bs-toggle="tab" data-bs-target="#my-attendance" type="button">
-                                    <i class="fas fa-user me-2"></i> My Hours
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation" id="teamAttendanceTab" style="display: none;">
-                                <button class="nav-link" id="team-attendance-tab" data-bs-toggle="tab" data-bs-target="#team-attendance" type="button">
-                                    <i class="fas fa-users me-2"></i> Team Hours
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation" id="allAttendanceTab" style="display: none;">
-                                <button class="nav-link" id="all-attendance-tab" data-bs-toggle="tab" data-bs-target="#all-attendance" type="button">
-                                    <i class="fas fa-tasks me-2"></i> All Hours (Admin)
-                                </button>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="tab-content" id="attendanceTabsContent">
-                        <!-- My Hours Tab -->
-                        <div class="tab-pane fade show active" id="my-attendance" role="tabpanel">
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Day</th>
-                                            <th>Check In</th>
-                                            <th>Check Out</th>
-                                            <th>Working Hours</th>
-                                            <th>Break Time</th>
-                                            <th>Net Hours</th>
-                                            <th>Status</th>
-                                            <th>Remarks</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="myAttendanceTableBody">
-                                        <tr>
-                                            <td colspan="10" class="text-center py-4">Loading hours data...</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        
-                        <!-- Team Hours Tab -->
-                        <div class="tab-pane fade" id="team-attendance" role="tabpanel">
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Employee</th>
-                                            <th>Date</th>
-                                            <th>Check In</th>
-                                            <th>Check Out</th>
-                                            <th>Working Hours</th>
-                                            <th>Break Time</th>
-                                            <th>Net Hours</th>
-                                            <th>Status</th>
-                                            <th>Remarks</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="teamAttendanceTableBody">
-                                        <tr>
-                                            <td colspan="10" class="text-center py-4">No team hours data available</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- All Hours Tab (Admin Only) -->
-                        <div class="tab-pane fade" id="all-attendance" role="tabpanel">
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Employee</th>
-                                            <th>Date</th>
-                                            <th>Check In</th>
-                                            <th>Check Out</th>
-                                            <th>Working Hours</th>
-                                            <th>Break Time</th>
-                                            <th>Net Hours</th>
-                                            <th>Status</th>
-                                            <th>Remarks</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="allAttendanceTableBody">
-                                        <tr>
-                                            <td colspan="10" class="text-center py-4">No hours data available</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
 
-    <!-- Mark Hours Modal -->
-    <div class="modal fade" id="markAttendanceModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-check-circle me-2"></i> Mark Hours</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="markAttendanceForm">
-                        <div class="mb-3">
-                            <label class="form-label">Date</label>
-                            <input type="date" class="form-control" id="attendanceDate" value="" required>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Check In Time</label>
-                                <input type="time" class="form-control" id="checkInTime" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Check Out Time</label>
-                                <input type="time" class="form-control" id="checkOutTime">
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Break Start</label>
-                                <input type="time" class="form-control" id="breakStartTime">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Break End</label>
-                                <input type="time" class="form-control" id="breakEndTime">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Status</label>
-                            <select class="form-select" id="attendanceStatus" required>
-                                <option value="present">Present</option>
-                                <option value="absent">Absent</option>
-                                <option value="leave">On Leave</option>
-                                <option value="holiday">Holiday</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Remarks (Optional)</label>
-                            <textarea class="form-control" id="attendanceRemarks" rows="3" placeholder="Any remarks or notes"></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="submitAttendanceBtn">Mark Hours</button>
-                </div>
-            </div>
-        </div>
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-number" id="totalEmployees">0</div>
+        <div class="stat-label">Total Employees</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-number" id="presentCount">0</div>
+        <div class="stat-label">Present Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">❌</div>
+        <div class="stat-number" id="absentCount">0</div>
+        <div class="stat-label">Absent Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-number" id="attendanceRate">0%</div>
+        <div class="stat-label">Attendance Rate</div>
+      </div>
     </div>
 
-    <!-- Bulk Hours Modal -->
-    <div class="modal fade" id="bulkAttendanceModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-users me-2"></i> Bulk Hours Update</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="bulkAttendanceForm">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Select Employees</label>
-                                <select class="form-select" id="bulkEmployees" multiple required>
-                                    <option value="">Loading employees...</option>
-                                </select>
-                                <small class="form-text text-muted">Hold Ctrl to select multiple employees</small>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Date</label>
-                                <input type="date" class="form-control" id="bulkAttendanceDate" required>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Status</label>
-                                <select class="form-select" id="bulkAttendanceStatus" required>
-                                    <option value="present">Present</option>
-                                    <option value="absent">Absent</option>
-                                    <option value="leave">On Leave</option>
-                                    <option value="holiday">Holiday</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Remarks</label>
-                                <input type="text" class="form-control" id="bulkRemarks" placeholder="Remarks for all selected employees">
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="submitBulkAttendanceBtn">Update Bulk Hours</button>
-                </div>
-            </div>
-        </div>
+    <!-- Charts Section -->
+    <div class="charts-section">
+      <div class="chart-container">
+        <div class="chart-title">Monthly Hours Distribution</div>
+        <canvas id="hoursChart"></canvas>
+      </div>
+      <div class="chart-container">
+        <div class="chart-title">Attendance Trend</div>
+        <canvas id="attendanceChart"></canvas>
+      </div>
     </div>
 
-    <!-- Edit Hours Modal -->
-    <div class="modal fade" id="editAttendanceModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i> Edit Hours</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editAttendanceForm">
-                        <input type="hidden" id="editAttendanceId">
-                        <div class="mb-3">
-                            <label class="form-label">Date</label>
-                            <input type="date" class="form-control" id="editAttendanceDate" required>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Check In Time</label>
-                                <input type="time" class="form-control" id="editCheckInTime" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Check Out Time</label>
-                                <input type="time" class="form-control" id="editCheckOutTime">
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Break Start</label>
-                                <input type="time" class="form-control" id="editBreakStartTime">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Break End</label>
-                                <input type="time" class="form-control" id="editBreakEndTime">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Status</label>
-                            <select class="form-select" id="editAttendanceStatus" required>
-                                <option value="present">Present</option>
-                                <option value="absent">Absent</option>
-                                <option value="leave">On Leave</option>
-                                <option value="holiday">Holiday</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Remarks</label>
-                            <textarea class="form-control" id="editAttendanceRemarks" rows="3"></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="updateAttendanceBtn">Update Hours</button>
-                </div>
-            </div>
+    <!-- Tabs -->
+    <div class="tabs-container">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('myHours')">My Hours</button>
+        <button class="tab" onclick="switchTab('teamHours')" id="teamTab" style="display: none;">Team Hours</button>
+        <button class="tab" onclick="switchTab('allHours')" id="allTab" style="display: none;">All Hours (Admin)</button>
+      </div>
+
+      <!-- My Hours Tab -->
+      <div class="tab-content active" id="myHours">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Day</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Working Hours</th>
+                <th>Break Time</th>
+                <th>Net Hours</th>
+                <th>Status</th>
+                <th>Remarks</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="myHoursTableBody">
+              <tr>
+                <td colspan="10" style="text-align: center; padding: 20px;">Loading your hours data...</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+      </div>
+
+      <!-- Team Hours Tab -->
+      <div class="tab-content" id="teamHours">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Date</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Working Hours</th>
+                <th>Break Time</th>
+                <th>Net Hours</th>
+                <th>Status</th>
+                <th>Remarks</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="teamHoursTableBody">
+              <tr>
+                <td colspan="10" style="text-align: center; padding: 20px;">No team hours data available</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- All Hours Tab -->
+      <div class="tab-content" id="allHours">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Date</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Working Hours</th>
+                <th>Break Time</th>
+                <th>Net Hours</th>
+                <th>Status</th>
+                <th>Remarks</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="allHoursTableBody">
+              <tr>
+                <td colspan="10" style="text-align: center; padding: 20px;">No hours data available</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
+  </main>
 
-    <!-- Footer -->
-    <footer class="mt-5">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>Leave Management System</h5>
-                    <p>Streamlining leave requests and approvals for your organization.</p>
-                </div>
-                <div class="col-md-6 text-end">
-                    <p>&copy; 2025 Your Company. All rights reserved.</p>
-                    <div>
-                        <a href="#" class="text-decoration-none me-3">Privacy Policy</a>
-                        <a href="#" class="text-decoration-none">Terms of Service</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </footer>
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
 
-    <!-- Bootstrap & jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDYhLNuJKj2ucwGimfddTfpTb32Y0c-bXg",
+      authDomain: "mytask-96a79.firebaseapp.com",
+      databaseURL: "https://mytask-96a79-default-rtdb.firebaseio.com",
+      projectId: "mytask-96a79",
+      storageBucket: "mytask-96a79.firebasestorage.app",
+      messagingSenderId: "963509757773",
+      appId: "1:963509757773:web:d9c81a108f5873702eb904",
+      measurementId: "G-L9C1LTCZRN"
+    };
 
-    <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDYhLNuJKj2ucwGimfddTfpTb32Y0c-bXg",
-            authDomain: "mytask-96a79.firebaseapp.com",
-            databaseURL: "https://mytask-96a79-default-rtdb.firebaseio.com",
-            projectId: "mytask-96a79",
-            storageBucket: "mytask-96a79.firebasestorage.app",
-            messagingSenderId: "963509757773",
-            appId: "1:963509757773:web:d9c81a108f5873702eb904",
-            measurementId: "G-L9C1LTCZRN"
-        };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+    // Global variables
+    let currentUser = null;
+    let userData = null;
+    let userRole = null;
+    let allUsers = [];
+    let hoursData = [];
+    let hoursChart = null;
+    let attendanceChart = null;
 
-        // Global variables
-        let currentUser = null;
-        let userData = null;
-        let userRole = null;
-        let allUsers = [];
-        let attendanceData = [];
+    // Toast notification function
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast';
+      toast.classList.add(type, 'show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 4000);
+    }
 
-        // Get current month and year
-        function getCurrentMonthYear() {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            return `${year}-${month}`;
+    // Update date time
+    function updateDateTime() {
+      const now = new Date();
+      const options = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      };
+      document.getElementById('dateTime').textContent = now.toLocaleDateString('en-US', options);
+    }
+
+    // Get current month and year
+    function getCurrentMonthYear() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      return `${year}-${month}`;
+    }
+
+    // Format month for display
+    function formatMonthDisplay(monthYear) {
+      const [year, month] = monthYear.split('-');
+      const date = new Date(year, month - 1);
+      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+    }
+
+    // Update current month display
+    function updateCurrentMonthDisplay() {
+      const currentMonth = getCurrentMonthYear();
+      const displayText = formatMonthDisplay(currentMonth);
+      document.getElementById('currentMonthDisplay').textContent = `Viewing: ${displayText}`;
+      
+      // Set the month filter to current month
+      document.getElementById('monthFilter').value = currentMonth;
+    }
+
+    // Home button click handler
+    function handleHomeClick() {
+      if (userRole === 'Admin') {
+        window.location.href = 'Home.html';
+      } else {
+        window.location.href = 'UserDashboard.html';
+      }
+    }
+
+    // Switch tabs
+    function switchTab(tabName) {
+      // Hide all tab contents
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Remove active class from all tabs
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Show selected tab content
+      document.getElementById(tabName).classList.add('active');
+      
+      // Add active class to clicked tab
+      event.target.classList.add('active');
+    }
+
+    // Initialize the application
+    async function initializeApp() {
+      updateDateTime();
+      setInterval(updateDateTime, 1000);
+      updateCurrentMonthDisplay();
+
+      // Get user from session storage
+      const username = sessionStorage.getItem("username");
+      if (!username) {
+        showToast('Please login first', 'error');
+        setTimeout(() => window.location.href = 'index.html', 2000);
+        return;
+      }
+
+      document.getElementById('profileName').textContent = username;
+
+      // Set up home button click handler
+      document.getElementById('homeButton').addEventListener('click', handleHomeClick);
+
+      // Find user in Firestore
+      try {
+        const userQuery = await db.collection("users")
+          .where("username", "==", username)
+          .get();
+
+        if (userQuery.empty) {
+          showToast('User not found in system', 'error');
+          return;
         }
 
-        // Format month for display
-        function formatMonthDisplay(monthYear) {
-            const [year, month] = monthYear.split('-');
-            const date = new Date(year, month - 1);
-            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+        userData = userQuery.docs[0].data();
+        currentUser = userQuery.docs[0].id;
+        userRole = userData.role || 'User';
+
+        // Check if user is admin
+        if (userRole === 'Admin') {
+          document.getElementById('adminMenu').classList.add('visible');
+          document.getElementById('teamTab').style.display = 'block';
+          document.getElementById('allTab').style.display = 'block';
         }
+
+        // Load all users
+        await loadAllUsers();
+        
+        // Load initial hours data
+        await loadHoursData();
+        
+        // Initialize charts
+        await initializeCharts();
+
+      } catch (error) {
+        console.error("Error initializing app:", error);
+        showToast('Error loading application: ' + error.message, 'error');
+      }
+    }
+
+    // Load all users for filters
+    async function loadAllUsers() {
+      try {
+        const usersQuery = await db.collection("users").get();
+        allUsers = [];
+        usersQuery.forEach(doc => {
+          allUsers.push({ id: doc.id, ...doc.data() });
+        });
+
+        // Update total employees count
+        document.getElementById('totalEmployees').textContent = allUsers.length;
+
+        // Populate employee filter dropdown
+        const employeeFilter = document.getElementById('employeeFilter');
+        employeeFilter.innerHTML = '<option value="all">All Employees</option>';
+        
+        allUsers.forEach(user => {
+          const option = document.createElement('option');
+          option.value = user.id;
+          option.textContent = `${user.username} (${user.empId || 'N/A'})`;
+          employeeFilter.appendChild(option);
+        });
+
+      } catch (error) {
+        console.error("Error loading users:", error);
+      }
+    }
+
+    // Load hours data based on filters
+    async function loadHoursData() {
+      try {
+        const monthFilter = document.getElementById('monthFilter').value || getCurrentMonthYear();
+        const employeeFilter = document.getElementById('employeeFilter').value;
+        const statusFilter = document.getElementById('statusFilter').value;
+
+        // Calculate date range for the selected month
+        const [year, month] = monthFilter.split('-');
+        const startDate = `${year}-${month}-01`;
+        const endDate = `${year}-${month}-${new Date(year, month, 0).getDate()}`;
 
         // Update current month display
-        function updateCurrentMonthDisplay() {
-            const currentMonth = getCurrentMonthYear();
-            const displayText = formatMonthDisplay(currentMonth);
-            document.getElementById('currentMonthDisplay').textContent = `Viewing Hours for ${displayText}`;
-            
-            // Set the month filter to current month
-            document.getElementById('monthFilter').value = currentMonth;
+        document.getElementById('currentMonthDisplay').textContent = `Viewing: ${formatMonthDisplay(monthFilter)}`;
+
+        let hoursQuery;
+        
+        if (employeeFilter === 'all' && userRole === 'Admin') {
+          // Admin viewing all hours
+          hoursQuery = await db.collection("attendance")
+            .where("date", ">=", startDate)
+            .where("date", "<=", endDate)
+            .get();
+        } else {
+          // User viewing their own hours or admin viewing specific user
+          const userId = employeeFilter === 'all' ? currentUser : employeeFilter;
+          hoursQuery = await db.collection("attendance")
+            .where("userId", "==", userId)
+            .where("date", ">=", startDate)
+            .where("date", "<=", endDate)
+            .get();
         }
 
-        // Toast notification function
-        function showToast(message, type = 'success') {
-            const toast = document.getElementById('toast');
-            const toastMessage = document.getElementById('toastMessage');
-            
-            toast.className = `toast align-items-center text-white bg-${type} border-0`;
-            toastMessage.textContent = message;
-            
-            const bsToast = new bootstrap.Toast(toast);
-            bsToast.show();
-        }
-
-        // Update debug info
-        function updateDebugInfo(message) {
-            const debugInfo = document.getElementById('debugInfo');
-            const timestamp = new Date().toLocaleTimeString();
-            debugInfo.innerHTML = `
-                <div><strong>Debug Info (${timestamp}):</strong> ${message}</div>
-                <div><strong>Current User:</strong> ${currentUser || 'Not loaded'}</div>
-                <div><strong>User Role:</strong> ${userRole || 'Not loaded'}</div>
-                <div><strong>Attendance Records:</strong> ${attendanceData ? attendanceData.length : 0} loaded</div>
-            `;
-            console.log('DEBUG:', message);
-        }
-
-        // Initialize the application
-        async function initializeApp() {
-            updateDebugInfo('Starting initialization...');
-            
-            // Update current month display
-            updateCurrentMonthDisplay();
-            
-            // Get user from session storage
-            const username = sessionStorage.getItem("username");
-            if (!username) {
-                showToast('Please login first', 'error');
-                setTimeout(() => window.location.href = 'index.html', 2000);
-                return;
-            }
-
-            document.getElementById('currentUserName').textContent = username;
-
-            // Find user in Firestore
-            try {
-                updateDebugInfo('Searching for user in Firestore...');
-                const userQuery = await db.collection("users")
-                    .where("username", "==", username)
-                    .get();
-
-                if (userQuery.empty) {
-                    updateDebugInfo('User not found in Firestore');
-                    showToast('User not found in system', 'error');
-                    return;
-                }
-
-                userData = userQuery.docs[0].data();
-                currentUser = userQuery.docs[0].id;
-                userRole = userData.role || 'employee';
-
-                updateDebugInfo(`User loaded: ${userData.username}, Role: ${userRole}, ID: ${currentUser}`);
-
-                // Show admin features if admin
-                if (userRole === 'Admin' || userRole === 'Sub Admin') {
-                    document.getElementById('bulkAttendanceBtn').style.display = 'inline-block';
-                    document.getElementById('teamAttendanceTab').style.display = 'block';
-                    document.getElementById('allAttendanceTab').style.display = 'block';
-                }
-
-                // Set today's date in modal
-                const today = new Date().toISOString().split('T')[0];
-                document.getElementById('attendanceDate').value = today;
-                document.getElementById('bulkAttendanceDate').value = today;
-
-                // Load initial data
-                await loadAllUsers();
-                await loadAttendanceData();
-                
-                updateDebugInfo('App initialized successfully');
-
-            } catch (error) {
-                updateDebugInfo('Error: ' + error.message);
-                console.error("Error initializing app:", error);
-                showToast('Error loading application: ' + error.message, 'error');
-            }
-        }
-
-        // Load all users for filters and bulk operations
-        async function loadAllUsers() {
-            try {
-                const usersQuery = await db.collection("users").get();
-                allUsers = [];
-                usersQuery.forEach(doc => {
-                    allUsers.push({ id: doc.id, ...doc.data() });
-                });
-
-                // Populate employee filter dropdown
-                const employeeFilter = document.getElementById('employeeFilter');
-                employeeFilter.innerHTML = '<option value="all">All Employees</option>';
-                
-                allUsers.forEach(user => {
-                    const option = document.createElement('option');
-                    option.value = user.id;
-                    option.textContent = `${user.username} (${user.empId || 'N/A'})`;
-                    employeeFilter.appendChild(option);
-                });
-
-                // Populate bulk employees dropdown
-                const bulkEmployees = document.getElementById('bulkEmployees');
-                bulkEmployees.innerHTML = '';
-                
-                allUsers.forEach(user => {
-                    const option = document.createElement('option');
-                    option.value = user.id;
-                    option.textContent = `${user.username} (${user.empId || 'N/A'})`;
-                    bulkEmployees.appendChild(option);
-                });
-
-            } catch (error) {
-                console.error("Error loading users:", error);
-            }
-        }
-
-        // Load attendance data based on filters
-        async function loadAttendanceData() {
-            try {
-                updateDebugInfo('Loading hours data...');
-                
-                const monthFilter = document.getElementById('monthFilter').value || getCurrentMonthYear();
-                const employeeFilter = document.getElementById('employeeFilter').value;
-                const statusFilter = document.getElementById('statusFilter').value;
-
-                // Calculate date range for the selected month
-                const [year, month] = monthFilter.split('-');
-                const startDate = `${year}-${month}-01`;
-                const endDate = `${year}-${month}-${new Date(year, month, 0).getDate()}`;
-
-                // Update current month display
-                document.getElementById('currentMonthDisplay').textContent = `Viewing Hours for ${formatMonthDisplay(monthFilter)}`;
-
-                let attendanceQuery;
-                
-                if (employeeFilter === 'all' && (userRole === 'Admin' || userRole === 'Sub Admin')) {
-                    // Admin viewing all attendance
-                    attendanceQuery = await db.collection("attendance")
-                        .where("date", ">=", startDate)
-                        .where("date", "<=", endDate)
-                        .get();
-                } else {
-                    // User viewing their own attendance or admin viewing specific user
-                    const userId = employeeFilter === 'all' ? currentUser : employeeFilter;
-                    attendanceQuery = await db.collection("attendance")
-                        .where("userId", "==", userId)
-                        .where("date", ">=", startDate)
-                        .where("date", "<=", endDate)
-                        .get();
-                }
-
-                attendanceData = [];
-                attendanceQuery.forEach(doc => {
-                    attendanceData.push({ id: doc.id, ...doc.data() });
-                });
-
-                // Filter by status if needed
-                if (statusFilter !== 'all') {
-                    attendanceData = attendanceData.filter(record => record.status === statusFilter);
-                }
-
-                updateDebugInfo(`Loaded ${attendanceData.length} hours records`);
-
-                // Update UI
-                updateAttendanceTables();
-                updateAttendanceStats();
-                updateSummaryCards();
-
-            } catch (error) {
-                updateDebugInfo('Error loading hours data: ' + error.message);
-                console.error("Error loading hours data:", error);
-                showToast('Error loading hours data', 'error');
-            }
-        }
-
-        // Update attendance tables
-        function updateAttendanceTables() {
-            updateMyAttendanceTable();
-            updateTeamAttendanceTable();
-            updateAllAttendanceTable();
-        }
-
-        // Update my attendance table
-        function updateMyAttendanceTable() {
-            const tbody = document.getElementById('myAttendanceTableBody');
-            tbody.innerHTML = '';
-
-            const myAttendance = attendanceData.filter(record => record.userId === currentUser);
-
-            if (myAttendance.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4">No hours records found for the selected period</td></tr>';
-                return;
-            }
-
-            // Sort by date descending
-            myAttendance.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            myAttendance.forEach(record => {
-                const row = createAttendanceRow(record, 'my');
-                tbody.appendChild(row);
-            });
-        }
-
-        // Update team attendance table
-        function updateTeamAttendanceTable() {
-            const tbody = document.getElementById('teamAttendanceTableBody');
-            tbody.innerHTML = '';
-
-            if (userRole !== 'Admin' && userRole !== 'Sub Admin') {
-                return;
-            }
-
-            // Get team members (for now, show all users except current user)
-            const teamAttendance = attendanceData.filter(record => record.userId !== currentUser);
-
-            if (teamAttendance.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4">No team hours records found for the selected period</td></tr>';
-                return;
-            }
-
-            // Sort by date descending
-            teamAttendance.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            teamAttendance.forEach(record => {
-                const row = createAttendanceRow(record, 'team');
-                tbody.appendChild(row);
-            });
-        }
-
-        // Update all attendance table (admin only)
-        function updateAllAttendanceTable() {
-            const tbody = document.getElementById('allAttendanceTableBody');
-            tbody.innerHTML = '';
-
-            if (userRole !== 'Admin' && userRole !== 'Sub Admin') {
-                return;
-            }
-
-            if (attendanceData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4">No hours records found for the selected period</td></tr>';
-                return;
-            }
-
-            // Sort by date descending
-            attendanceData.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            attendanceData.forEach(record => {
-                const row = createAttendanceRow(record, 'all');
-                tbody.appendChild(row);
-            });
-        }
-
-        // Create attendance table row
-        function createAttendanceRow(record, tableType) {
-            const row = document.createElement('tr');
-            
-            // Format date and day
-            const dateObj = new Date(record.date + 'T00:00:00'); // Add time to avoid timezone issues
-            const formattedDate = dateObj.toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric' 
-            });
-            const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
-            
-            // Calculate working hours with better error handling
-            let workingHours = '-';
-            let netHours = '-';
-            let breakTime = '-';
-            
-            if (record.checkIn && record.checkOut) {
-                try {
-                    const checkInTime = new Date(`${record.date}T${record.checkIn}`);
-                    const checkOutTime = new Date(`${record.date}T${record.checkOut}`);
-                    
-                    // Calculate total working hours in hours
-                    const totalMs = checkOutTime - checkInTime;
-                    const totalHours = totalMs / (1000 * 60 * 60);
-                    
-                    // Calculate break time if available
-                    let breakMs = 0;
-                    if (record.breakStart && record.breakEnd) {
-                        const breakStartTime = new Date(`${record.date}T${record.breakStart}`);
-                        const breakEndTime = new Date(`${record.date}T${record.breakEnd}`);
-                        breakMs = breakEndTime - breakStartTime;
-                    }
-                    
-                    const breakHours = breakMs / (1000 * 60 * 60);
-                    const netHoursValue = totalHours - breakHours;
-                    
-                    // Format times
-                    workingHours = totalHours.toFixed(2) + 'h';
-                    breakTime = breakHours > 0 ? breakHours.toFixed(2) + 'h' : '-';
-                    netHours = netHoursValue.toFixed(2) + 'h';
-                    
-                    // Add overtime/undertime indicators
-                    if (netHoursValue > 8) {
-                        netHours = `<span class="overtime">${netHours} (+${(netHoursValue - 8).toFixed(2)}h)</span>`;
-                    } else if (netHoursValue < 8 && record.status === 'present') {
-                        netHours = `<span class="undertime">${netHours} (-${(8 - netHoursValue).toFixed(2)}h)</span>`;
-                    } else {
-                        netHours = `<span class="working-hours">${netHours}</span>`;
-                    }
-                } catch (error) {
-                    console.error('Error calculating hours:', error);
-                    workingHours = 'Error';
-                    netHours = 'Error';
-                    breakTime = 'Error';
-                }
-            }
-
-            // Get employee name
-            let employeeName = record.username || 'Unknown';
-            if (tableType !== 'my') {
-                const user = allUsers.find(u => u.id === record.userId);
-                employeeName = user ? `${user.username} (${user.empId || 'N/A'})` : 'Unknown';
-            }
-
-            // Create status badge
-            let statusBadge = '';
-            switch (record.status) {
-                case 'present':
-                    statusBadge = `<span class="status-present">Present</span>`;
-                    break;
-                case 'absent':
-                    statusBadge = `<span class="status-absent">Absent</span>`;
-                    break;
-                case 'leave':
-                    statusBadge = `<span class="status-leave">On Leave</span>`;
-                    break;
-                case 'holiday':
-                    statusBadge = `<span class="status-holiday">Holiday</span>`;
-                    break;
-                default:
-                    statusBadge = `<span class="badge bg-secondary">${record.status}</span>`;
-            }
-
-            // Create row HTML based on table type
-            if (tableType === 'my') {
-                row.innerHTML = `
-                    <td>${formattedDate}</td>
-                    <td>${dayName}</td>
-                    <td>${record.checkIn || '-'}</td>
-                    <td>${record.checkOut || '-'}</td>
-                    <td>${workingHours}</td>
-                    <td>${breakTime}</td>
-                    <td>${netHours}</td>
-                    <td>${statusBadge}</td>
-                    <td>${record.remarks || '-'}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="editAttendance('${record.id}')">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteAttendance('${record.id}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-            } else {
-                row.innerHTML = `
-                    <td>${employeeName}</td>
-                    <td>${formattedDate}</td>
-                    <td>${record.checkIn || '-'}</td>
-                    <td>${record.checkOut || '-'}</td>
-                    <td>${workingHours}</td>
-                    <td>${breakTime}</td>
-                    <td>${netHours}</td>
-                    <td>${statusBadge}</td>
-                    <td>${record.remarks || '-'}</td>
-                    <td>
-                        <div class="admin-actions">
-                            <button class="btn btn-sm btn-outline-primary" onclick="editAttendance('${record.id}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteAttendance('${record.id}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                `;
-            }
-
-            return row;
-        }
-
-        // Update attendance statistics
-        function updateAttendanceStats() {
-            const today = new Date().toISOString().split('T')[0];
-            
-            // Get today's attendance
-            const todayAttendance = attendanceData.filter(record => record.date === today);
-            
-            // Count by status
-            const presentToday = todayAttendance.filter(record => record.status === 'present').length;
-            const absentToday = todayAttendance.filter(record => record.status === 'absent').length;
-            const onLeaveToday = todayAttendance.filter(record => record.status === 'leave').length;
-            
-            // Calculate attendance rate for the month
-            const totalWorkDays = calculateTotalWorkDays();
-            const presentCount = attendanceData.filter(record => 
-                record.userId === currentUser && record.status === 'present'
-            ).length;
-            
-            const attendanceRate = totalWorkDays > 0 ? 
-                Math.round((presentCount / totalWorkDays) * 100) : 0;
-            
-            // Update DOM
-            document.getElementById('presentToday').textContent = presentToday;
-            document.getElementById('absentToday').textContent = absentToday;
-            document.getElementById('onLeaveToday').textContent = onLeaveToday;
-            document.getElementById('attendanceRate').textContent = `${attendanceRate}%`;
-        }
-
-        // Calculate total work days in the current month
-        function calculateTotalWorkDays() {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = now.getMonth();
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            
-            let workDays = 0;
-            for (let day = firstDay; day <= lastDay; day.setDate(day.getDate() + 1)) {
-                // Count only weekdays (Monday to Friday)
-                if (day.getDay() !== 0 && day.getDay() !== 6) {
-                    workDays++;
-                }
-            }
-            
-            return workDays;
-        }
-
-        // Update summary cards
-        function updateSummaryCards() {
-            const summaryContainer = document.getElementById('attendanceSummary');
-            
-            // Calculate summary data
-            const totalRecords = attendanceData.length;
-            const presentCount = attendanceData.filter(record => record.status === 'present').length;
-            const absentCount = attendanceData.filter(record => record.status === 'absent').length;
-            const leaveCount = attendanceData.filter(record => record.status === 'leave').length;
-            const holidayCount = attendanceData.filter(record => record.status === 'holiday').length;
-            
-            // Calculate average working hours for present days
-            const presentRecords = attendanceData.filter(record => 
-                record.status === 'present' && record.checkIn && record.checkOut
-            );
-            
-            let totalNetHours = 0;
-            presentRecords.forEach(record => {
-                if (record.checkIn && record.checkOut) {
-                    const checkInTime = new Date(`${record.date}T${record.checkIn}`);
-                    const checkOutTime = new Date(`${record.date}T${record.checkOut}`);
-                    const totalMs = checkOutTime - checkInTime;
-                    
-                    let breakMs = 0;
-                    if (record.breakStart && record.breakEnd) {
-                        const breakStartTime = new Date(`${record.date}T${record.breakStart}`);
-                        const breakEndTime = new Date(`${record.date}T${record.breakEnd}`);
-                        breakMs = breakEndTime - breakStartTime;
-                    }
-                    
-                    const netHours = (totalMs - breakMs) / (1000 * 60 * 60);
-                    totalNetHours += netHours;
-                }
-            });
-            
-            const avgWorkingHours = presentRecords.length > 0 ? 
-                (totalNetHours / presentRecords.length).toFixed(2) + 'h' : '0h';
-            
-            summaryContainer.innerHTML = `
-                <div class="summary-item">
-                    <div class="summary-label">Total Records</div>
-                    <div class="summary-value">${totalRecords}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Present Days</div>
-                    <div class="summary-value">${presentCount}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Absent Days</div>
-                    <div class="summary-value">${absentCount}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Leave Days</div>
-                    <div class="summary-value">${leaveCount}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Holidays</div>
-                    <div class="summary-value">${holidayCount}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="summary-label">Avg Hours</div>
-                    <div class="summary-value">${avgWorkingHours}</div>
-                </div>
-            `;
-        }
-
-        // Generate sample data for testing
-        async function generateSampleData() {
-            try {
-                const today = new Date();
-                const sampleDate = today.toISOString().split('T')[0];
-                
-                const sampleData = {
-                    userId: currentUser,
-                    username: userData.username,
-                    date: sampleDate,
-                    checkIn: "09:00",
-                    checkOut: "17:00",
-                    breakStart: "12:00",
-                    breakEnd: "13:00",
-                    status: "present",
-                    remarks: "Sample attendance record",
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                // Check if sample data already exists
-                const existingQuery = await db.collection("attendance")
-                    .where("userId", "==", currentUser)
-                    .where("date", "==", sampleDate)
-                    .get();
-
-                if (existingQuery.empty) {
-                    await db.collection("attendance").add(sampleData);
-                    showToast('Sample data created successfully!');
-                    await loadAttendanceData();
-                } else {
-                    showToast('Sample data already exists for today', 'info');
-                }
-            } catch (error) {
-                console.error("Error creating sample data:", error);
-                showToast('Error creating sample data', 'error');
-            }
-        }
-
-        // Mark attendance function
-        document.getElementById('submitAttendanceBtn').addEventListener('click', async function() {
-            try {
-                const form = document.getElementById('markAttendanceForm');
-                if (!form.checkValidity()) {
-                    form.reportValidity();
-                    return;
-                }
-
-                const attendanceData = {
-                    userId: currentUser,
-                    username: userData.username,
-                    date: document.getElementById('attendanceDate').value,
-                    checkIn: document.getElementById('checkInTime').value,
-                    checkOut: document.getElementById('checkOutTime').value || null,
-                    breakStart: document.getElementById('breakStartTime').value || null,
-                    breakEnd: document.getElementById('breakEndTime').value || null,
-                    status: document.getElementById('attendanceStatus').value,
-                    remarks: document.getElementById('attendanceRemarks').value || '',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                // Check if attendance already exists for this date and user
-                const existingQuery = await db.collection("attendance")
-                    .where("userId", "==", currentUser)
-                    .where("date", "==", attendanceData.date)
-                    .get();
-
-                if (!existingQuery.empty) {
-                    showToast('Hours already marked for this date', 'warning');
-                    return;
-                }
-
-                await db.collection("attendance").add(attendanceData);
-                
-                showToast('Hours marked successfully!');
-                $('#markAttendanceModal').modal('hide');
-                form.reset();
-                
-                // Reload data
-                await loadAttendanceData();
-
-            } catch (error) {
-                console.error("Error marking hours:", error);
-                showToast('Error marking hours: ' + error.message, 'error');
-            }
+        hoursData = [];
+        hoursQuery.forEach(doc => {
+          hoursData.push({ id: doc.id, ...doc.data() });
         });
 
-        // Bulk attendance function
-        document.getElementById('submitBulkAttendanceBtn').addEventListener('click', async function() {
-            try {
-                const form = document.getElementById('bulkAttendanceForm');
-                if (!form.checkValidity()) {
-                    form.reportValidity();
-                    return;
-                }
-
-                const selectedEmployees = Array.from(document.getElementById('bulkEmployees').selectedOptions)
-                    .map(option => option.value);
-
-                if (selectedEmployees.length === 0) {
-                    showToast('Please select at least one employee', 'warning');
-                    return;
-                }
-
-                const bulkData = {
-                    date: document.getElementById('bulkAttendanceDate').value,
-                    status: document.getElementById('bulkAttendanceStatus').value,
-                    remarks: document.getElementById('bulkRemarks').value || '',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                let successCount = 0;
-                let errorCount = 0;
-
-                // Process each selected employee
-                for (const employeeId of selectedEmployees) {
-                    try {
-                        const user = allUsers.find(u => u.id === employeeId);
-                        if (!user) continue;
-
-                        // Check if attendance already exists
-                        const existingQuery = await db.collection("attendance")
-                            .where("userId", "==", employeeId)
-                            .where("date", "==", bulkData.date)
-                            .get();
-
-                        if (!existingQuery.empty) {
-                            errorCount++;
-                            continue;
-                        }
-
-                        // Add attendance record
-                        await db.collection("attendance").add({
-                            ...bulkData,
-                            userId: employeeId,
-                            username: user.username
-                        });
-
-                        successCount++;
-
-                    } catch (error) {
-                        console.error(`Error processing employee ${employeeId}:`, error);
-                        errorCount++;
-                    }
-                }
-
-                showToast(`Bulk update completed: ${successCount} successful, ${errorCount} failed`);
-                $('#bulkAttendanceModal').modal('hide');
-                form.reset();
-                
-                // Reload data
-                await loadAttendanceData();
-
-            } catch (error) {
-                console.error("Error in bulk hours update:", error);
-                showToast('Error in bulk hours update: ' + error.message, 'error');
-            }
+        // Filter by status if needed
+        if (statusFilter !== 'all') {
+          hoursData = hoursData.filter(record => record.status === statusFilter);
         }
 
-        // Edit attendance function
-        async function editAttendance(attendanceId) {
-            try {
-                const attendanceDoc = await db.collection("attendance").doc(attendanceId).get();
-                if (!attendanceDoc.exists) {
-                    showToast('Hours record not found', 'error');
-                    return;
-                }
+        // Update statistics
+        updateStatistics();
+        
+        // Update tables
+        updateHoursTables();
+        
+        // Update charts
+        await updateCharts();
 
-                const record = attendanceDoc.data();
+        showToast(`Loaded ${hoursData.length} hours records`, 'success');
 
-                // Populate edit form
-                document.getElementById('editAttendanceId').value = attendanceId;
-                document.getElementById('editAttendanceDate').value = record.date;
-                document.getElementById('editCheckInTime').value = record.checkIn || '';
-                document.getElementById('editCheckOutTime').value = record.checkOut || '';
-                document.getElementById('editBreakStartTime').value = record.breakStart || '';
-                document.getElementById('editBreakEndTime').value = record.breakEnd || '';
-                document.getElementById('editAttendanceStatus').value = record.status;
-                document.getElementById('editAttendanceRemarks').value = record.remarks || '';
+      } catch (error) {
+        console.error("Error loading hours data:", error);
+        showToast('Error loading hours data: ' + error.message, 'error');
+      }
+    }
 
-                // Show edit modal
-                $('#editAttendanceModal').modal('show');
+    // Update statistics
+    function updateStatistics() {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Get today's attendance
+      const todayAttendance = hoursData.filter(record => record.date === today);
+      
+      // Count by status
+      const presentCount = todayAttendance.filter(record => 
+        record.loginTime && !record.logoutTime
+      ).length;
+      
+      const absentCount = allUsers.length - presentCount;
+      
+      // Calculate attendance rate for the month
+      const userAttendance = hoursData.filter(record => 
+        record.userId === currentUser && record.loginTime
+      ).length;
+      
+      const workDays = calculateWorkDaysInMonth();
+      const attendanceRate = workDays > 0 ? 
+        Math.round((userAttendance / workDays) * 100) : 0;
 
-            } catch (error) {
-                console.error("Error loading hours for edit:", error);
-                showToast('Error loading hours record', 'error');
-            }
+      // Update DOM
+      document.getElementById('presentCount').textContent = presentCount;
+      document.getElementById('absentCount').textContent = absentCount;
+      document.getElementById('attendanceRate').textContent = `${attendanceRate}%`;
+    }
+
+    // Calculate work days in current month
+    function calculateWorkDaysInMonth() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      
+      let workDays = 0;
+      for (let day = firstDay; day <= lastDay; day.setDate(day.getDate() + 1)) {
+        // Count only weekdays (Monday to Friday)
+        if (day.getDay() !== 0 && day.getDay() !== 6) {
+          workDays++;
         }
+      }
+      
+      return workDays;
+    }
 
-        // Update attendance function
-        document.getElementById('updateAttendanceBtn').addEventListener('click', async function() {
-            try {
-                const form = document.getElementById('editAttendanceForm');
-                if (!form.checkValidity()) {
-                    form.reportValidity();
-                    return;
+    // Update hours tables
+    function updateHoursTables() {
+      updateMyHoursTable();
+      updateTeamHoursTable();
+      updateAllHoursTable();
+    }
+
+    // Update my hours table
+    function updateMyHoursTable() {
+      const tbody = document.getElementById('myHoursTableBody');
+      tbody.innerHTML = '';
+
+      const myHours = hoursData.filter(record => record.userId === currentUser);
+
+      if (myHours.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px;">No hours records found for the selected period</td></tr>';
+        return;
+      }
+
+      // Sort by date descending
+      myHours.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      myHours.forEach(record => {
+        const row = createHoursRow(record, 'my');
+        tbody.appendChild(row);
+      });
+    }
+
+    // Update team hours table
+    function updateTeamHoursTable() {
+      const tbody = document.getElementById('teamHoursTableBody');
+      tbody.innerHTML = '';
+
+      if (userRole !== 'Admin') {
+        return;
+      }
+
+      // Get team members (all users except current user)
+      const teamHours = hoursData.filter(record => record.userId !== currentUser);
+
+      if (teamHours.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px;">No team hours records found for the selected period</td></tr>';
+        return;
+      }
+
+      // Sort by date descending
+      teamHours.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      teamHours.forEach(record => {
+        const row = createHoursRow(record, 'team');
+        tbody.appendChild(row);
+      });
+    }
+
+    // Update all hours table
+    function updateAllHoursTable() {
+      const tbody = document.getElementById('allHoursTableBody');
+      tbody.innerHTML = '';
+
+      if (userRole !== 'Admin') {
+        return;
+      }
+
+      if (hoursData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px;">No hours records found for the selected period</td></tr>';
+        return;
+      }
+
+      // Sort by date descending
+      hoursData.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      hoursData.forEach(record => {
+        const row = createHoursRow(record, 'all');
+        tbody.appendChild(row);
+      });
+    }
+
+    // Create hours table row
+    function createHoursRow(record, tableType) {
+      const row = document.createElement('tr');
+      
+      // Format date and day
+      const dateObj = new Date(record.date);
+      const formattedDate = dateObj.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+      
+      // Calculate working hours
+      let workingHours = '-';
+      let netHours = '-';
+      let breakTime = '-';
+      let status = 'present';
+      
+      if (record.loginTime && record.logoutTime) {
+        const loginTime = parseTimeString(record.loginTime, record.date);
+        const logoutTime = parseTimeString(record.logoutTime, record.date);
+        
+        if (loginTime && logoutTime) {
+          const totalMs = logoutTime - loginTime;
+          const totalHours = totalMs / (1000 * 60 * 60);
+          
+          // Calculate break time
+          let breakMs = 0;
+          if (record.breaks && Array.isArray(record.breaks)) {
+            record.breaks.forEach(breakRecord => {
+              if (breakRecord.breakOut && breakRecord.breakIn) {
+                const breakOut = parseTimeString(breakRecord.breakOut, record.date);
+                const breakIn = parseTimeString(breakRecord.breakIn, record.date);
+                if (breakOut && breakIn) {
+                  breakMs += (breakIn - breakOut);
                 }
+              }
+            });
+          }
+          
+          const breakHours = breakMs / (1000 * 60 * 60);
+          const netHoursValue = totalHours - breakHours;
+          
+          workingHours = totalHours.toFixed(2) + 'h';
+          breakTime = breakHours > 0 ? breakHours.toFixed(2) + 'h' : '-';
+          netHours = netHoursValue.toFixed(2) + 'h';
+          
+          // Add overtime/undertime indicators
+          if (netHoursValue > 8) {
+            netHours = `<span class="overtime">${netHours} (+${(netHoursValue - 8).toFixed(2)}h)</span>`;
+          } else if (netHoursValue < 8) {
+            netHours = `<span class="undertime">${netHours} (-${(8 - netHoursValue).toFixed(2)}h)</span>`;
+          }
+        }
+      } else if (record.loginTime && !record.logoutTime) {
+        status = 'working';
+      } else {
+        status = record.status || 'absent';
+      }
 
-                const attendanceId = document.getElementById('editAttendanceId').value;
-                const updateData = {
-                    date: document.getElementById('editAttendanceDate').value,
-                    checkIn: document.getElementById('editCheckInTime').value,
-                    checkOut: document.getElementById('editCheckOutTime').value || null,
-                    breakStart: document.getElementById('editBreakStartTime').value || null,
-                    breakEnd: document.getElementById('editBreakEndTime').value || null,
-                    status: document.getElementById('editAttendanceStatus').value,
-                    remarks: document.getElementById('editAttendanceRemarks').value || '',
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
+      // Get employee name
+      let employeeName = record.username || 'Unknown';
+      if (tableType !== 'my') {
+        const user = allUsers.find(u => u.id === record.userId);
+        employeeName = user ? `${user.username} (${user.empId || 'N/A'})` : 'Unknown';
+      }
 
-                await db.collection("attendance").doc(attendanceId).update(updateData);
-                
-                showToast('Hours updated successfully!');
-                $('#editAttendanceModal').modal('hide');
-                
-                // Reload data
-                await loadAttendanceData();
+      // Create status badge
+      let statusBadge = '';
+      switch (status) {
+        case 'present':
+        case 'working':
+          statusBadge = `<span class="status-present">Present</span>`;
+          break;
+        case 'absent':
+          statusBadge = `<span class="status-absent">Absent</span>`;
+          break;
+        case 'leave':
+          statusBadge = `<span class="status-leave">On Leave</span>`;
+          break;
+        case 'holiday':
+          statusBadge = `<span class="status-holiday">Holiday</span>`;
+          break;
+        default:
+          statusBadge = `<span class="status-absent">${status}</span>`;
+      }
 
-            } catch (error) {
-                console.error("Error updating hours:", error);
-                showToast('Error updating hours: ' + error.message, 'error');
+      // Create row HTML based on table type
+      if (tableType === 'my') {
+        row.innerHTML = `
+          <td>${formattedDate}</td>
+          <td>${dayName}</td>
+          <td>${record.loginTime || '-'}</td>
+          <td>${record.logoutTime || '-'}</td>
+          <td>${workingHours}</td>
+          <td>${breakTime}</td>
+          <td>${netHours}</td>
+          <td>${statusBadge}</td>
+          <td>${record.remarks || '-'}</td>
+          <td class="action-buttons">
+            <button class="btn-edit" onclick="editHours('${record.id}')">Edit</button>
+          </td>
+        `;
+      } else {
+        row.innerHTML = `
+          <td>${employeeName}</td>
+          <td>${formattedDate}</td>
+          <td>${record.loginTime || '-'}</td>
+          <td>${record.logoutTime || '-'}</td>
+          <td>${workingHours}</td>
+          <td>${breakTime}</td>
+          <td>${netHours}</td>
+          <td>${statusBadge}</td>
+          <td>${record.remarks || '-'}</td>
+          <td class="action-buttons">
+            <button class="btn-edit" onclick="editHours('${record.id}')">Edit</button>
+            <button class="btn-delete" onclick="deleteHours('${record.id}')">Delete</button>
+          </td>
+        `;
+      }
+
+      return row;
+    }
+
+    // Helper function to parse time strings
+    function parseTimeString(timeStr, baseDate) {
+      if (!timeStr) return null;
+      
+      try {
+        const [time, period] = timeStr.split(' ');
+        const [hours, minutes] = time.split(':').map(Number);
+        
+        const date = new Date(baseDate);
+        let hours24 = hours;
+        
+        // Convert to 24-hour format
+        if (period === 'PM' && hours24 !== 12) {
+          hours24 += 12;
+        } else if (period === 'AM' && hours24 === 12) {
+          hours24 = 0;
+        }
+        
+        date.setHours(hours24, minutes, 0, 0);
+        return date;
+      } catch (error) {
+        console.error("Error parsing time string:", timeStr, error);
+        return null;
+      }
+    }
+
+    // Initialize charts
+    async function initializeCharts() {
+      try {
+        // Hours Distribution Chart
+        const hoursCtx = document.getElementById('hoursChart').getContext('2d');
+        hoursChart = new Chart(hoursCtx, {
+          type: 'bar',
+          data: {
+            labels: ['0-4h', '4-6h', '6-8h', '8-10h', '10h+'],
+            datasets: [{
+              label: 'Employees',
+              data: [2, 5, 8, 3, 1],
+              backgroundColor: 'rgba(102, 126, 234, 0.8)',
+              borderColor: 'rgba(102, 126, 234, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Number of Employees'
+                }
+              }
             }
+          }
         });
 
-        // Delete attendance function
-        async function deleteAttendance(attendanceId) {
-            if (!confirm('Are you sure you want to delete this hours record?')) {
-                return;
+        // Attendance Trend Chart
+        const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
+        attendanceChart = new Chart(attendanceCtx, {
+          type: 'line',
+          data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+              label: 'Attendance Rate',
+              data: [85, 92, 78, 95, 88, 45, 30],
+              borderColor: 'rgba(39, 174, 96, 1)',
+              backgroundColor: 'rgba(39, 174, 96, 0.1)',
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                min: 0,
+                max: 100,
+                ticks: {
+                  callback: function(value) {
+                    return value + '%';
+                  }
+                }
+              }
             }
-
-            try {
-                await db.collection("attendance").doc(attendanceId).delete();
-                showToast('Hours record deleted successfully!');
-                
-                // Reload data
-                await loadAttendanceData();
-
-            } catch (error) {
-                console.error("Error deleting hours:", error);
-                showToast('Error deleting hours record', 'error');
-            }
-        }
-
-        // Logout function
-        function logout() {
-            sessionStorage.removeItem("username");
-            showToast('Logged out successfully');
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 1000);
-        }
-
-        // Auto-fill current time for check-in
-        document.getElementById('markAttendanceBtn').addEventListener('click', function() {
-            const now = new Date();
-            const currentTime = now.toTimeString().split(' ')[0].substring(0, 5);
-            
-            // Set current time for check-in
-            document.getElementById('checkInTime').value = currentTime;
-            
-            // Set check-out time to 9 hours later (standard work day)
-            const checkOutTime = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-            const checkOutTimeStr = checkOutTime.toTimeString().split(' ')[0].substring(0, 5);
-            document.getElementById('checkOutTime').value = checkOutTimeStr;
-            
-            // Set break time (1 hour lunch break)
-            const breakStartTime = new Date(now.getTime() + 4 * 60 * 60 * 1000);
-            const breakStartStr = breakStartTime.toTimeString().split(' ')[0].substring(0, 5);
-            document.getElementById('breakStartTime').value = breakStartStr;
-            
-            const breakEndTime = new Date(now.getTime() + 5 * 60 * 60 * 1000);
-            const breakEndStr = breakEndTime.toTimeString().split(' ')[0].substring(0, 5);
-            document.getElementById('breakEndTime').value = breakEndStr;
+          }
         });
 
-        // Initialize app when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeApp();
-        });
-    </script>
+      } catch (error) {
+        console.error("Error initializing charts:", error);
+      }
+    }
+
+    async function updateCharts() {
+      // Update charts with real data based on hoursData
+      // This is a simplified version - you can enhance it with actual data calculations
+      if (hoursChart && attendanceChart) {
+        // Update charts with filtered data
+        // For now, we'll keep the dummy data
+      }
+    }
+
+    // Edit hours function
+    function editHours(hoursId) {
+      showToast('Edit functionality coming soon!', 'info');
+    }
+
+    // Delete hours function
+    function deleteHours(hoursId) {
+      if (confirm('Are you sure you want to delete this hours record?')) {
+        showToast('Delete functionality coming soon!', 'info');
+      }
+    }
+
+    // Sidebar functionality for mobile
+    document.getElementById('sidebarToggle').addEventListener('click', function() {
+      document.getElementById('sidebar').classList.toggle('visible');
+    });
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(e) {
+      const sidebar = document.getElementById('sidebar');
+      const toggle = document.getElementById('sidebarToggle');
+      
+      if (window.innerWidth <= 768 && 
+          sidebar.classList.contains('visible') && 
+          !sidebar.contains(e.target) && 
+          !toggle.contains(e.target)) {
+        sidebar.classList.remove('visible');
+      }
+    });
+
+    // Initialize the app when DOM is loaded
+    document.addEventListener('DOMContentLoaded', initializeApp);
+  </script>
 </body>
 </html>
