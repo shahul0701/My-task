@@ -1317,7 +1317,9 @@
       const analytics = {
         departmentStats: {},
         monthlyTrends: {},
-        performanceMetrics: {}
+        performanceMetrics: {},
+        hoursDistribution: {},
+        attendanceTrends: {}
       };
 
       // Department-wise statistics
@@ -1328,7 +1330,8 @@
             totalEmployees: 0,
             presentDays: 0,
             totalHours: 0,
-            overtimeHours: 0
+            overtimeHours: 0,
+            attendanceRate: 0
           };
         }
         
@@ -1339,10 +1342,112 @@
           analytics.departmentStats[dept].presentDays += userData.presentDays;
           analytics.departmentStats[dept].totalHours += userData.totalHours;
           analytics.departmentStats[dept].overtimeHours += userData.overtimeHours;
+          
+          // Calculate department attendance rate
+          const totalDays = userData.presentDays + userData.absentDays;
+          if (totalDays > 0) {
+            analytics.departmentStats[dept].attendanceRate += (userData.presentDays / totalDays) * 100;
+          }
+        }
+      });
+
+      // Calculate average attendance rate per department
+      Object.keys(analytics.departmentStats).forEach(dept => {
+        const deptStats = analytics.departmentStats[dept];
+        if (deptStats.totalEmployees > 0) {
+          deptStats.attendanceRate = Math.round(deptStats.attendanceRate / deptStats.totalEmployees);
+        }
+      });
+
+      // Monthly trends
+      const monthlyData = {};
+      data.detailed.forEach(record => {
+        const month = record.date.substring(0, 7); // YYYY-MM format
+        if (!monthlyData[month]) {
+          monthlyData[month] = { present: 0, total: 0 };
+        }
+        
+        monthlyData[month].total++;
+        if (record.loginTime) {
+          monthlyData[month].present++;
+        }
+      });
+
+      analytics.monthlyTrends = monthlyData;
+
+      // Performance metrics
+      analytics.performanceMetrics = {};
+      Object.values(data.summary).forEach(userData => {
+        if (userData.workingDays > 0) {
+          const attendanceRate = Math.round((userData.presentDays / userData.workingDays) * 100);
+          const punctualityRate = userData.presentDays > 0 ? 
+            Math.round(((userData.presentDays - userData.lateArrivals) / userData.presentDays) * 100) : 0;
+          
+          // Simple performance score (attendance 70%, punctuality 30%)
+          const performanceScore = Math.round((attendanceRate * 0.7) + (punctualityRate * 0.3));
+          analytics.performanceMetrics[userData.user.id] = performanceScore;
+        }
+      });
+
+      // Hours distribution
+      analytics.hoursDistribution = { '<6h': 0, '6-8h': 0, '8-10h': 0, '>10h': 0 };
+      Object.values(data.summary).forEach(userData => {
+        const avgHours = userData.presentDays > 0 ? userData.totalHours / userData.presentDays : 0;
+        
+        if (avgHours < 6) {
+          analytics.hoursDistribution['<6h']++;
+        } else if (avgHours <= 8) {
+          analytics.hoursDistribution['6-8h']++;
+        } else if (avgHours <= 10) {
+          analytics.hoursDistribution['8-10h']++;
+        } else {
+          analytics.hoursDistribution['>10h']++;
+        }
+      });
+
+      // Late arrivals trend (by week)
+      analytics.lateArrivalsTrend = {};
+      data.detailed.forEach(record => {
+        if (record.loginTime) {
+          const loginTime = parseTimeString(record.loginTime, record.date);
+          if (loginTime) {
+            const nineThirty = new Date(record.date + 'T09:30:00');
+            if (loginTime > nineThirty) {
+              const week = getWeekNumber(new Date(record.date));
+              if (!analytics.lateArrivalsTrend[week]) {
+                analytics.lateArrivalsTrend[week] = 0;
+              }
+              analytics.lateArrivalsTrend[week]++;
+            }
+          }
+        }
+      });
+
+      // Leave distribution
+      analytics.leaveDistribution = { 'Sick Leave': 0, 'Vacation': 0, 'Personal': 0, 'Other': 0 };
+      data.detailed.forEach(record => {
+        if (record.status === 'leave') {
+          const leaveType = record.remarks || 'Other';
+          if (leaveType.includes('Sick') || leaveType.includes('sick')) {
+            analytics.leaveDistribution['Sick Leave']++;
+          } else if (leaveType.includes('Vacation') || leaveType.includes('vacation') || leaveType.includes('Holiday')) {
+            analytics.leaveDistribution['Vacation']++;
+          } else if (leaveType.includes('Personal') || leaveType.includes('personal')) {
+            analytics.leaveDistribution['Personal']++;
+          } else {
+            analytics.leaveDistribution['Other']++;
+          }
         }
       });
 
       data.analytics = analytics;
+    }
+
+    // Helper function to get week number
+    function getWeekNumber(date) {
+      const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+      const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+      return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
     }
 
     // Update statistics
@@ -1566,7 +1671,7 @@
         data: {
           labels: ['Present', 'Absent', 'Leave', 'Holiday'],
           datasets: [{
-            data: [65, 15, 10, 10],
+            data: [0, 0, 0, 0],
             backgroundColor: ['#27ae60', '#e74c3c', '#f39c12', '#3498db'],
             borderWidth: 2,
             borderColor: '#fff'
@@ -1588,10 +1693,10 @@
       charts.monthlyTrend = new Chart(monthlyCtx, {
         type: 'line',
         data: {
-          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          labels: [],
           datasets: [{
             label: 'Attendance Rate',
-            data: [85, 88, 92, 90, 87, 91],
+            data: [],
             borderColor: '#667eea',
             backgroundColor: 'rgba(102, 126, 234, 0.1)',
             tension: 0.4,
@@ -1620,10 +1725,10 @@
       charts.performance = new Chart(performanceCtx, {
         type: 'bar',
         data: {
-          labels: ['Employee 1', 'Employee 2', 'Employee 3', 'Employee 4'],
+          labels: [],
           datasets: [{
             label: 'Performance Score',
-            data: [85, 92, 78, 88],
+            data: [],
             backgroundColor: '#667eea'
           }]
         },
@@ -1647,7 +1752,7 @@
           labels: ['<6h', '6-8h', '8-10h', '>10h'],
           datasets: [{
             label: 'Employees',
-            data: [2, 15, 8, 3],
+            data: [0, 0, 0, 0],
             backgroundColor: '#27ae60'
           }]
         },
@@ -1662,10 +1767,10 @@
       charts.department = new Chart(departmentCtx, {
         type: 'bar',
         data: {
-          labels: ['IT', 'HR', 'Finance', 'Marketing'],
+          labels: [],
           datasets: [{
             label: 'Attendance Rate',
-            data: [92, 88, 85, 90],
+            data: [],
             backgroundColor: '#3498db'
           }]
         },
@@ -1685,10 +1790,10 @@
       charts.lateArrivals = new Chart(lateCtx, {
         type: 'line',
         data: {
-          labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+          labels: [],
           datasets: [{
             label: 'Late Arrivals',
-            data: [5, 3, 7, 4],
+            data: [],
             borderColor: '#e74c3c',
             backgroundColor: 'rgba(231, 76, 60, 0.1)',
             tension: 0.4,
@@ -1705,10 +1810,10 @@
       charts.overtime = new Chart(overtimeCtx, {
         type: 'bar',
         data: {
-          labels: ['IT', 'HR', 'Finance', 'Marketing'],
+          labels: [],
           datasets: [{
             label: 'Overtime Hours',
-            data: [45, 22, 18, 35],
+            data: [],
             backgroundColor: '#f39c12'
           }]
         },
@@ -1724,7 +1829,7 @@
         data: {
           labels: ['Sick Leave', 'Vacation', 'Personal', 'Other'],
           datasets: [{
-            data: [40, 35, 15, 10],
+            data: [0, 0, 0, 0],
             backgroundColor: ['#9b59b6', '#3498db', '#e74c3c', '#f39c12']
           }]
         },
@@ -1737,7 +1842,9 @@
 
     // Update charts with real data
     function updateCharts(data) {
-      if (!dashboardData) return;
+      if (!dashboardData || !dashboardData.analytics) return;
+
+      const analytics = dashboardData.analytics;
 
       // Update attendance distribution
       let present = 0, absent = 0, leave = 0, holiday = 0;
@@ -1759,8 +1866,95 @@
         charts.attendance.update();
       }
 
-      // Update other charts with real data as needed
-      // This is where you would add more complex data processing for charts
+      // Update monthly trend chart
+      if (charts.monthlyTrend && analytics.monthlyTrends) {
+        const months = Object.keys(analytics.monthlyTrends).sort();
+        const attendanceRates = months.map(month => {
+          const data = analytics.monthlyTrends[month];
+          return data.total > 0 ? Math.round((data.present / data.total) * 100) : 0;
+        });
+        
+        // Format month labels
+        const monthLabels = months.map(month => {
+          const [year, monthNum] = month.split('-');
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          return `${monthNames[parseInt(monthNum) - 1]} ${year}`;
+        });
+        
+        charts.monthlyTrend.data.labels = monthLabels;
+        charts.monthlyTrend.data.datasets[0].data = attendanceRates;
+        charts.monthlyTrend.update();
+      }
+
+      // Update performance chart
+      if (charts.performance && analytics.performanceMetrics) {
+        const performanceData = Object.values(analytics.performanceMetrics);
+        const userNames = Object.keys(analytics.performanceMetrics).map(userId => {
+          const user = allUsers.find(u => u.id === userId);
+          return user ? user.username : 'Unknown';
+        });
+        
+        // Show top 10 performers
+        const combined = userNames.map((name, index) => ({ name, score: performanceData[index] }));
+        combined.sort((a, b) => b.score - a.score);
+        const topPerformers = combined.slice(0, 10);
+        
+        charts.performance.data.labels = topPerformers.map(item => item.name);
+        charts.performance.data.datasets[0].data = topPerformers.map(item => item.score);
+        charts.performance.update();
+      }
+
+      // Update hours distribution chart
+      if (charts.hoursDistribution && analytics.hoursDistribution) {
+        charts.hoursDistribution.data.datasets[0].data = [
+          analytics.hoursDistribution['<6h'],
+          analytics.hoursDistribution['6-8h'],
+          analytics.hoursDistribution['8-10h'],
+          analytics.hoursDistribution['>10h']
+        ];
+        charts.hoursDistribution.update();
+      }
+
+      // Update department chart
+      if (charts.department && analytics.departmentStats) {
+        const departments = Object.keys(analytics.departmentStats);
+        const attendanceRates = departments.map(dept => analytics.departmentStats[dept].attendanceRate);
+        
+        charts.department.data.labels = departments;
+        charts.department.data.datasets[0].data = attendanceRates;
+        charts.department.update();
+      }
+
+      // Update late arrivals chart
+      if (charts.lateArrivals && analytics.lateArrivalsTrend) {
+        const weeks = Object.keys(analytics.lateArrivalsTrend).sort();
+        const lateCounts = weeks.map(week => analytics.lateArrivalsTrend[week]);
+        
+        charts.lateArrivals.data.labels = weeks.map(week => `Week ${week}`);
+        charts.lateArrivals.data.datasets[0].data = lateCounts;
+        charts.lateArrivals.update();
+      }
+
+      // Update overtime chart
+      if (charts.overtime && analytics.departmentStats) {
+        const departments = Object.keys(analytics.departmentStats);
+        const overtimeHours = departments.map(dept => analytics.departmentStats[dept].overtimeHours);
+        
+        charts.overtime.data.labels = departments;
+        charts.overtime.data.datasets[0].data = overtimeHours;
+        charts.overtime.update();
+      }
+
+      // Update leave chart
+      if (charts.leave && analytics.leaveDistribution) {
+        charts.leave.data.datasets[0].data = [
+          analytics.leaveDistribution['Sick Leave'],
+          analytics.leaveDistribution['Vacation'],
+          analytics.leaveDistribution['Personal'],
+          analytics.leaveDistribution['Other']
+        ];
+        charts.leave.update();
+      }
     }
 
     // Generate custom report
