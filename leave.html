@@ -11,10 +11,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Your existing CSS styles remain the same */
         :root {
             --primary: #4361ee;
             --secondary: #3f37c9;
@@ -176,6 +173,11 @@
             font-family: monospace;
             font-size: 12px;
         }
+
+        .admin-actions {
+            display: flex;
+            gap: 5px;
+        }
     </style>
 </head>
 <body>
@@ -230,7 +232,7 @@
 
     <!-- Main Content -->
     <div class="container my-4">
-        <!-- Debug Info Panel (Remove in production) -->
+        <!-- Debug Info Panel -->
         <div class="debug-info" id="debugInfo">
             Debug: Loading...
         </div>
@@ -340,6 +342,11 @@
                                     <i class="fas fa-users me-2"></i> Team Leaves
                                 </button>
                             </li>
+                            <li class="nav-item" role="presentation" id="adminTab" style="display: none;">
+                                <button class="nav-link" id="all-leaves-tab" data-bs-toggle="tab" data-bs-target="#all-leaves" type="button">
+                                    <i class="fas fa-tasks me-2"></i> All Leaves (Admin)
+                                </button>
+                            </li>
                         </ul>
                     </div>
                     <div class="tab-content" id="leaveTabsContent">
@@ -385,6 +392,31 @@
                                     <tbody id="teamLeavesTableBody">
                                         <tr>
                                             <td colspan="7" class="text-center py-4">No team leaves to display</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- All Leaves Tab (Admin Only) -->
+                        <div class="tab-pane fade" id="all-leaves" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Employee</th>
+                                            <th>Leave Type</th>
+                                            <th>From Date</th>
+                                            <th>To Date</th>
+                                            <th>Duration</th>
+                                            <th>Status</th>
+                                            <th>Applied On</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="allLeavesTableBody">
+                                        <tr>
+                                            <td colspan="8" class="text-center py-4">No leaves to display</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -556,11 +588,23 @@
 
                 updateDebugInfo(`User loaded: ${userData.username}, Role: ${userRole}, ID: ${currentUser}`);
 
+                // Show/hide admin tab based on role
+                if (userRole === 'Admin' || userRole === 'Sub Admin') {
+                    document.getElementById('adminTab').style.display = 'block';
+                }
+
                 // Load user data
                 await loadUserData();
                 
                 // Load leaves data
                 await loadMyLeaves();
+                
+                // Load team leaves if manager
+                if (userRole === 'Admin' || userRole === 'Sub Admin') {
+                    await loadAllLeaves();
+                } else {
+                    await loadTeamLeaves();
+                }
                 
                 updateDebugInfo('App initialized successfully');
 
@@ -697,8 +741,7 @@
                     .get();
 
                 const tbody = document.getElementById('myLeavesTableBody');
-                tbody.innerHTML = '';
-
+                
                 updateDebugInfo(`Found ${leavesQuery.size} leaves in Firestore`);
 
                 if (leavesQuery.empty) {
@@ -707,25 +750,90 @@
                     return;
                 }
 
+                tbody.innerHTML = '';
                 leavesQuery.forEach(doc => {
                     const leave = doc.data();
                     updateDebugInfo(`Processing leave: ${leave.type} - ${leave.status}`);
-                    const row = createMyLeaveRow(leave, doc.id);
+                    const row = createLeaveRow(leave, doc.id, 'my');
                     tbody.appendChild(row);
                 });
 
-                updateDebugInfo('Leaves loaded successfully into table');
+                updateDebugInfo('My leaves loaded successfully');
 
             } catch (error) {
-                updateDebugInfo('Error loading leaves: ' + error.message);
+                updateDebugInfo('Error loading my leaves: ' + error.message);
                 console.error("Error loading my leaves:", error);
                 const tbody = document.getElementById('myLeavesTableBody');
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger">Error loading leaves: ' + error.message + '</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger">Error loading leaves</td></tr>';
             }
         }
 
-        // Create row for my leaves table
-        function createMyLeaveRow(leave, leaveId) {
+        // Load team leaves - Shows leaves of team members for managers
+        async function loadTeamLeaves() {
+            try {
+                updateDebugInfo('Loading team leaves...');
+                
+                // For managers, show leaves of their team members
+                const leavesQuery = await db.collection("leaves")
+                    .where("manager", "==", userData.username)
+                    .orderBy("appliedDate", "desc")
+                    .get();
+
+                const tbody = document.getElementById('teamLeavesTableBody');
+                
+                updateDebugInfo(`Found ${leavesQuery.size} team leaves`);
+
+                if (leavesQuery.empty) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">No team leaves to display</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                leavesQuery.forEach(doc => {
+                    const leave = doc.data();
+                    const row = createLeaveRow(leave, doc.id, 'team');
+                    tbody.appendChild(row);
+                });
+
+            } catch (error) {
+                updateDebugInfo('Error loading team leaves: ' + error.message);
+                console.error("Error loading team leaves:", error);
+            }
+        }
+
+        // Load all leaves - For admin users
+        async function loadAllLeaves() {
+            try {
+                updateDebugInfo('Loading all leaves for admin...');
+                
+                const leavesQuery = await db.collection("leaves")
+                    .orderBy("appliedDate", "desc")
+                    .get();
+
+                const tbody = document.getElementById('allLeavesTableBody');
+                
+                updateDebugInfo(`Found ${leavesQuery.size} total leaves`);
+
+                if (leavesQuery.empty) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">No leaves found in system</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                leavesQuery.forEach(doc => {
+                    const leave = doc.data();
+                    const row = createLeaveRow(leave, doc.id, 'admin');
+                    tbody.appendChild(row);
+                });
+
+            } catch (error) {
+                updateDebugInfo('Error loading all leaves: ' + error.message);
+                console.error("Error loading all leaves:", error);
+            }
+        }
+
+        // Create row for leaves table
+        function createLeaveRow(leave, leaveId, viewType) {
             const row = document.createElement('tr');
             
             // Format dates
@@ -758,39 +866,95 @@
                 typeDisplay = '<i class="fas fa-plane text-warning me-2"></i> Earned Leave';
             }
             
-            // Action buttons - only show for pending leaves
+            // Action buttons based on view type and role
             let actionButtons = '';
-            if (leave.status === 'pending') {
-                actionButtons = `
-                    <div class="action-buttons">
-                        <button class="btn btn-sm btn-outline-primary" onclick="editLeave('${leaveId}')" title="Edit Leave">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteLeave('${leaveId}')" title="Delete Leave">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                `;
-            } else {
-                actionButtons = `
-                    <div class="action-buttons">
-                        <button class="btn btn-sm btn-outline-secondary" title="View Leave">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                `;
+            
+            if (viewType === 'my') {
+                // My leaves view - user can edit/delete pending leaves
+                if (leave.status === 'pending') {
+                    actionButtons = `
+                        <div class="action-buttons">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editLeave('${leaveId}')" title="Edit Leave">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteLeave('${leaveId}')" title="Delete Leave">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    actionButtons = `
+                        <div class="action-buttons">
+                            <button class="btn btn-sm btn-outline-secondary" title="View Leave">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+            } else if (viewType === 'team' || viewType === 'admin') {
+                // Team/Admin view - can approve/reject pending leaves
+                if (leave.status === 'pending') {
+                    actionButtons = `
+                        <div class="admin-actions">
+                            <button class="btn btn-sm btn-success" onclick="approveLeave('${leaveId}')" title="Approve Leave">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="rejectLeave('${leaveId}')" title="Reject Leave">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-info" onclick="viewLeaveDetails('${leaveId}')" title="View Details">
+                                <i class="fas fa-info"></i>
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    actionButtons = `
+                        <div class="admin-actions">
+                            <button class="btn btn-sm btn-outline-info" onclick="viewLeaveDetails('${leaveId}')" title="View Details">
+                                <i class="fas fa-info"></i>
+                            </button>
+                        </div>
+                    `;
+                }
             }
             
-            row.innerHTML = `
-                <td>${typeDisplay}</td>
-                <td>${fromDate}</td>
-                <td>${toDate}</td>
-                <td>${duration} Days</td>
-                <td>${statusBadge}</td>
-                <td>${appliedDate}</td>
-                <td>${actionButtons}</td>
-            `;
+            // Build row content based on view type
+            let rowContent = '';
+            
+            if (viewType === 'my') {
+                rowContent = `
+                    <td>${typeDisplay}</td>
+                    <td>${fromDate}</td>
+                    <td>${toDate}</td>
+                    <td>${duration} Days</td>
+                    <td>${statusBadge}</td>
+                    <td>${appliedDate}</td>
+                    <td>${actionButtons}</td>
+                `;
+            } else if (viewType === 'team') {
+                rowContent = `
+                    <td>${leave.username} (${leave.empId || 'N/A'})</td>
+                    <td>${typeDisplay}</td>
+                    <td>${fromDate}</td>
+                    <td>${toDate}</td>
+                    <td>${duration} Days</td>
+                    <td>${statusBadge}</td>
+                    <td>${actionButtons}</td>
+                `;
+            } else if (viewType === 'admin') {
+                rowContent = `
+                    <td>${leave.username} (${leave.empId || 'N/A'})</td>
+                    <td>${typeDisplay}</td>
+                    <td>${fromDate}</td>
+                    <td>${toDate}</td>
+                    <td>${duration} Days</td>
+                    <td>${statusBadge}</td>
+                    <td>${appliedDate}</td>
+                    <td>${actionButtons}</td>
+                `;
+            }
 
+            row.innerHTML = rowContent;
             return row;
         }
 
@@ -886,6 +1050,100 @@
                 console.error("Error deleting leave:", error);
                 showToast('Error deleting leave request', 'error');
             }
+        }
+
+        // Approve leave (for managers/admins)
+        async function approveLeave(leaveId) {
+            try {
+                await db.collection("leaves").doc(leaveId).update({
+                    status: 'approved',
+                    approvedDate: new Date().toISOString(),
+                    approvedBy: userData.username
+                });
+                showToast('Leave approved successfully!');
+                
+                // Reload appropriate tables
+                if (userRole === 'Admin' || userRole === 'Sub Admin') {
+                    await loadAllLeaves();
+                } else {
+                    await loadTeamLeaves();
+                }
+                
+            } catch (error) {
+                updateDebugInfo('Error approving leave: ' + error.message);
+                console.error("Error approving leave:", error);
+                showToast('Error approving leave', 'error');
+            }
+        }
+
+        // Reject leave (for managers/admins)
+        async function rejectLeave(leaveId) {
+            const reason = prompt('Please enter reason for rejection:');
+            if (reason === null) return;
+            
+            if (!reason.trim()) {
+                showToast('Please provide a rejection reason', 'error');
+                return;
+            }
+
+            try {
+                await db.collection("leaves").doc(leaveId).update({
+                    status: 'rejected',
+                    rejectedDate: new Date().toISOString(),
+                    rejectedBy: userData.username,
+                    rejectionReason: reason
+                });
+                showToast('Leave rejected successfully!');
+                
+                // Reload appropriate tables
+                if (userRole === 'Admin' || userRole === 'Sub Admin') {
+                    await loadAllLeaves();
+                } else {
+                    await loadTeamLeaves();
+                }
+                
+            } catch (error) {
+                updateDebugInfo('Error rejecting leave: ' + error.message);
+                console.error("Error rejecting leave:", error);
+                showToast('Error rejecting leave', 'error');
+            }
+        }
+
+        // View leave details
+        async function viewLeaveDetails(leaveId) {
+            try {
+                const leaveDoc = await db.collection("leaves").doc(leaveId).get();
+                const leave = leaveDoc.data();
+                
+                let details = `Leave Details:\n\n`;
+                details += `Employee: ${leave.username} (${leave.empId || 'N/A'})\n`;
+                details += `Type: ${leave.type}\n`;
+                details += `From: ${new Date(leave.fromDate).toLocaleDateString()}\n`;
+                details += `To: ${new Date(leave.toDate).toLocaleDateString()}\n`;
+                details += `Duration: ${leave.duration} days\n`;
+                details += `Status: ${leave.status}\n`;
+                details += `Reason: ${leave.reason}\n`;
+                details += `Contact: ${leave.contactNumber}\n`;
+                details += `Applied: ${new Date(leave.appliedDate).toLocaleString()}\n`;
+                
+                if (leave.approvedDate) {
+                    details += `Approved: ${new Date(leave.approvedDate).toLocaleString()} by ${leave.approvedBy}\n`;
+                }
+                if (leave.rejectedDate) {
+                    details += `Rejected: ${new Date(leave.rejectedDate).toLocaleString()} by ${leave.rejectedBy}\n`;
+                    details += `Reason: ${leave.rejectionReason}\n`;
+                }
+                
+                alert(details);
+            } catch (error) {
+                console.error("Error viewing leave details:", error);
+                showToast('Error loading leave details', 'error');
+            }
+        }
+
+        // Edit leave (placeholder - you can implement this)
+        async function editLeave(leaveId) {
+            showToast('Edit feature coming soon!', 'info');
         }
 
         // Logout function
