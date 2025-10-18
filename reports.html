@@ -152,8 +152,6 @@
 
     .admin-only {
       display: none;
-      background: rgba(255, 193, 7, 0.1);
-      border-left: 4px solid #ffc107;
     }
 
     .admin-only.visible {
@@ -666,7 +664,7 @@
     <!-- Page Header -->
     <div class="page-header">
       <div>
-        <h1 class="page-title">Attendance Reports</h1>
+        <h1 class="page-title" id="pageTitle">Attendance Reports</h1>
         <p class="page-subtitle" id="userRoleInfo">Comprehensive attendance analytics and export functionality</p>
       </div>
       <div class="export-buttons">
@@ -699,7 +697,7 @@
             <input type="date" class="filter-input" id="endDate" style="flex: 1;">
           </div>
         </div>
-        <div class="filter-group" id="employeeFilterGroup">
+        <div class="filter-group admin-only-element" id="employeeFilterGroup">
           <label class="filter-label">Employee</label>
           <select class="filter-select" id="employeeFilter">
             <option value="all">All Employees</option>
@@ -710,7 +708,7 @@
           <select class="filter-select" id="reportType">
             <option value="summary">Summary Report</option>
             <option value="detailed">Detailed Report</option>
-            <option value="comparison" id="comparisonOption" style="display: none;">Comparison Report</option>
+            <option value="comparison" class="admin-only-element">Comparison Report</option>
           </select>
         </div>
         <div class="filter-group">
@@ -723,7 +721,7 @@
 
     <!-- Stats Grid -->
     <div class="stats-grid">
-      <div class="stat-card">
+      <div class="stat-card admin-only-element">
         <div class="stat-icon">👥</div>
         <div class="stat-number" id="totalEmployees">0</div>
         <div class="stat-label">Total Employees</div>
@@ -731,28 +729,28 @@
       <div class="stat-card">
         <div class="stat-icon">📅</div>
         <div class="stat-number" id="totalDays">0</div>
-        <div class="stat-label">Working Days</div>
+        <div class="stat-label" id="daysLabel">Working Days</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon">✅</div>
-        <div class="stat-number" id="avgAttendance">0%</div>
-        <div class="stat-label">Avg Attendance</div>
+        <div class="stat-number" id="attendanceRate">0%</div>
+        <div class="stat-label" id="attendanceLabel">Attendance Rate</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon">⏱️</div>
         <div class="stat-number" id="avgHours">0h</div>
-        <div class="stat-label">Avg Daily Hours</div>
+        <div class="stat-label" id="hoursLabel">Avg Daily Hours</div>
       </div>
     </div>
 
     <!-- Charts Section -->
     <div class="charts-section">
       <div class="chart-container">
-        <div class="chart-title">Attendance Distribution</div>
+        <div class="chart-title" id="attendanceChartTitle">Attendance Distribution</div>
         <canvas id="attendanceChart"></canvas>
       </div>
       <div class="chart-container">
-        <div class="chart-title">Weekly Trend</div>
+        <div class="chart-title" id="trendChartTitle">Weekly Trend</div>
         <canvas id="trendChart"></canvas>
       </div>
     </div>
@@ -760,9 +758,15 @@
     <!-- Tabs -->
     <div class="tabs-container">
       <div class="tabs">
-        <button class="tab active" onclick="switchTab('summaryReport')">Summary Report</button>
-        <button class="tab" onclick="switchTab('detailedReport')">Detailed Report</button>
-        <button class="tab" onclick="switchTab('comparisonReport')" id="comparisonTab" style="display: none;">Comparison Report</button>
+        <button class="tab active" onclick="switchTab('summaryReport')">
+          <span id="summaryTabText">Summary Report</span>
+        </button>
+        <button class="tab" onclick="switchTab('detailedReport')">
+          <span id="detailedTabText">Detailed Report</span>
+        </button>
+        <button class="tab admin-only-element" onclick="switchTab('comparisonReport')" id="comparisonTab">
+          <span>Comparison Report</span>
+        </button>
       </div>
 
       <!-- Summary Report Tab -->
@@ -771,7 +775,7 @@
           <table>
             <thead>
               <tr>
-                <th>Employee</th>
+                <th id="summaryEmployeeHeader">Employee</th>
                 <th>Present Days</th>
                 <th>Absent Days</th>
                 <th>Leave Days</th>
@@ -799,7 +803,7 @@
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Employee</th>
+                <th id="detailedEmployeeHeader">Employee</th>
                 <th>Check In</th>
                 <th>Check Out</th>
                 <th>Working Hours</th>
@@ -821,7 +825,7 @@
       </div>
 
       <!-- Comparison Report Tab -->
-      <div class="tab-content" id="comparisonReport">
+      <div class="tab-content admin-only-element" id="comparisonReport">
         <div class="table-container">
           <table class="comparison-table">
             <thead>
@@ -872,6 +876,7 @@
     let attendanceChart = null;
     let trendChart = null;
     let currentReportData = null;
+    let isAdmin = false;
 
     // Update debug info
     function updateDebugInfo(message) {
@@ -910,7 +915,7 @@
 
     // Home button click handler
     function handleHomeClick() {
-      if (userRole === 'Admin' || userRole === 'admin') {
+      if (isAdmin) {
         window.location.href = 'Home.html';
       } else {
         window.location.href = 'UserDashboard.html';
@@ -984,13 +989,14 @@
         userData = userQuery.docs[0].data();
         currentUser = userQuery.docs[0].id;
         userRole = userData.role || 'employee';
+        isAdmin = (userRole === 'Admin' || userRole === 'admin');
 
-        updateDebugInfo(`User loaded: ${userData.username}, Role: ${userRole}, ID: ${currentUser}`);
+        updateDebugInfo(`User loaded: ${userData.username}, Role: ${userRole}, ID: ${currentUser}, isAdmin: ${isAdmin}`);
 
         // Update UI based on user role
         updateUIForUserRole();
 
-        // Load all users (for admin) or just current user data
+        // Load users data based on role
         await loadUsersData();
         
         // Initialize charts
@@ -1007,19 +1013,40 @@
 
     // Update UI based on user role
     function updateUIForUserRole() {
-      const isAdmin = userRole === 'Admin' || userRole === 'admin';
-      
       if (isAdmin) {
+        // Admin view
         document.getElementById('adminMenu').classList.add('visible');
-        document.getElementById('comparisonTab').style.display = 'block';
-        document.getElementById('comparisonOption').style.display = 'block';
+        document.getElementById('pageTitle').textContent = 'Team Attendance Reports';
         document.getElementById('userRoleInfo').textContent = 'Comprehensive attendance analytics for all employees';
+        document.getElementById('summaryTabText').textContent = 'Team Summary';
+        document.getElementById('detailedTabText').textContent = 'Team Details';
+        document.getElementById('summaryEmployeeHeader').textContent = 'Employee';
+        document.getElementById('detailedEmployeeHeader').textContent = 'Employee';
+        document.getElementById('attendanceChartTitle').textContent = 'Team Attendance Distribution';
+        document.getElementById('trendChartTitle').textContent = 'Team Weekly Trend';
+        
+        // Show admin elements
+        document.querySelectorAll('.admin-only-element').forEach(el => {
+          el.style.display = 'block';
+        });
       } else {
-        // Regular user - hide admin features
-        document.getElementById('employeeFilterGroup').style.display = 'none';
-        document.getElementById('comparisonTab').style.display = 'none';
-        document.getElementById('comparisonOption').style.display = 'none';
+        // Regular user view
+        document.getElementById('pageTitle').textContent = 'My Attendance Reports';
         document.getElementById('userRoleInfo').textContent = 'Your personal attendance analytics and reports';
+        document.getElementById('summaryTabText').textContent = 'My Summary';
+        document.getElementById('detailedTabText').textContent = 'My Details';
+        document.getElementById('summaryEmployeeHeader').textContent = 'Period';
+        document.getElementById('detailedEmployeeHeader').textContent = 'Day';
+        document.getElementById('attendanceChartTitle').textContent = 'My Attendance Distribution';
+        document.getElementById('trendChartTitle').textContent = 'My Weekly Trend';
+        document.getElementById('daysLabel').textContent = 'Days Tracked';
+        document.getElementById('attendanceLabel').textContent = 'My Attendance';
+        document.getElementById('hoursLabel').textContent = 'My Avg Hours';
+        
+        // Hide admin elements
+        document.querySelectorAll('.admin-only-element').forEach(el => {
+          el.style.display = 'none';
+        });
         
         // Add user-view class to main content for CSS targeting
         document.getElementById('mainContent').classList.add('user-view');
@@ -1030,17 +1057,19 @@
     async function loadUsersData() {
       try {
         updateDebugInfo('Loading users data...');
-        const usersQuery = await db.collection("users").get();
-        allUsers = [];
-        usersQuery.forEach(doc => {
-          allUsers.push({ id: doc.id, ...doc.data() });
-        });
+        
+        if (isAdmin) {
+          // Load all users for admin
+          const usersQuery = await db.collection("users").get();
+          allUsers = [];
+          usersQuery.forEach(doc => {
+            allUsers.push({ id: doc.id, ...doc.data() });
+          });
 
-        // Update total employees count
-        document.getElementById('totalEmployees').textContent = allUsers.length;
+          // Update total employees count
+          document.getElementById('totalEmployees').textContent = allUsers.length;
 
-        // Populate employee filter dropdown (only for admins)
-        if (userRole === 'Admin' || userRole === 'admin') {
+          // Populate employee filter dropdown
           const employeeFilter = document.getElementById('employeeFilter');
           employeeFilter.innerHTML = '<option value="all">All Employees</option>';
           
@@ -1051,7 +1080,15 @@
             employeeFilter.appendChild(option);
           });
         } else {
-          // For regular users, set the employee filter to show only themselves
+          // For regular users, only load their own data
+          allUsers = [{
+            id: currentUser,
+            username: userData.username,
+            empId: userData.empId,
+            role: userData.role
+          }];
+          
+          // Set employee filter to show only themselves
           const employeeFilter = document.getElementById('employeeFilter');
           employeeFilter.innerHTML = '';
           const option = document.createElement('option');
@@ -1118,11 +1155,11 @@
         const employeeFilter = document.getElementById('employeeFilter').value;
         const reportType = document.getElementById('reportType').value;
 
-        updateDebugInfo(`Date range: ${dateRange.start} to ${dateRange.end}, Employee: ${employeeFilter}`);
+        updateDebugInfo(`Date range: ${dateRange.start} to ${dateRange.end}, Employee: ${employeeFilter}, Report Type: ${reportType}`);
 
         let attendanceQuery;
         
-        if ((userRole === 'Admin' || userRole === 'admin') && employeeFilter === 'all') {
+        if (isAdmin && employeeFilter === 'all') {
           // Admin viewing all data
           updateDebugInfo('Loading all attendance data (admin view)');
           attendanceQuery = await db.collection("attendance")
@@ -1131,7 +1168,7 @@
             .get();
         } else {
           // User viewing their own data or admin viewing specific user
-          const userId = (userRole === 'Admin' || userRole === 'admin') ? employeeFilter : currentUser;
+          const userId = isAdmin ? employeeFilter : currentUser;
           updateDebugInfo(`Loading attendance data for user: ${userId}`);
           attendanceQuery = await db.collection("attendance")
             .where("userId", "==", userId)
@@ -1175,15 +1212,17 @@
         dateRange: dateRange
       };
 
-      // Determine which users to process based on role
-      const usersToProcess = (userRole === 'Admin' || userRole === 'admin') ? 
+      // Determine which users to process based on role and data availability
+      const usersToProcess = isAdmin ? 
         allUsers : 
-        allUsers.filter(user => user.id === currentUser);
+        [allUsers.find(user => user.id === currentUser)].filter(Boolean);
 
       // Group data by user
       const userData = {};
       
       usersToProcess.forEach(user => {
+        if (!user) return;
+        
         userData[user.id] = {
           user: user,
           records: [],
@@ -1191,19 +1230,24 @@
           absentDays: 0,
           leaveDays: 0,
           totalHours: 0,
-          overtimeHours: 0
+          overtimeHours: 0,
+          workingDays: 0
         };
       });
 
       // Process each attendance record
       rawData.forEach(record => {
-        if (!userData[record.userId]) return;
+        if (!userData[record.userId]) {
+          // If we encounter data for a user not in our list, skip it
+          return;
+        }
 
         userData[record.userId].records.push(record);
 
         // Count status
         if (record.loginTime) {
           userData[record.userId].presentDays++;
+          userData[record.userId].workingDays++;
           
           // Calculate hours if both login and logout times exist
           if (record.loginTime && record.logoutTime) {
@@ -1238,8 +1282,11 @@
           }
         } else if (record.status === 'leave') {
           userData[record.userId].leaveDays++;
+        } else if (record.status === 'holiday') {
+          // Holidays don't count as absent
         } else {
           userData[record.userId].absentDays++;
+          userData[record.userId].workingDays++;
         }
       });
 
@@ -1257,7 +1304,7 @@
           displayDetailedReport(data);
           break;
         case 'comparison':
-          if (userRole === 'Admin' || userRole === 'admin') {
+          if (isAdmin) {
             displayComparisonReport(data);
           }
           break;
@@ -1270,26 +1317,49 @@
       tbody.innerHTML = '';
 
       Object.values(data.summary).forEach(userData => {
-        // For regular users, only show their data
-        if ((userRole !== 'Admin' && userRole !== 'admin') && userData.user.id !== currentUser) {
-          return;
-        }
-
         const totalDays = userData.presentDays + userData.absentDays + userData.leaveDays;
-        const attendanceRate = totalDays > 0 ? Math.round((userData.presentDays / totalDays) * 100) : 0;
+        const attendanceRate = userData.workingDays > 0 ? Math.round((userData.presentDays / userData.workingDays) * 100) : 0;
         const avgHours = userData.presentDays > 0 ? (userData.totalHours / userData.presentDays).toFixed(2) : 0;
 
         const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${userData.user.username} (${userData.user.empId || 'N/A'})</td>
-          <td class="highlight-good">${userData.presentDays}</td>
-          <td class="highlight-bad">${userData.absentDays}</td>
-          <td>${userData.leaveDays}</td>
-          <td>${userData.totalHours.toFixed(2)}h</td>
-          <td>${avgHours}h</td>
-          <td>${attendanceRate}%</td>
-          <td>${userData.overtimeHours.toFixed(2)}h</td>
-        `;
+        
+        if (isAdmin) {
+          // Admin view - show employee name
+          row.innerHTML = `
+            <td>${userData.user.username} (${userData.user.empId || 'N/A'})</td>
+            <td class="highlight-good">${userData.presentDays}</td>
+            <td class="highlight-bad">${userData.absentDays}</td>
+            <td>${userData.leaveDays}</td>
+            <td>${userData.totalHours.toFixed(2)}h</td>
+            <td>${avgHours}h</td>
+            <td>${attendanceRate}%</td>
+            <td>${userData.overtimeHours.toFixed(2)}h</td>
+          `;
+        } else {
+          // User view - show period instead of employee name
+          const period = document.getElementById('periodFilter').value;
+          let periodText = '';
+          switch (period) {
+            case 'current_month': periodText = 'Current Month'; break;
+            case 'last_month': periodText = 'Last Month'; break;
+            case 'current_quarter': periodText = 'Current Quarter'; break;
+            case 'last_quarter': periodText = 'Last Quarter'; break;
+            case 'custom': periodText = 'Custom Period'; break;
+            default: periodText = 'Selected Period';
+          }
+          
+          row.innerHTML = `
+            <td><strong>${periodText}</strong></td>
+            <td class="highlight-good">${userData.presentDays}</td>
+            <td class="highlight-bad">${userData.absentDays}</td>
+            <td>${userData.leaveDays}</td>
+            <td>${userData.totalHours.toFixed(2)}h</td>
+            <td>${avgHours}h</td>
+            <td>${attendanceRate}%</td>
+            <td>${userData.overtimeHours.toFixed(2)}h</td>
+          `;
+        }
+        
         tbody.appendChild(row);
       });
 
@@ -1311,7 +1381,7 @@
 
       data.detailed.forEach(record => {
         // For regular users, only show their data
-        if ((userRole !== 'Admin' && userRole !== 'admin') && record.userId !== currentUser) {
+        if (!isAdmin && record.userId !== currentUser) {
           return;
         }
 
@@ -1388,17 +1458,33 @@
         });
 
         const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${formattedDate}</td>
-          <td>${userName}</td>
-          <td>${record.loginTime || '-'}</td>
-          <td>${record.logoutTime || '-'}</td>
-          <td>${workingHours}</td>
-          <td>${breakTime}</td>
-          <td>${netHours}</td>
-          <td>${statusBadge}</td>
-          <td>${record.remarks || '-'}</td>
-        `;
+        
+        if (isAdmin) {
+          row.innerHTML = `
+            <td>${formattedDate}</td>
+            <td>${userName}</td>
+            <td>${record.loginTime || '-'}</td>
+            <td>${record.logoutTime || '-'}</td>
+            <td>${workingHours}</td>
+            <td>${breakTime}</td>
+            <td>${netHours}</td>
+            <td>${statusBadge}</td>
+            <td>${record.remarks || '-'}</td>
+          `;
+        } else {
+          row.innerHTML = `
+            <td>${formattedDate}</td>
+            <td>${dateObj.toLocaleDateString('en-US', { weekday: 'long' })}</td>
+            <td>${record.loginTime || '-'}</td>
+            <td>${record.logoutTime || '-'}</td>
+            <td>${workingHours}</td>
+            <td>${breakTime}</td>
+            <td>${netHours}</td>
+            <td>${statusBadge}</td>
+            <td>${record.remarks || '-'}</td>
+          `;
+        }
+        
         tbody.appendChild(row);
       });
 
@@ -1551,9 +1637,6 @@
 
     // Update statistics
     function updateStatistics(data) {
-      const totalEmployees = (userRole === 'Admin' || userRole === 'admin') ? 
-        allUsers.length : 1;
-      
       // Calculate working days in period
       const start = new Date(data.dateRange.start);
       const end = new Date(data.dateRange.end);
@@ -1565,26 +1648,42 @@
         }
       }
 
-      // Calculate average attendance and hours
-      let totalPresent = 0;
-      let totalHours = 0;
-      let userCount = 0;
-
-      Object.values(data.summary).forEach(userData => {
-        if (userData.records.length > 0) {
-          totalPresent += userData.presentDays;
-          totalHours += userData.totalHours;
-          userCount++;
-        }
-      });
-
-      const avgAttendance = userCount > 0 ? Math.round((totalPresent / (userCount * workingDays)) * 100) : 0;
-      const avgHours = userCount > 0 ? (totalHours / totalPresent).toFixed(1) : 0;
-
       document.getElementById('totalDays').textContent = workingDays;
-      document.getElementById('avgAttendance').textContent = avgAttendance + '%';
-      document.getElementById('avgHours').textContent = avgHours + 'h';
-      document.getElementById('totalEmployees').textContent = totalEmployees;
+
+      if (isAdmin) {
+        // Admin statistics
+        let totalPresent = 0;
+        let totalHours = 0;
+        let userCount = 0;
+
+        Object.values(data.summary).forEach(userData => {
+          if (userData.records.length > 0) {
+            totalPresent += userData.presentDays;
+            totalHours += userData.totalHours;
+            userCount++;
+          }
+        });
+
+        const avgAttendance = userCount > 0 ? Math.round((totalPresent / (userCount * workingDays)) * 100) : 0;
+        const avgHours = userCount > 0 ? (totalHours / totalPresent).toFixed(1) : 0;
+
+        document.getElementById('attendanceRate').textContent = avgAttendance + '%';
+        document.getElementById('avgHours').textContent = avgHours + 'h';
+        document.getElementById('totalEmployees').textContent = userCount;
+      } else {
+        // User statistics
+        const userData = data.summary[currentUser];
+        if (userData) {
+          const attendanceRate = userData.workingDays > 0 ? Math.round((userData.presentDays / userData.workingDays) * 100) : 0;
+          const avgHours = userData.presentDays > 0 ? (userData.totalHours / userData.presentDays).toFixed(1) : 0;
+
+          document.getElementById('attendanceRate').textContent = attendanceRate + '%';
+          document.getElementById('avgHours').textContent = avgHours + 'h';
+        } else {
+          document.getElementById('attendanceRate').textContent = '0%';
+          document.getElementById('avgHours').textContent = '0h';
+        }
+      }
     }
 
     // Initialize charts
@@ -1653,7 +1752,7 @@
       
       data.detailed.forEach(record => {
         // For regular users, only count their data
-        if ((userRole !== 'Admin' && userRole !== 'admin') && record.userId !== currentUser) {
+        if (!isAdmin && record.userId !== currentUser) {
           return;
         }
 
@@ -1685,7 +1784,7 @@
       
       data.detailed.forEach(record => {
         // For regular users, only count their data
-        if ((userRole !== 'Admin' && userRole !== 'admin') && record.userId !== currentUser) {
+        if (!isAdmin && record.userId !== currentUser) {
           return;
         }
 
@@ -1695,7 +1794,7 @@
         weekIndex++;
       });
 
-      const maxDays = Math.max(...weeks);
+      const maxDays = Math.max(...weeks) || 1;
       return weeks.map(days => Math.round((days / maxDays) * 100));
     }
 
@@ -1749,7 +1848,7 @@
             dataToExport = prepareDetailedDataForExport(currentReportData);
             break;
           case 'comparison':
-            if (userRole === 'Admin' || userRole === 'admin') {
+            if (isAdmin) {
               dataToExport = prepareComparisonDataForExport(currentReportData);
             } else {
               dataToExport = prepareSummaryDataForExport(currentReportData);
@@ -1777,25 +1876,38 @@
       
       Object.values(data.summary).forEach(userData => {
         // For regular users, only export their data
-        if ((userRole !== 'Admin' && userRole !== 'admin') && userData.user.id !== currentUser) {
+        if (!isAdmin && userData.user.id !== currentUser) {
           return;
         }
 
         const totalDays = userData.presentDays + userData.absentDays + userData.leaveDays;
-        const attendanceRate = totalDays > 0 ? Math.round((userData.presentDays / totalDays) * 100) : 0;
+        const attendanceRate = userData.workingDays > 0 ? Math.round((userData.presentDays / userData.workingDays) * 100) : 0;
         const avgHours = userData.presentDays > 0 ? (userData.totalHours / userData.presentDays).toFixed(2) : 0;
 
-        exportData.push({
-          'Employee Name': userData.user.username,
-          'Employee ID': userData.user.empId || 'N/A',
-          'Present Days': userData.presentDays,
-          'Absent Days': userData.absentDays,
-          'Leave Days': userData.leaveDays,
-          'Total Hours': userData.totalHours.toFixed(2),
-          'Average Hours/Day': avgHours,
-          'Attendance Rate': attendanceRate + '%',
-          'Overtime Hours': userData.overtimeHours.toFixed(2)
-        });
+        if (isAdmin) {
+          exportData.push({
+            'Employee Name': userData.user.username,
+            'Employee ID': userData.user.empId || 'N/A',
+            'Present Days': userData.presentDays,
+            'Absent Days': userData.absentDays,
+            'Leave Days': userData.leaveDays,
+            'Total Hours': userData.totalHours.toFixed(2),
+            'Average Hours/Day': avgHours,
+            'Attendance Rate': attendanceRate + '%',
+            'Overtime Hours': userData.overtimeHours.toFixed(2)
+          });
+        } else {
+          exportData.push({
+            'Period': document.getElementById('periodFilter').options[document.getElementById('periodFilter').selectedIndex].text,
+            'Present Days': userData.presentDays,
+            'Absent Days': userData.absentDays,
+            'Leave Days': userData.leaveDays,
+            'Total Hours': userData.totalHours.toFixed(2),
+            'Average Hours/Day': avgHours,
+            'Attendance Rate': attendanceRate + '%',
+            'Overtime Hours': userData.overtimeHours.toFixed(2)
+          });
+        }
       });
 
       return exportData;
@@ -1807,7 +1919,7 @@
       
       data.detailed.forEach(record => {
         // For regular users, only export their data
-        if ((userRole !== 'Admin' && userRole !== 'admin') && record.userId !== currentUser) {
+        if (!isAdmin && record.userId !== currentUser) {
           return;
         }
 
@@ -1858,18 +1970,33 @@
           status = 'Working';
         }
 
-        exportData.push({
-          'Date': record.date,
-          'Employee Name': user ? user.username : 'Unknown',
-          'Employee ID': user ? (user.empId || 'N/A') : 'N/A',
-          'Check In': record.loginTime || '-',
-          'Check Out': record.logoutTime || '-',
-          'Working Hours': workingHours,
-          'Break Time': breakTime,
-          'Net Hours': netHours,
-          'Status': status,
-          'Remarks': record.remarks || '-'
-        });
+        if (isAdmin) {
+          exportData.push({
+            'Date': record.date,
+            'Employee Name': user ? user.username : 'Unknown',
+            'Employee ID': user ? (user.empId || 'N/A') : 'N/A',
+            'Check In': record.loginTime || '-',
+            'Check Out': record.logoutTime || '-',
+            'Working Hours': workingHours,
+            'Break Time': breakTime,
+            'Net Hours': netHours,
+            'Status': status,
+            'Remarks': record.remarks || '-'
+          });
+        } else {
+          const dateObj = new Date(record.date);
+          exportData.push({
+            'Date': record.date,
+            'Day': dateObj.toLocaleDateString('en-US', { weekday: 'long' }),
+            'Check In': record.loginTime || '-',
+            'Check Out': record.logoutTime || '-',
+            'Working Hours': workingHours,
+            'Break Time': breakTime,
+            'Net Hours': netHours,
+            'Status': status,
+            'Remarks': record.remarks || '-'
+          });
+        }
       });
 
       return exportData;
@@ -1896,7 +2023,8 @@
         // Add title
         doc.setFontSize(20);
         doc.setTextColor(40, 40, 40);
-        doc.text('Attendance Report', 105, 15, { align: 'center' });
+        const title = isAdmin ? 'Team Attendance Report' : 'My Attendance Report';
+        doc.text(title, 105, 15, { align: 'center' });
         
         // Add date range
         doc.setFontSize(12);
@@ -1905,15 +2033,17 @@
         doc.text(dateRange, 105, 25, { align: 'center' });
         
         // Add user info for regular users
-        if (userRole !== 'Admin' && userRole !== 'admin') {
+        if (!isAdmin) {
           doc.setFontSize(10);
           doc.text(`Employee: ${userData.username} (${userData.empId || 'N/A'})`, 14, 35);
         }
         
         // Add summary table
         doc.autoTable({
-          startY: userRole !== 'Admin' && userRole !== 'admin' ? 45 : 35,
-          head: [['Employee', 'Present', 'Absent', 'Leave', 'Total Hours', 'Attendance %']],
+          startY: !isAdmin ? 45 : 35,
+          head: isAdmin ? 
+            [['Employee', 'Present', 'Absent', 'Leave', 'Total Hours', 'Attendance %']] :
+            [['Period', 'Present', 'Absent', 'Leave', 'Total Hours', 'Attendance %']],
           body: preparePDFSummaryData(currentReportData),
           theme: 'grid',
           headStyles: {
@@ -1941,21 +2071,33 @@
       
       Object.values(data.summary).forEach(userData => {
         // For regular users, only export their data
-        if ((userRole !== 'Admin' && userRole !== 'admin') && userData.user.id !== currentUser) {
+        if (!isAdmin && userData.user.id !== currentUser) {
           return;
         }
 
         const totalDays = userData.presentDays + userData.absentDays + userData.leaveDays;
-        const attendanceRate = totalDays > 0 ? Math.round((userData.presentDays / totalDays) * 100) : 0;
+        const attendanceRate = userData.workingDays > 0 ? Math.round((userData.presentDays / userData.workingDays) * 100) : 0;
 
-        pdfData.push([
-          userData.user.username,
-          userData.presentDays.toString(),
-          userData.absentDays.toString(),
-          userData.leaveDays.toString(),
-          userData.totalHours.toFixed(2),
-          attendanceRate + '%'
-        ]);
+        if (isAdmin) {
+          pdfData.push([
+            userData.user.username,
+            userData.presentDays.toString(),
+            userData.absentDays.toString(),
+            userData.leaveDays.toString(),
+            userData.totalHours.toFixed(2),
+            attendanceRate + '%'
+          ]);
+        } else {
+          const period = document.getElementById('periodFilter').options[document.getElementById('periodFilter').selectedIndex].text;
+          pdfData.push([
+            period,
+            userData.presentDays.toString(),
+            userData.absentDays.toString(),
+            userData.leaveDays.toString(),
+            userData.totalHours.toFixed(2),
+            attendanceRate + '%'
+          ]);
+        }
       });
 
       return pdfData;
