@@ -11,6 +11,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- FullCalendar -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
     <style>
         :root {
             --primary: #4361ee;
@@ -178,6 +180,45 @@
             display: flex;
             gap: 5px;
         }
+
+        .balance-edit {
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        .balance-edit:hover {
+            background: rgba(67, 97, 238, 0.1);
+        }
+
+        /* Calendar Styles */
+        #calendar {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .fc-event {
+            border-radius: 5px;
+            padding: 2px 5px;
+        }
+
+        .leave-sick {
+            background-color: #4cc9f0;
+            border-color: #4cc9f0;
+        }
+
+        .leave-casual {
+            background-color: #4895ef;
+            border-color: #4895ef;
+        }
+
+        .leave-earned {
+            background-color: #f72585;
+            border-color: #f72585;
+        }
     </style>
 </head>
 <body>
@@ -247,6 +288,9 @@
                 <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#applyLeaveModal">
                     <i class="fas fa-plus me-2"></i> Apply Leave
                 </button>
+                <button class="btn btn-light ms-2" data-bs-toggle="modal" data-bs-target="#bulkLeaveModal" id="bulkLeaveBtn" style="display: none;">
+                    <i class="fas fa-users me-2"></i> Bulk Leave
+                </button>
             </div>
         </div>
 
@@ -298,8 +342,13 @@
         <div class="row mt-4">
             <div class="col-md-8">
                 <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-chart-pie me-2"></i> Leave Balance Breakdown
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-chart-pie me-2"></i> Leave Balance Breakdown
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" id="editBalanceBtn" style="display: none;">
+                            <i class="fas fa-edit me-1"></i> Edit Balances
+                        </button>
                     </div>
                     <div class="card-body" id="leaveBalanceContainer">
                         <!-- Leave balances will be loaded here -->
@@ -315,10 +364,10 @@
                         <button class="btn btn-primary w-100 mb-3" data-bs-toggle="modal" data-bs-target="#applyLeaveModal">
                             <i class="fas fa-plus me-2"></i> Apply for Leave
                         </button>
-                        <button class="btn btn-outline-primary w-100 mb-3">
+                        <button class="btn btn-outline-primary w-100 mb-3" data-bs-toggle="modal" data-bs-target="#bulkLeaveModal" id="quickBulkLeaveBtn" style="display: none;">
                             <i class="fas fa-users me-2"></i> Bulk Leave Request
                         </button>
-                        <button class="btn btn-outline-primary w-100">
+                        <button class="btn btn-outline-primary w-100" onclick="showLeaveCalendar()">
                             <i class="fas fa-calendar me-2"></i> View Leave Calendar
                         </button>
                     </div>
@@ -337,7 +386,7 @@
                                     <i class="fas fa-list me-2"></i> My Leaves
                                 </button>
                             </li>
-                            <li class="nav-item" role="presentation">
+                            <li class="nav-item" role="presentation" id="teamTab" style="display: none;">
                                 <button class="nav-link" id="team-leaves-tab" data-bs-toggle="tab" data-bs-target="#team-leaves" type="button">
                                     <i class="fas fa-users me-2"></i> Team Leaves
                                 </button>
@@ -491,6 +540,111 @@
         </div>
     </div>
 
+    <!-- Bulk Leave Modal -->
+    <div class="modal fade" id="bulkLeaveModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-white"><i class="fas fa-users me-2"></i> Bulk Leave Request</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="bulkLeaveForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Leave Type</label>
+                                <select class="form-select" id="bulkLeaveType" required>
+                                    <option value="" selected disabled>Select Leave Type</option>
+                                    <option value="sick">Sick Leave</option>
+                                    <option value="casual">Casual Leave</option>
+                                    <option value="earned">Earned Leave</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Select Employees</label>
+                                <select class="form-select" id="bulkEmployees" multiple required>
+                                    <option value="">Loading employees...</option>
+                                </select>
+                                <small class="form-text text-muted">Hold Ctrl to select multiple employees</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">From Date</label>
+                                <input type="date" class="form-control" id="bulkFromDate" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">To Date</label>
+                                <input type="date" class="form-control" id="bulkToDate" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Reason for Leave</label>
+                            <textarea class="form-control" id="bulkReason" rows="3" placeholder="Reason for bulk leave" required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="submitBulkLeaveBtn">Submit Bulk Leave</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Modal -->
+    <div class="modal fade" id="calendarModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-white"><i class="fas fa-calendar me-2"></i> Leave Calendar</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Balance Modal -->
+    <div class="modal fade" id="editBalanceModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-white"><i class="fas fa-edit me-2"></i> Edit Leave Balances</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editBalanceForm">
+                        <div class="mb-3">
+                            <label class="form-label">Select User</label>
+                            <select class="form-select" id="balanceUserSelect" required>
+                                <option value="">Loading users...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Sick Leave Balance</label>
+                            <input type="number" class="form-control" id="editSickBalance" min="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Casual Leave Balance</label>
+                            <input type="number" class="form-control" id="editCasualBalance" min="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Earned Leave Balance</label>
+                            <input type="number" class="form-control" id="editEarnedBalance" min="0" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveBalanceBtn">Save Balances</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="mt-5">
         <div class="container">
@@ -513,6 +667,8 @@
     <!-- Bootstrap & jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- FullCalendar -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
 
     <script>
         // Firebase configuration
@@ -535,6 +691,7 @@
         let currentUser = null;
         let userData = null;
         let userRole = null;
+        let calendar = null;
 
         // Toast notification function
         function showToast(message, type = 'success') {
@@ -588,11 +745,9 @@
 
                 updateDebugInfo(`User loaded: ${userData.username}, Role: ${userRole}, ID: ${currentUser}`);
 
-                // Show/hide admin tab based on role
-                if (userRole === 'Admin' || userRole === 'Sub Admin') {
-                    document.getElementById('adminTab').style.display = 'block';
-                }
-
+                // Show/hide features based on role
+                setupRoleBasedFeatures();
+                
                 // Load user data
                 await loadUserData();
                 
@@ -602,7 +757,9 @@
                 // Load team leaves if manager
                 if (userRole === 'Admin' || userRole === 'Sub Admin') {
                     await loadAllLeaves();
-                } else {
+                    await loadUsersForBulkLeave();
+                    await loadUsersForBalanceEdit();
+                } else if (userData.manager) {
                     await loadTeamLeaves();
                 }
                 
@@ -615,6 +772,22 @@
             }
         }
 
+        // Setup role-based features
+        function setupRoleBasedFeatures() {
+            // Show admin features
+            if (userRole === 'Admin' || userRole === 'Sub Admin') {
+                document.getElementById('adminTab').style.display = 'block';
+                document.getElementById('bulkLeaveBtn').style.display = 'inline-block';
+                document.getElementById('quickBulkLeaveBtn').style.display = 'block';
+                document.getElementById('editBalanceBtn').style.display = 'block';
+            }
+            
+            // Show team features for managers
+            if (userData.manager || userRole === 'Admin' || userRole === 'Sub Admin') {
+                document.getElementById('teamTab').style.display = 'block';
+            }
+        }
+
         // Load user data including leave balances
         async function loadUserData() {
             try {
@@ -624,8 +797,19 @@
                 document.getElementById('reportingManager').value = userData.manager || 'Not assigned';
                 
                 // Load leave balances
+                await loadLeaveBalances(currentUser);
+
+            } catch (error) {
+                updateDebugInfo('Error loading user data: ' + error.message);
+                console.error("Error loading user data:", error);
+            }
+        }
+
+        // Load leave balances for a user
+        async function loadLeaveBalances(userId) {
+            try {
                 const leaveBalanceQuery = await db.collection("leaveBalances")
-                    .where("userId", "==", currentUser)
+                    .where("userId", "==", userId)
                     .get();
 
                 if (!leaveBalanceQuery.empty) {
@@ -636,11 +820,13 @@
                     updateDebugInfo('No leave balances found, creating default...');
                     // Create default leave balances if not exists
                     const defaultBalances = {
-                        userId: currentUser,
+                        userId: userId,
                         username: userData.username,
                         sick: 12,
                         casual: 10,
-                        earned: 15
+                        earned: 15,
+                        lastUpdated: new Date().toISOString(),
+                        updatedBy: userData.username
                     };
                     
                     await db.collection("leaveBalances").add(defaultBalances);
@@ -651,8 +837,8 @@
                 await updateLeaveStatistics();
 
             } catch (error) {
-                updateDebugInfo('Error loading user data: ' + error.message);
-                console.error("Error loading user data:", error);
+                updateDebugInfo('Error loading leave balances: ' + error.message);
+                console.error("Error loading leave balances:", error);
             }
         }
 
@@ -695,6 +881,12 @@
                         <small>Days Available</small>
                     </div>
                 </div>
+                ${userRole === 'Admin' || userRole === 'Sub Admin' ? `
+                <div class="mt-3 text-muted small">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Last updated: ${new Date(balances.lastUpdated).toLocaleString()} by ${balances.updatedBy}
+                </div>
+                ` : ''}
             `;
         }
 
@@ -958,6 +1150,99 @@
             return row;
         }
 
+        // Load users for bulk leave
+        async function loadUsersForBulkLeave() {
+            try {
+                const usersQuery = await db.collection("users").get();
+                const select = document.getElementById('bulkEmployees');
+                select.innerHTML = '';
+                
+                usersQuery.forEach(doc => {
+                    const user = doc.data();
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.textContent = `${user.username} (${user.empId || 'N/A'})`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Error loading users for bulk leave:", error);
+            }
+        }
+
+        // Load users for balance edit
+        async function loadUsersForBalanceEdit() {
+            try {
+                const usersQuery = await db.collection("users").get();
+                const select = document.getElementById('balanceUserSelect');
+                select.innerHTML = '<option value="">Select User</option>';
+                
+                usersQuery.forEach(doc => {
+                    const user = doc.data();
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.textContent = `${user.username} (${user.empId || 'N/A'}) - ${user.role}`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Error loading users for balance edit:", error);
+            }
+        }
+
+        // Show leave calendar
+        async function showLeaveCalendar() {
+            try {
+                // Load all approved leaves for calendar
+                const leavesQuery = await db.collection("leaves")
+                    .where("status", "==", "approved")
+                    .get();
+
+                const events = [];
+                leavesQuery.forEach(doc => {
+                    const leave = doc.data();
+                    let color = '';
+                    if (leave.type === 'sick') color = '#4cc9f0';
+                    else if (leave.type === 'casual') color = '#4895ef';
+                    else color = '#f72585';
+                    
+                    events.push({
+                        title: `${leave.username} - ${leave.type}`,
+                        start: leave.fromDate,
+                        end: leave.toDate,
+                        backgroundColor: color,
+                        borderColor: color
+                    });
+                });
+
+                // Initialize calendar
+                const calendarEl = document.getElementById('calendar');
+                if (calendar) {
+                    calendar.destroy();
+                }
+
+                calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    },
+                    events: events,
+                    eventDisplay: 'block',
+                    height: 'auto'
+                });
+
+                calendar.render();
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('calendarModal'));
+                modal.show();
+
+            } catch (error) {
+                console.error("Error loading calendar:", error);
+                showToast('Error loading calendar', 'error');
+            }
+        }
+
         // Apply for leave
         document.getElementById('submitLeaveBtn').addEventListener('click', async function() {
             const form = document.getElementById('applyLeaveForm');
@@ -1030,6 +1315,165 @@
                 updateDebugInfo('Error submitting leave: ' + error.message);
                 console.error("Error applying for leave:", error);
                 showToast('Error submitting leave application: ' + error.message, 'error');
+            }
+        });
+
+        // Submit bulk leave
+        document.getElementById('submitBulkLeaveBtn').addEventListener('click', async function() {
+            const form = document.getElementById('bulkLeaveForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const leaveType = document.getElementById('bulkLeaveType').value;
+            const fromDate = document.getElementById('bulkFromDate').value;
+            const toDate = document.getElementById('bulkToDate').value;
+            const reason = document.getElementById('bulkReason').value;
+            const selectedUsers = Array.from(document.getElementById('bulkEmployees').selectedOptions).map(opt => opt.value);
+
+            if (selectedUsers.length === 0) {
+                showToast('Please select at least one employee', 'error');
+                return;
+            }
+
+            try {
+                let successCount = 0;
+                let errorCount = 0;
+
+                for (const userId of selectedUsers) {
+                    try {
+                        // Get user data
+                        const userDoc = await db.collection("users").doc(userId).get();
+                        const user = userDoc.data();
+
+                        const leaveData = {
+                            userId: userId,
+                            username: user.username,
+                            empId: user.empId || 'N/A',
+                            type: leaveType,
+                            fromDate: fromDate,
+                            toDate: toDate,
+                            duration: Math.ceil((new Date(toDate) - new Date(fromDate)) / (1000 * 60 * 60 * 24)) + 1,
+                            reason: reason,
+                            contactNumber: 'N/A',
+                            status: 'pending',
+                            appliedDate: new Date().toISOString(),
+                            manager: user.manager || 'Not assigned',
+                            bulkApplied: true,
+                            appliedBy: userData.username
+                        };
+
+                        await db.collection("leaves").add(leaveData);
+                        successCount++;
+                    } catch (error) {
+                        console.error(`Error applying leave for user ${userId}:`, error);
+                        errorCount++;
+                    }
+                }
+
+                // Close modal and reset form
+                const modal = bootstrap.Modal.getInstance(document.getElementById('bulkLeaveModal'));
+                modal.hide();
+                form.reset();
+
+                showToast(`Bulk leave applied: ${successCount} successful, ${errorCount} failed`);
+                
+                // Reload data
+                await loadAllLeaves();
+
+            } catch (error) {
+                console.error("Error submitting bulk leave:", error);
+                showToast('Error submitting bulk leave application', 'error');
+            }
+        });
+
+        // Edit balance button handler
+        document.getElementById('editBalanceBtn').addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('editBalanceModal'));
+            modal.show();
+        });
+
+        // Load user balances when user selected
+        document.getElementById('balanceUserSelect').addEventListener('change', async function() {
+            const userId = this.value;
+            if (!userId) return;
+
+            try {
+                const balanceQuery = await db.collection("leaveBalances")
+                    .where("userId", "==", userId)
+                    .get();
+
+                if (!balanceQuery.empty) {
+                    const balances = balanceQuery.docs[0].data();
+                    document.getElementById('editSickBalance').value = balances.sick;
+                    document.getElementById('editCasualBalance').value = balances.casual;
+                    document.getElementById('editEarnedBalance').value = balances.earned;
+                } else {
+                    // Set defaults if no balances exist
+                    document.getElementById('editSickBalance').value = 12;
+                    document.getElementById('editCasualBalance').value = 10;
+                    document.getElementById('editEarnedBalance').value = 15;
+                }
+            } catch (error) {
+                console.error("Error loading user balances:", error);
+            }
+        });
+
+        // Save balance changes
+        document.getElementById('saveBalanceBtn').addEventListener('click', async function() {
+            const userId = document.getElementById('balanceUserSelect').value;
+            const sickBalance = parseInt(document.getElementById('editSickBalance').value);
+            const casualBalance = parseInt(document.getElementById('editCasualBalance').value);
+            const earnedBalance = parseInt(document.getElementById('editEarnedBalance').value);
+
+            if (!userId) {
+                showToast('Please select a user', 'error');
+                return;
+            }
+
+            try {
+                // Get user data for username
+                const userDoc = await db.collection("users").doc(userId).get();
+                const user = userDoc.data();
+
+                const balanceData = {
+                    userId: userId,
+                    username: user.username,
+                    sick: sickBalance,
+                    casual: casualBalance,
+                    earned: earnedBalance,
+                    lastUpdated: new Date().toISOString(),
+                    updatedBy: userData.username
+                };
+
+                // Check if balance record exists
+                const balanceQuery = await db.collection("leaveBalances")
+                    .where("userId", "==", userId)
+                    .get();
+
+                if (!balanceQuery.empty) {
+                    // Update existing
+                    await db.collection("leaveBalances").doc(balanceQuery.docs[0].id).update(balanceData);
+                } else {
+                    // Create new
+                    await db.collection("leaveBalances").add(balanceData);
+                }
+
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editBalanceModal'));
+                modal.hide();
+
+                showToast('Leave balances updated successfully!');
+
+                // If editing current user, reload their balances
+                if (userId === currentUser) {
+                    await loadLeaveBalances(currentUser);
+                }
+
+            } catch (error) {
+                console.error("Error updating balances:", error);
+                showToast('Error updating leave balances', 'error');
             }
         });
 
