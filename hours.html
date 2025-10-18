@@ -808,6 +808,7 @@
     let allUsers = [];
     let hoursData = [];
     let isAdmin = false;
+    let currentTab = 'myHours';
 
     // Update debug info
     function updateDebugInfo(message) {
@@ -895,6 +896,12 @@
       
       // Add active class to clicked tab
       event.target.classList.add('active');
+      
+      // Update current tab
+      currentTab = tabName;
+      
+      // Update tables based on current tab
+      updateHoursTables();
     }
 
     // Initialize the application
@@ -1090,7 +1097,7 @@
         // Update statistics
         updateStatistics();
         
-        // Update tables
+        // Update tables based on current tab
         updateHoursTables();
 
         showToast(`Loaded ${hoursData.length} hours records`, 'success');
@@ -1186,20 +1193,51 @@
       return workDays;
     }
 
-    // Update hours tables
+    // Update hours tables - FIXED FILTERING LOGIC
     function updateHoursTables() {
-      updateMyHoursTable();
+      // Clear all tables first
+      document.getElementById('myHoursTableBody').innerHTML = '';
       if (isAdmin) {
-        updateTeamHoursTable();
-        updateAllHoursTable();
+        document.getElementById('teamHoursTableBody').innerHTML = '';
+        document.getElementById('allHoursTableBody').innerHTML = '';
+      }
+
+      if (hoursData.length === 0) {
+        const noDataHTML = `
+          <tr>
+            <td colspan="9" class="no-data">
+              <div>No hours records found for the selected period</div>
+            </td>
+          </tr>
+        `;
+        document.getElementById('myHoursTableBody').innerHTML = noDataHTML;
+        if (isAdmin) {
+          document.getElementById('teamHoursTableBody').innerHTML = noDataHTML;
+          document.getElementById('allHoursTableBody').innerHTML = noDataHTML;
+        }
+        return;
+      }
+
+      // Update tables based on current active tab
+      switch(currentTab) {
+        case 'myHours':
+          updateMyHoursTable();
+          break;
+        case 'teamHours':
+          if (isAdmin) updateTeamHoursTable();
+          break;
+        case 'allHours':
+          if (isAdmin) updateAllHoursTable();
+          break;
       }
     }
 
-    // Update my hours table
+    // Update my hours table - ONLY SHOW CURRENT USER'S DATA
     function updateMyHoursTable() {
       const tbody = document.getElementById('myHoursTableBody');
       tbody.innerHTML = '';
 
+      // Filter to only current user's records
       const myHours = hoursData.filter(record => record.userId === currentUser);
 
       if (myHours.length === 0) {
@@ -1222,7 +1260,7 @@
       });
     }
 
-    // Update team hours table
+    // Update team hours table - ONLY SHOW TEAM MEMBERS (EXCLUDE CURRENT USER)
     function updateTeamHoursTable() {
       const tbody = document.getElementById('teamHoursTableBody');
       tbody.innerHTML = '';
@@ -1250,26 +1288,15 @@
       });
     }
 
-    // Update all hours table
+    // Update all hours table - SHOW ALL DATA
     function updateAllHoursTable() {
       const tbody = document.getElementById('allHoursTableBody');
       tbody.innerHTML = '';
 
-      if (hoursData.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="9" class="no-data">
-              <div>No hours records found for the selected period</div>
-            </td>
-          </tr>
-        `;
-        return;
-      }
-
       // Sort by date descending
-      hoursData.sort((a, b) => new Date(b.date) - new Date(a.date));
+      const sortedData = [...hoursData].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-      hoursData.forEach(record => {
+      sortedData.forEach(record => {
         const row = createHoursRow(record, 'all');
         tbody.appendChild(row);
       });
