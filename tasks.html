@@ -222,7 +222,7 @@
       background-color: #0056b3;
     }
 
-    #createTaskBtn, #uploadCSVBtn {
+    #createTaskBtn, #uploadCSVBtn, #downloadTemplateBtn {
       position: fixed;
       bottom: 30px;
       right: 30px;
@@ -246,9 +246,15 @@
       background-color: #007bff;
       font-size: 20px;
     }
+    
+    #downloadTemplateBtn {
+      bottom: 170px;
+      background-color: #6f42c1;
+      font-size: 20px;
+    }
 
     /* Modal container */
-    #taskModal {
+    #taskModal, #addPersonModal {
       background: rgba(0, 0, 0, 0.6);
       display: none;
       position: fixed;
@@ -261,7 +267,7 @@
     }
 
     /* Modal box */
-    #taskModal > div {
+    #taskModal > div, #addPersonModal > div {
       background-color: #fff;
       padding: 30px 25px;
       border-radius: 12px;
@@ -275,7 +281,7 @@
     }
 
     /* Modal heading */
-    #taskModal h3 {
+    #taskModal h3, #addPersonModal h3 {
       margin-top: 0;
       margin-bottom: 20px;
       color: #333;
@@ -286,7 +292,9 @@
     /* Inputs, selects, textarea */
     #taskModal input,
     #taskModal select,
-    #taskModal textarea {
+    #taskModal textarea,
+    #addPersonModal input,
+    #addPersonModal select {
       width: 100%;
       padding: 10px 12px;
       margin-bottom: 15px;
@@ -299,13 +307,16 @@
 
     #taskModal input:focus,
     #taskModal select:focus,
-    #taskModal textarea:focus {
+    #taskModal textarea:focus,
+    #addPersonModal input:focus,
+    #addPersonModal select:focus {
       border-color: #007bff;
       outline: none;
     }
 
     /* Buttons */
-    #taskModal button[type="submit"] {
+    #taskModal button[type="submit"],
+    #addPersonModal button[type="submit"] {
       background-color: #007bff;
       color: #fff;
       font-weight: bold;
@@ -318,11 +329,13 @@
       transition: background-color 0.3s;
     }
 
-    #taskModal button[type="submit"]:hover {
+    #taskModal button[type="submit"]:hover,
+    #addPersonModal button[type="submit"]:hover {
       background-color: #0056b3;
     }
 
-    #taskModal button[type="button"] {
+    #taskModal button[type="button"],
+    #addPersonModal button[type="button"] {
       background-color: #6c757d;
       color: #fff;
       padding: 10px 16px;
@@ -333,7 +346,8 @@
       transition: background-color 0.3s;
     }
 
-    #taskModal button[type="button"]:hover {
+    #taskModal button[type="button"]:hover,
+    #addPersonModal button[type="button"]:hover {
       background-color: #5a6268;
     }
     
@@ -401,6 +415,14 @@
     .date-filter-section input {
       flex: 1;
       min-width: 120px;
+    }
+    
+    /* Dropdown with "Add New" option */
+    select option.add-new {
+      background-color: #e9ecef;
+      color: #495057;
+      font-weight: bold;
+      border-top: 1px solid #dee2e6;
     }
     
     /* Responsive tweaks */
@@ -561,10 +583,27 @@
   </div>
 </div>
 
+<!-- Modal for Adding New Person -->
+<div id="addPersonModal" style="display:none;">
+  <div>
+    <h3 id="addPersonModalTitle">Add New Person</h3>
+    <form id="addPersonForm">
+      <input type="text" id="newPersonName" placeholder="Enter Name" required />
+      <select id="personType">
+        <option value="owner">Owner</option>
+        <option value="assignedBy">Assigned By</option>
+      </select><br/>
+      <button type="submit">Add Person</button>
+      <button type="button" onclick="document.getElementById('addPersonModal').style.display='none'">Cancel</button>
+    </form>
+  </div>
+</div>
+
 <!-- Floating Buttons -->
 <button id="createTaskBtn">+</button>
 <input type="file" id="csvUpload" style="display:none" accept=".csv" />
 <button id="uploadCSVBtn"><i class="fas fa-upload"></i></button>
+<button id="downloadTemplateBtn"><i class="fas fa-download"></i></button>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -575,6 +614,7 @@
 
 <script>
 let editingTaskId = null;
+let currentPersonType = null;
 
 // Firebase config
 const firebaseConfig = {
@@ -608,7 +648,11 @@ const companyInput = taskForm.elements['company'];
 const modalTitle = document.getElementById('modalTitle');
 const uploadCSVBtn = document.getElementById('uploadCSVBtn');
 const csvUpload = document.getElementById('csvUpload');
-const modalContent = document.getElementById('modalContent'); // Added
+const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
+const addPersonModal = document.getElementById('addPersonModal');
+const addPersonForm = document.getElementById('addPersonForm');
+const newPersonName = document.getElementById('newPersonName');
+const personType = document.getElementById('personType');
 
 const rowsPerPage = 10;
 let currentPage = 1;
@@ -1171,6 +1215,19 @@ function populateDropdowns() {
     option.value = account;
     accountsCardsList.appendChild(option);
   });
+  
+  // Add "Add New" option to both dropdowns
+  const addNewOptionOwner = document.createElement('option');
+  addNewOptionOwner.value = "add-new";
+  addNewOptionOwner.textContent = "+ Add New Owner";
+  addNewOptionOwner.classList.add('add-new');
+  ownerSelect.appendChild(addNewOptionOwner);
+  
+  const addNewOptionAssignedBy = document.createElement('option');
+  addNewOptionAssignedBy.value = "add-new";
+  addNewOptionAssignedBy.textContent = "+ Add New Assigner";
+  addNewOptionAssignedBy.classList.add('add-new');
+  assignedBySelect.appendChild(addNewOptionAssignedBy);
 }
 
 // When user types company name, prefill if exists
@@ -1185,6 +1242,55 @@ companyInput.addEventListener('input', () => {
     taskForm.elements['owner'].value = existingTask.Owner || '';
     taskForm.elements['assignedBy'].value = existingTask['Assigned By'] || '';
   }
+});
+
+// Handle "Add New" option in dropdowns
+ownerSelect.addEventListener('change', function() {
+  if (this.value === "add-new") {
+    currentPersonType = "owner";
+    document.getElementById('addPersonModalTitle').textContent = "Add New Owner";
+    document.getElementById('newPersonName').value = '';
+    addPersonModal.style.display = 'flex';
+    this.selectedIndex = 0; // Reset selection
+  }
+});
+
+assignedBySelect.addEventListener('change', function() {
+  if (this.value === "add-new") {
+    currentPersonType = "assignedBy";
+    document.getElementById('addPersonModalTitle').textContent = "Add New Assigner";
+    document.getElementById('newPersonName').value = '';
+    addPersonModal.style.display = 'flex';
+    this.selectedIndex = 0; // Reset selection
+  }
+});
+
+// Handle adding new person
+addPersonForm.addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const name = newPersonName.value.trim();
+  if (!name) {
+    alert('Please enter a name');
+    return;
+  }
+  
+  // Add the new person to the appropriate dropdown
+  if (currentPersonType === "owner") {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    ownerSelect.insertBefore(option, ownerSelect.lastChild);
+    ownerSelect.value = name;
+  } else if (currentPersonType === "assignedBy") {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    assignedBySelect.insertBefore(option, assignedBySelect.lastChild);
+    assignedBySelect.value = name;
+  }
+  
+  addPersonModal.style.display = 'none';
 });
 
 // Generate SINO: generates globally incremented SINO ignoring company name
@@ -1463,6 +1569,71 @@ async function handleCSVUpload(event) {
       alert("CSV parsing failed.");
     }
   });
+}
+
+// Download CSV Template
+downloadTemplateBtn.addEventListener('click', downloadCSVTemplate);
+
+function downloadCSVTemplate() {
+  // Create sample data for the template
+  const sampleData = [
+    {
+      'SINO': '001',
+      'Company': 'ABC Corporation',
+      'Type of Work': 'Account Reconciliation',
+      'Account Type': 'Saving Acc',
+      'Accounts / Cards': 'Account 12345',
+      'Task': 'Monthly reconciliation',
+      'Owner': 'John Doe',
+      'Work For': 'Monthly',
+      'Period': 'January 2023',
+      'DueDate': '2023-01-31',
+      'Assigned By': 'Manager',
+      'Notes': 'Complete reconciliation by end of month',
+      'Status': 'Pending',
+      'Time Started': '2023-01-15T09:00',
+      'Time End': '2023-01-15T17:00',
+      'Total Work Hours': '8h 0m',
+      'Total Pause Hours': '1h 0m',
+      'Remarks': 'Completed successfully'
+    },
+    {
+      'SINO': '002',
+      'Company': 'XYZ Ltd',
+      'Type of Work': 'Tax Filing',
+      'Account Type': 'Chequing Acc',
+      'Accounts / Cards': 'Account 67890',
+      'Task': 'Quarterly tax filing',
+      'Owner': 'Jane Smith',
+      'Work For': 'Quarterly',
+      'Period': 'Q1 2023',
+      'DueDate': '2023-04-15',
+      'Assigned By': 'Supervisor',
+      'Notes': 'File quarterly taxes',
+      'Status': 'In Progress',
+      'Time Started': '2023-04-01T10:00',
+      'Time End': '2023-04-01T16:30',
+      'Total Work Hours': '6h 30m',
+      'Total Pause Hours': '0h 30m',
+      'Remarks': 'In progress'
+    }
+  ];
+
+  // Convert to CSV
+  const csv = Papa.unparse(sampleData);
+  
+  // Create and download the file
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'task_template.csv');
+  link.style.visibility = 'hidden';
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 </script>
 </body>
