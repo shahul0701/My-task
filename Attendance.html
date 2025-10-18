@@ -1019,27 +1019,17 @@
       tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Loading attendance data...</td></tr>';
 
       try {
-        // Calculate date range for last 5 days
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 5);
-        
-        const startDateStr = startDate.toISOString().split('T')[0];
-        const endDateStr = endDate.toISOString().split('T')[0];
-
-        console.log("Loading attendance from", startDateStr, "to", endDateStr, "for user:", currentUser);
-
+        // Get all attendance records for the user and filter client-side
         const attendanceQuery = await db.collection("attendance")
           .where("userId", "==", currentUser)
-          .where("date", ">=", startDateStr)
-          .where("date", "<=", endDateStr)
           .orderBy("date", "desc")
+          .limit(30) // Get more records to ensure we have last 5 days
           .get();
 
         console.log("Found", attendanceQuery.size, "attendance records");
 
         if (attendanceQuery.empty) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #666;">No attendance records found for the last 5 days.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #666;">No attendance records found.</td></tr>';
           return;
         }
 
@@ -1052,7 +1042,7 @@
 
         // Generate last 5 days including today
         const last5Days = [];
-        for (let i = 0; i <= 5; i++) {
+        for (let i = 0; i < 5; i++) {
           const date = new Date();
           date.setDate(date.getDate() - i);
           const dateStr = date.toISOString().split('T')[0];
