@@ -491,6 +491,11 @@
       border-left: 4px solid #dc3545;
     }
 
+    /* User-specific styles */
+    .user-view .admin-only-element {
+      display: none !important;
+    }
+
     /* Responsive Design */
     @media (max-width: 1024px) {
       .page-header {
@@ -603,8 +608,8 @@
     <!-- Page Header -->
     <div class="page-header">
       <div>
-        <h1 class="page-title">Hours Management</h1>
-        <p class="page-subtitle">Track and manage employee working hours</p>
+        <h1 class="page-title" id="pageTitle">Hours Management</h1>
+        <p class="page-subtitle" id="pageSubtitle">Track and manage employee working hours</p>
       </div>
       <div class="current-month-display" id="currentMonthDisplay">
         Loading current month...
@@ -613,17 +618,17 @@
 
     <!-- Stats Grid -->
     <div class="stats-grid">
-      <div class="stat-card">
+      <div class="stat-card admin-only-element">
         <div class="stat-icon">👥</div>
         <div class="stat-number" id="totalEmployees">0</div>
         <div class="stat-label">Total Employees</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card admin-only-element">
         <div class="stat-icon">✅</div>
         <div class="stat-number" id="presentToday">0</div>
         <div class="stat-label">Present Today</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card admin-only-element">
         <div class="stat-icon">❌</div>
         <div class="stat-number" id="absentToday">0</div>
         <div class="stat-label">Absent Today</div>
@@ -631,7 +636,17 @@
       <div class="stat-card">
         <div class="stat-icon">📊</div>
         <div class="stat-number" id="attendanceRate">0%</div>
-        <div class="stat-label">Attendance Rate</div>
+        <div class="stat-label" id="attendanceLabel">Attendance Rate</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⏱️</div>
+        <div class="stat-number" id="totalHours">0h</div>
+        <div class="stat-label" id="hoursLabel">Total Hours</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-number" id="workDays">0</div>
+        <div class="stat-label" id="daysLabel">Work Days</div>
       </div>
     </div>
 
@@ -642,7 +657,7 @@
           <label class="filter-label">Select Month</label>
           <input type="month" class="filter-input" id="monthFilter">
         </div>
-        <div class="filter-group">
+        <div class="filter-group admin-only-element">
           <label class="filter-label">Select Employee</label>
           <select class="filter-select" id="employeeFilter">
             <option value="all">All Employees</option>
@@ -669,9 +684,15 @@
     <!-- Tabs -->
     <div class="tabs-container">
       <div class="tabs">
-        <button class="tab active" onclick="switchTab('myHours')">My Hours</button>
-        <button class="tab" onclick="switchTab('teamHours')" id="teamTab" style="display: none;">Team Hours</button>
-        <button class="tab" onclick="switchTab('allHours')" id="allTab" style="display: none;">All Hours (Admin)</button>
+        <button class="tab active" onclick="switchTab('myHours')">
+          <span id="myHoursTabText">My Hours</span>
+        </button>
+        <button class="tab admin-only-element" onclick="switchTab('teamHours')" id="teamTab">
+          <span>Team Hours</span>
+        </button>
+        <button class="tab admin-only-element" onclick="switchTab('allHours')" id="allTab">
+          <span>All Hours (Admin)</span>
+        </button>
       </div>
 
       <!-- My Hours Tab -->
@@ -703,7 +724,7 @@
       </div>
 
       <!-- Team Hours Tab -->
-      <div class="tab-content" id="teamHours">
+      <div class="tab-content admin-only-element" id="teamHours">
         <div class="table-container">
           <table>
             <thead>
@@ -731,7 +752,7 @@
       </div>
 
       <!-- All Hours Tab -->
-      <div class="tab-content" id="allHours">
+      <div class="tab-content admin-only-element" id="allHours">
         <div class="table-container">
           <table>
             <thead>
@@ -786,6 +807,7 @@
     let userRole = null;
     let allUsers = [];
     let hoursData = [];
+    let isAdmin = false;
 
     // Update debug info
     function updateDebugInfo(message) {
@@ -849,7 +871,7 @@
 
     // Home button click handler
     function handleHomeClick() {
-      if (userRole === 'Admin') {
+      if (isAdmin) {
         window.location.href = 'Home.html';
       } else {
         window.location.href = 'UserDashboard.html';
@@ -912,15 +934,12 @@
         userData = userQuery.docs[0].data();
         currentUser = userQuery.docs[0].id;
         userRole = userData.role || 'employee';
+        isAdmin = (userRole === 'Admin' || userRole === 'admin');
 
-        updateDebugInfo(`User loaded: ${userData.username}, Role: ${userRole}`);
+        updateDebugInfo(`User loaded: ${userData.username}, Role: ${userRole}, isAdmin: ${isAdmin}`);
 
-        // Check if user is admin
-        if (userRole === 'Admin' || userRole === 'admin') {
-          document.getElementById('adminMenu').classList.add('visible');
-          document.getElementById('teamTab').style.display = 'block';
-          document.getElementById('allTab').style.display = 'block';
-        }
+        // Update UI based on user role
+        updateUIForUserRole();
 
         // Load all users
         await loadAllUsers();
@@ -937,29 +956,75 @@
       }
     }
 
+    // Update UI based on user role
+    function updateUIForUserRole() {
+      if (isAdmin) {
+        // Admin view
+        document.getElementById('adminMenu').classList.add('visible');
+        document.getElementById('pageTitle').textContent = 'Hours Management';
+        document.getElementById('pageSubtitle').textContent = 'Track and manage employee working hours';
+        document.getElementById('myHoursTabText').textContent = 'My Hours';
+        document.getElementById('attendanceLabel').textContent = 'Team Attendance';
+        document.getElementById('hoursLabel').textContent = 'Team Hours';
+        document.getElementById('daysLabel').textContent = 'Work Days';
+        
+        // Show admin elements
+        document.querySelectorAll('.admin-only-element').forEach(el => {
+          el.style.display = 'block';
+        });
+      } else {
+        // Regular user view
+        document.getElementById('pageTitle').textContent = 'My Hours';
+        document.getElementById('pageSubtitle').textContent = 'Track your working hours and attendance';
+        document.getElementById('myHoursTabText').textContent = 'My Attendance';
+        document.getElementById('attendanceLabel').textContent = 'My Attendance';
+        document.getElementById('hoursLabel').textContent = 'My Total Hours';
+        document.getElementById('daysLabel').textContent = 'Days Worked';
+        
+        // Hide admin elements
+        document.querySelectorAll('.admin-only-element').forEach(el => {
+          el.style.display = 'none';
+        });
+        
+        // Add user-view class to main content for CSS targeting
+        document.getElementById('mainContent').classList.add('user-view');
+      }
+    }
+
     // Load all users for filters
     async function loadAllUsers() {
       try {
         updateDebugInfo('Loading users from Firestore...');
-        const usersQuery = await db.collection("users").get();
-        allUsers = [];
-        usersQuery.forEach(doc => {
-          allUsers.push({ id: doc.id, ...doc.data() });
-        });
-
-        // Update total employees count
-        document.getElementById('totalEmployees').textContent = allUsers.length;
-
-        // Populate employee filter dropdown
-        const employeeFilter = document.getElementById('employeeFilter');
-        employeeFilter.innerHTML = '<option value="all">All Employees</option>';
         
-        allUsers.forEach(user => {
-          const option = document.createElement('option');
-          option.value = user.id;
-          option.textContent = `${user.username} (${user.empId || 'N/A'})`;
-          employeeFilter.appendChild(option);
-        });
+        if (isAdmin) {
+          const usersQuery = await db.collection("users").get();
+          allUsers = [];
+          usersQuery.forEach(doc => {
+            allUsers.push({ id: doc.id, ...doc.data() });
+          });
+
+          // Update total employees count
+          document.getElementById('totalEmployees').textContent = allUsers.length;
+
+          // Populate employee filter dropdown
+          const employeeFilter = document.getElementById('employeeFilter');
+          employeeFilter.innerHTML = '<option value="all">All Employees</option>';
+          
+          allUsers.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.id;
+            option.textContent = `${user.username} (${user.empId || 'N/A'})`;
+            employeeFilter.appendChild(option);
+          });
+        } else {
+          // For regular users, only load their own data
+          allUsers = [{
+            id: currentUser,
+            username: userData.username,
+            empId: userData.empId,
+            role: userData.role
+          }];
+        }
 
         updateDebugInfo(`Loaded ${allUsers.length} users`);
 
@@ -969,13 +1034,13 @@
       }
     }
 
-    // Load hours data based on filters
+    // Load hours data based on filters - UPDATED TO AVOID COMPOSITE INDEX ISSUES
     async function loadHoursData() {
       try {
         updateDebugInfo('Loading hours data...');
         
         const monthFilter = document.getElementById('monthFilter').value || getCurrentMonthYear();
-        const employeeFilter = document.getElementById('employeeFilter').value;
+        const employeeFilter = isAdmin ? document.getElementById('employeeFilter').value : currentUser;
         const statusFilter = document.getElementById('statusFilter').value;
 
         // Calculate date range for the selected month
@@ -988,35 +1053,39 @@
 
         let hoursQuery;
         
-        if (employeeFilter === 'all' && (userRole === 'Admin' || userRole === 'admin')) {
-          // Admin viewing all hours
+        if (isAdmin && employeeFilter === 'all') {
+          // Admin viewing all hours - load all records and filter by date client-side
           updateDebugInfo('Loading all hours data (admin view)');
-          hoursQuery = await db.collection("attendance")
-            .where("date", ">=", startDate)
-            .where("date", "<=", endDate)
-            .get();
+          hoursQuery = await db.collection("attendance").get();
+          hoursData = [];
+          hoursQuery.forEach(doc => {
+            const record = { id: doc.id, ...doc.data() };
+            if (record.date >= startDate && record.date <= endDate) {
+              hoursData.push(record);
+            }
+          });
         } else {
           // User viewing their own hours or admin viewing specific user
-          const userId = employeeFilter === 'all' ? currentUser : employeeFilter;
+          const userId = isAdmin ? employeeFilter : currentUser;
           updateDebugInfo(`Loading hours for user: ${userId}`);
           hoursQuery = await db.collection("attendance")
             .where("userId", "==", userId)
-            .where("date", ">=", startDate)
-            .where("date", "<=", endDate)
             .get();
+          hoursData = [];
+          hoursQuery.forEach(doc => {
+            const record = { id: doc.id, ...doc.data() };
+            if (record.date >= startDate && record.date <= endDate) {
+              hoursData.push(record);
+            }
+          });
         }
-
-        hoursData = [];
-        hoursQuery.forEach(doc => {
-          hoursData.push({ id: doc.id, ...doc.data() });
-        });
 
         // Filter by status if needed
         if (statusFilter !== 'all') {
           hoursData = hoursData.filter(record => record.status === statusFilter);
         }
 
-        updateDebugInfo(`Loaded ${hoursData.length} hours records`);
+        updateDebugInfo(`Loaded ${hoursData.length} hours records after filtering`);
 
         // Update statistics
         updateStatistics();
@@ -1037,40 +1106,77 @@
     function updateStatistics() {
       const today = new Date().toISOString().split('T')[0];
       
-      // Get today's attendance
-      const todayAttendance = hoursData.filter(record => record.date === today);
-      
-      // Count present today (has login time)
-      const presentToday = todayAttendance.filter(record => record.loginTime).length;
-      
-      // Count absent today (no attendance record or no login time)
-      const totalEmployees = allUsers.length;
-      const absentToday = totalEmployees - presentToday;
-      
-      // Calculate attendance rate for current user this month
-      const userRecords = hoursData.filter(record => 
-        record.userId === currentUser && record.loginTime
-      );
-      const workDays = calculateWorkDaysInMonth();
-      const attendanceRate = workDays > 0 ? 
-        Math.round((userRecords.length / workDays) * 100) : 0;
+      if (isAdmin) {
+        // Admin statistics
+        // Get today's attendance
+        const todayAttendance = hoursData.filter(record => record.date === today);
+        
+        // Count present today (has login time)
+        const presentToday = todayAttendance.filter(record => record.loginTime).length;
+        
+        // Count absent today (no attendance record or no login time)
+        const totalEmployees = allUsers.length;
+        const absentToday = totalEmployees - presentToday;
+        
+        // Calculate total hours for all employees
+        let totalHours = 0;
+        hoursData.forEach(record => {
+          if (record.loginTime && record.logoutTime) {
+            const loginTime = parseTimeString(record.loginTime, record.date);
+            const logoutTime = parseTimeString(record.logoutTime, record.date);
+            if (loginTime && logoutTime) {
+              const totalMs = logoutTime - loginTime;
+              totalHours += totalMs / (1000 * 60 * 60);
+            }
+          }
+        });
 
-      // Update DOM
-      document.getElementById('presentToday').textContent = presentToday;
-      document.getElementById('absentToday').textContent = absentToday;
-      document.getElementById('attendanceRate').textContent = `${attendanceRate}%`;
+        // Calculate work days in month
+        const workDays = calculateWorkDaysInMonth();
+
+        // Update DOM
+        document.getElementById('presentToday').textContent = presentToday;
+        document.getElementById('absentToday').textContent = absentToday;
+        document.getElementById('totalHours').textContent = totalHours.toFixed(1) + 'h';
+        document.getElementById('workDays').textContent = workDays;
+        document.getElementById('attendanceRate').textContent = totalEmployees > 0 ? 
+          Math.round((presentToday / totalEmployees) * 100) + '%' : '0%';
+      } else {
+        // User statistics
+        const userRecords = hoursData.filter(record => record.userId === currentUser);
+        const presentDays = userRecords.filter(record => record.loginTime).length;
+        const workDays = calculateWorkDaysInMonth();
+        const attendanceRate = workDays > 0 ? Math.round((presentDays / workDays) * 100) : 0;
+
+        // Calculate total hours
+        let totalHours = 0;
+        userRecords.forEach(record => {
+          if (record.loginTime && record.logoutTime) {
+            const loginTime = parseTimeString(record.loginTime, record.date);
+            const logoutTime = parseTimeString(record.logoutTime, record.date);
+            if (loginTime && logoutTime) {
+              const totalMs = logoutTime - loginTime;
+              totalHours += totalMs / (1000 * 60 * 60);
+            }
+          }
+        });
+
+        // Update DOM
+        document.getElementById('attendanceRate').textContent = attendanceRate + '%';
+        document.getElementById('totalHours').textContent = totalHours.toFixed(1) + 'h';
+        document.getElementById('workDays').textContent = presentDays;
+      }
     }
 
     // Calculate work days in current month
     function calculateWorkDaysInMonth() {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth();
-      const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
+      const monthFilter = document.getElementById('monthFilter').value || getCurrentMonthYear();
+      const [year, month] = monthFilter.split('-');
+      const firstDay = new Date(year, month - 1, 1);
+      const lastDay = new Date(year, month, 0);
       
       let workDays = 0;
-      for (let day = firstDay; day <= lastDay; day.setDate(day.getDate() + 1)) {
+      for (let day = new Date(firstDay); day <= lastDay; day.setDate(day.getDate() + 1)) {
         // Count only weekdays (Monday to Friday)
         if (day.getDay() !== 0 && day.getDay() !== 6) {
           workDays++;
@@ -1083,8 +1189,10 @@
     // Update hours tables
     function updateHoursTables() {
       updateMyHoursTable();
-      updateTeamHoursTable();
-      updateAllHoursTable();
+      if (isAdmin) {
+        updateTeamHoursTable();
+        updateAllHoursTable();
+      }
     }
 
     // Update my hours table
@@ -1119,10 +1227,6 @@
       const tbody = document.getElementById('teamHoursTableBody');
       tbody.innerHTML = '';
 
-      if (userRole !== 'Admin' && userRole !== 'admin') {
-        return;
-      }
-
       // Get team members (all users except current user)
       const teamHours = hoursData.filter(record => record.userId !== currentUser);
 
@@ -1150,10 +1254,6 @@
     function updateAllHoursTable() {
       const tbody = document.getElementById('allHoursTableBody');
       tbody.innerHTML = '';
-
-      if (userRole !== 'Admin' && userRole !== 'admin') {
-        return;
-      }
 
       if (hoursData.length === 0) {
         tbody.innerHTML = `
@@ -1227,7 +1327,7 @@
             // Add overtime/undertime indicators
             if (netHoursValue > 8) {
               netHours = `<span class="overtime">${netHours} (+${(netHoursValue - 8).toFixed(2)}h)</span>`;
-            } else if (netHoursValue < 8) {
+            } else if (netHoursValue < 8 && netHoursValue > 0) {
               netHours = `<span class="undertime">${netHours} (-${(8 - netHoursValue).toFixed(2)}h)</span>`;
             }
           }
@@ -1236,6 +1336,7 @@
         }
       } else if (record.loginTime && !record.logoutTime) {
         status = 'working';
+        workingHours = 'In Progress';
       } else {
         status = record.status || 'absent';
       }
@@ -1251,8 +1352,10 @@
       let statusBadge = '';
       switch (status) {
         case 'present':
-        case 'working':
           statusBadge = `<span class="status-present">Present</span>`;
+          break;
+        case 'working':
+          statusBadge = `<span class="status-present">Working</span>`;
           break;
         case 'absent':
           statusBadge = `<span class="status-absent">Absent</span>`;
