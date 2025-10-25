@@ -7,6 +7,12 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     /* Reset & base */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(135deg, #6b73ff 0%, #000dff 100%);
@@ -129,7 +135,7 @@
       border: none;
       cursor: pointer;
       box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-      transition: background-color 0.3s ease;
+      transition: all 0.3s ease;
     }
 
     .edit-btn {
@@ -139,6 +145,7 @@
 
     .edit-btn:hover {
       background-color: #3b8e40;
+      transform: translateY(-2px);
     }
 
     .delete-btn {
@@ -148,6 +155,7 @@
 
     .delete-btn:hover {
       background-color: #b83227;
+      transform: translateY(-2px);
     }
     
     .start-btn {
@@ -157,6 +165,7 @@
 
     .start-btn:hover {
       background-color: #0b7dda;
+      transform: translateY(-2px);
     }
     
     .complete-btn {
@@ -166,6 +175,7 @@
 
     .complete-btn:hover {
       background-color: #e68a00;
+      transform: translateY(-2px);
     }
 
     /* Pagination styles */
@@ -184,7 +194,7 @@
       font-weight: 600;
       cursor: pointer;
       box-shadow: 0 5px 15px rgba(58, 66, 244, 0.4);
-      transition: background-color 0.3s ease;
+      transition: all 0.3s ease;
     }
 
     .pagination button:disabled {
@@ -195,6 +205,7 @@
 
     .pagination button:hover:not(:disabled) {
       background-color: #2a31d9;
+      transform: translateY(-2px);
     }
 
     /* Added for detail row visibility */
@@ -229,22 +240,24 @@
       display: inline-block;
       padding: 10px 20px;
       text-decoration: none;
-      background-color: #007bff;
+      background: linear-gradient(135deg, #007bff, #0056b3);
       color: white;
-      border-radius: 5px;
+      border-radius: 8px;
       font-weight: bold;
-      transition: background-color 0.3s ease;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 123, 255, 0.3);
     }
 
     .top-button:hover {
-      background-color: #0056b3;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 8px rgba(0, 123, 255, 0.4);
     }
 
     #createTaskBtn, #uploadCSVBtn, #downloadTemplateBtn {
       position: fixed;
       bottom: 30px;
       right: 30px;
-      background-color: #28a745;
+      background: linear-gradient(135deg, #28a745, #20c997);
       color: white;
       border: none;
       border-radius: 50%;
@@ -257,17 +270,23 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      transition: all 0.3s ease;
+    }
+    
+    #createTaskBtn:hover, #uploadCSVBtn:hover, #downloadTemplateBtn:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
     }
     
     #uploadCSVBtn {
       bottom: 100px;
-      background-color: #007bff;
+      background: linear-gradient(135deg, #007bff, #6610f2);
       font-size: 20px;
     }
     
     #downloadTemplateBtn {
       bottom: 170px;
-      background-color: #6f42c1;
+      background: linear-gradient(135deg, #6f42c1, #e83e8c);
       font-size: 20px;
     }
 
@@ -286,14 +305,14 @@
 
     /* Modal box */
     #taskModal > div, #addPersonModal > div {
-      background-color: #fff;
+      background: linear-gradient(145deg, #ffffff, #f0f0f0);
       padding: 30px 25px;
-      border-radius: 12px;
+      border-radius: 20px;
       width: 95%;
       max-width: 600px;
       max-height: 90vh;
       overflow-y: auto;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
       font-family: 'Segoe UI', sans-serif;
       position: relative;
     }
@@ -303,8 +322,12 @@
       margin-top: 0;
       margin-bottom: 20px;
       color: #333;
-      font-size: 22px;
+      font-size: 24px;
       text-align: center;
+      background: linear-gradient(135deg, #3a42f4, #6b73ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 700;
     }
 
     /* Inputs, selects, textarea */
@@ -314,13 +337,15 @@
     #addPersonModal input,
     #addPersonModal select {
       width: 100%;
-      padding: 10px 12px;
+      padding: 12px 15px;
       margin-bottom: 15px;
       font-size: 15px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
       box-sizing: border-box;
-      transition: border 0.3s;
+      transition: all 0.3s ease;
+      background: #f8f9fa;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
     }
 
     #taskModal input:focus,
@@ -328,65 +353,82 @@
     #taskModal textarea:focus,
     #addPersonModal input:focus,
     #addPersonModal select:focus {
-      border-color: #007bff;
+      border-color: #3a42f4;
       outline: none;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(58, 66, 244, 0.2);
     }
 
     /* Buttons */
     #taskModal button[type="submit"],
     #addPersonModal button[type="submit"] {
-      background-color: #007bff;
+      background: linear-gradient(135deg, #28a745, #20c997);
       color: #fff;
       font-weight: bold;
-      padding: 10px 16px;
+      padding: 12px 16px;
       border: none;
-      border-radius: 6px;
+      border-radius: 10px;
       cursor: pointer;
       width: 48%;
       margin-right: 4%;
-      transition: background-color 0.3s;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(40, 167, 69, 0.3);
     }
 
     #taskModal button[type="submit"]:hover,
     #addPersonModal button[type="submit"]:hover {
-      background-color: #0056b3;
+      background: linear-gradient(135deg, #218838, #1e9e6e);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 8px rgba(40, 167, 69, 0.4);
     }
 
     #taskModal button[type="button"],
     #addPersonModal button[type="button"] {
-      background-color: #6c757d;
+      background: linear-gradient(135deg, #6c757d, #5a6268);
       color: #fff;
-      padding: 10px 16px;
+      padding: 12px 16px;
       border: none;
-      border-radius: 6px;
+      border-radius: 10px;
       cursor: pointer;
       width: 48%;
-      transition: background-color 0.3s;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(108, 117, 125, 0.3);
     }
 
     #taskModal button[type="button"]:hover,
     #addPersonModal button[type="button"]:hover {
-      background-color: #5a6268;
+      background: linear-gradient(135deg, #5a6268, #495057);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 8px rgba(108, 117, 125, 0.4);
     }
     
     /* Time editing section in modal */
     .time-edit-section {
-      background: #f5f5f5;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 15px;
+      background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      border: 1px solid #bbdefb;
+      display: none;
     }
     
     .time-edit-section h4 {
       margin-top: 0;
-      margin-bottom: 10px;
-      color: #333;
+      margin-bottom: 15px;
+      color: #1565c0;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .time-edit-section h4 i {
+      margin-right: 10px;
     }
     
     .time-input-group {
       display: flex;
       gap: 10px;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
     }
     
     .time-input-group input {
@@ -396,24 +438,25 @@
     
     /* Status badges */
     .status-badge {
-      padding: 4px 8px;
-      border-radius: 12px;
+      padding: 6px 12px;
+      border-radius: 20px;
       font-size: 12px;
       font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
     .status-pending {
-      background-color: #ff9800;
+      background: linear-gradient(135deg, #ff9800, #f57c00);
       color: white;
     }
     
     .status-complete {
-      background-color: #4caf50;
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
       color: white;
     }
     
     .status-progress {
-      background-color: #2196f3;
+      background: linear-gradient(135deg, #2196f3, #0d47a1);
       color: white;
     }
     
@@ -424,9 +467,9 @@
       gap: 10px;
       align-items: center;
       margin-bottom: 15px;
-      padding: 10px;
-      background: #f0f4ff;
-      border-radius: 8px;
+      padding: 15px;
+      background: linear-gradient(135deg, #e8eaf6, #c5cae9);
+      border-radius: 12px;
     }
     
     .date-filter-section select, 
@@ -450,9 +493,32 @@
       font-weight: bold;
       background: #333;
       color: #fff;
-      padding: 5px 10px;
-      border-radius: 4px;
+      padding: 8px 12px;
+      border-radius: 8px;
       display: inline-block;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    /* Form sections */
+    .form-section {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      border-left: 4px solid #3a42f4;
+    }
+    
+    .form-section h4 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      color: #3a42f4;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .form-section h4 i {
+      margin-right: 10px;
     }
     
     /* Responsive tweaks */
@@ -478,6 +544,10 @@
       .date-filter-section {
         flex-direction: column;
         align-items: stretch;
+      }
+      
+      .time-input-group {
+        flex-direction: column;
       }
     }
   </style>
@@ -550,52 +620,64 @@
   <div>
     <h3 id="modalTitle">Create New Task</h3>
     <form id="taskForm">
-      <input list="companyList" name="company" id="companyInput" placeholder="Company Name" required />
-      <datalist id="companyList"></datalist>
+      <div class="form-section">
+        <h4><i class="fas fa-building"></i> Company Information</h4>
+        <input list="companyList" name="company" id="companyInput" placeholder="Company Name" required />
+        <datalist id="companyList"></datalist>
 
-      <input list="workTypeList" name="typeOfWork" id="typeOfWorkInput" placeholder="TYPE OF WORK" required />
-      <datalist id="workTypeList"></datalist>
+        <input list="workTypeList" name="typeOfWork" id="typeOfWorkInput" placeholder="TYPE OF WORK" required />
+        <datalist id="workTypeList"></datalist>
 
-      <select name="accountType" id="accountTypeSelect">
-        <option value="">Select ACCOUNT TYPE</option>
-        <option value="Saving Acc">Saving Acc</option>
-        <option value="Chequing Acc">Chequing Acc</option>
-        <option value="Loan Acc">Loan Acc</option>
-        <option value="Credit Card">Credit Card</option>
-        <option value="Other">Other</option>
-      </select><br/>
+        <select name="accountType" id="accountTypeSelect">
+          <option value="">Select ACCOUNT TYPE</option>
+          <option value="Saving Acc">Saving Acc</option>
+          <option value="Chequing Acc">Chequing Acc</option>
+          <option value="Loan Acc">Loan Acc</option>
+          <option value="Credit Card">Credit Card</option>
+          <option value="Other">Other</option>
+        </select>
 
-      <input type="text" name="accountsCards" id="accountsCards" placeholder="Accounts / Cards" list="accountsCardsList"/><br/>
-      <datalist id="accountsCardsList"></datalist>
+        <input type="text" name="accountsCards" id="accountsCards" placeholder="Accounts / Cards" list="accountsCardsList"/>
+        <datalist id="accountsCardsList"></datalist>
+      </div>
 
-      <input type="text" name="task" placeholder="Task" /><br/>
+      <div class="form-section">
+        <h4><i class="fas fa-tasks"></i> Task Details</h4>
+        <input type="text" name="task" placeholder="Task" />
 
-      <select name="owner" id="ownerSelect" required>
-        <option value="">Select Owner</option>
-      </select><br/>
+        <select name="workFor" id="workForSelect">
+          <option value="">Select WORK FOR</option>
+          <option value="Yearly">Yearly</option>
+          <option value="Monthly">Monthly</option>
+          <option value="Weekly">Weekly</option>
+          <option value="Daily">Daily</option>
+          <option value="Custom">Custom</option>
+        </select>
 
-      <select name="workFor" id="workForSelect">
-        <option value="">Select WORK FOR</option>
-        <option value="Yearly">Yearly</option>
-        <option value="Monthly">Monthly</option>
-        <option value="Weekly">Weekly</option>
-        <option value="Daily">Daily</option>
-        <option value="Custom">Custom</option>
-      </select><br/>
+        <input type="text" name="period" id="periodInput" placeholder="PERIOD" style="display:none;" />
 
-      <input type="text" name="period" id="periodInput" placeholder="PERIOD" style="display:none;" /><br/>
+        <input type="date" name="dueDate" required />
+      </div>
 
-      <input type="date" name="dueDate" required /><br/>
+      <div class="form-section">
+        <h4><i class="fas fa-users"></i> Assignment</h4>
+        <select name="owner" id="ownerSelect" required>
+          <option value="">Select Owner</option>
+        </select>
 
-      <select name="assignedBy" id="assignedBySelect" required>
-        <option value="">Select Assigned By</option>
-      </select><br/>
+        <select name="assignedBy" id="assignedBySelect" required>
+          <option value="">Select Assigned By</option>
+        </select>
+      </div>
 
-      <textarea name="notes" placeholder="Notes"></textarea><br/>
+      <div class="form-section">
+        <h4><i class="fas fa-sticky-note"></i> Additional Information</h4>
+        <textarea name="notes" placeholder="Notes" rows="3"></textarea>
+      </div>
       
-      <!-- Time Editing Section -->
-      <div class="time-edit-section">
-        <h4>Time Tracking</h4>
+      <!-- Time Editing Section - Hidden by default, shown only in edit mode -->
+      <div class="time-edit-section" id="timeEditSection">
+        <h4><i class="fas fa-clock"></i> Time Tracking</h4>
         <div class="time-input-group">
           <input type="datetime-local" id="timeStartInput" placeholder="Start Time">
           <input type="datetime-local" id="timeEndInput" placeholder="End Time">
@@ -607,8 +689,10 @@
         <input type="text" id="remarksInput" placeholder="Remarks">
       </div>
 
-      <button type="submit">Save</button>
-      <button type="button" onclick="document.getElementById('taskModal').style.display='none'">Cancel</button>
+      <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+        <button type="submit">Save Task</button>
+        <button type="button" onclick="document.getElementById('taskModal').style.display='none'">Cancel</button>
+      </div>
     </form> 
   </div>
 </div>
@@ -684,6 +768,7 @@ const addPersonModal = document.getElementById('addPersonModal');
 const addPersonForm = document.getElementById('addPersonForm');
 const newPersonName = document.getElementById('newPersonName');
 const personType = document.getElementById('personType');
+const timeEditSection = document.getElementById('timeEditSection');
 
 const rowsPerPage = 10;
 let currentPage = 1;
@@ -986,6 +1071,9 @@ function attachRowEventListeners() {
       populateDropdowns(); // Ensure dropdowns are filled
       taskForm.reset(); // Clear previous data
 
+      // Show time editing section for existing tasks
+      timeEditSection.style.display = 'block';
+
       // Populate form fields
       taskForm.elements['company'].value = task['Existing Company Name'] || '';
       taskForm.elements['typeOfWork'].value = task['TYPE OF WORK'] || '';
@@ -1244,6 +1332,10 @@ createTaskBtn.addEventListener('click', () => {
   modalTitle.textContent = 'Create New Task';
   populateDropdowns();
   taskForm.reset();
+  
+  // Hide time editing section for new tasks
+  timeEditSection.style.display = 'none';
+  
   document.getElementById('timeStartInput').value = '';
   document.getElementById('timeEndInput').value = '';
   document.getElementById('totalWorkHours').value = '';
