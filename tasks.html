@@ -540,34 +540,6 @@
       font-weight: 500;
     }
     
-    /* Session details */
-    .session-details {
-      margin-top: 15px;
-      background: white;
-      padding: 15px;
-      border-radius: 8px;
-      border: 1px solid #e0e0e0;
-    }
-    
-    .session-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      font-size: 12px;
-    }
-    
-    .session-table th,
-    .session-table td {
-      padding: 8px;
-      text-align: left;
-      border-bottom: 1px solid #e0e0e0;
-    }
-    
-    .session-table th {
-      background: #f5f5f5;
-      font-weight: 600;
-    }
-    
     /* Loading indicator */
     .loading {
       display: inline-block;
@@ -877,7 +849,8 @@ function calculateAndUpdateTaskTimeInfo(task) {
       totalWorkHours: '0h 0m',
       totalPauseHours: '0h 0m',
       startTime: null,
-      endTime: null
+      endTime: null,
+      sessionCount: 0
     };
   }
 
@@ -929,12 +902,14 @@ function calculateAndUpdateTaskTimeInfo(task) {
   task.calculatedPauseHours = formatTime(totalPauseMs);
   task.calculatedStartTime = startTime;
   task.calculatedEndTime = endTime;
+  task.sessionCount = task.workSessions.length;
 
   return {
     totalWorkHours: task.calculatedWorkHours,
     totalPauseHours: task.calculatedPauseHours,
     startTime: task.calculatedStartTime,
-    endTime: task.calculatedEndTime
+    endTime: task.calculatedEndTime,
+    sessionCount: task.sessionCount
   };
 }
 
@@ -993,12 +968,11 @@ function renderTablePage(page, tasks) {
     
     // Show time information for all tasks that have work sessions
     let timeInfoHtml = '';
-    let sessionDetailsHtml = '';
     
     if (task.workSessions && task.workSessions.length > 0) {
       timeInfoHtml = `
         <div class="time-info">
-          <strong><i class="fas fa-clock"></i> Time Tracking Information</strong>
+          <strong><i class="fas fa-clock"></i> Time Tracking Summary</strong>
           <div class="time-info-grid">
             <div class="time-info-item">
               <span class="time-info-label">Start Time</span>
@@ -1016,49 +990,11 @@ function renderTablePage(page, tasks) {
               <span class="time-info-label">Total Pause</span>
               <span class="time-info-value">${timeInfo.totalPauseHours}</span>
             </div>
+            <div class="time-info-item">
+              <span class="time-info-label">Work Sessions</span>
+              <span class="time-info-value">${timeInfo.sessionCount} sessions</span>
+            </div>
           </div>
-        </div>
-      `;
-      
-      // Session details table
-      sessionDetailsHtml = `
-        <div class="session-details">
-          <strong><i class="fas fa-list"></i> Work Sessions</strong>
-          <table class="session-table">
-            <thead>
-              <tr>
-                <th>Session</th>
-                <th>Start Time</th>
-                <th>End Time</th>
-                <th>Duration</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-      `;
-      
-      task.workSessions.forEach((session, index) => {
-        const start = session.start ? (session.start.toDate ? session.start.toDate() : new Date(session.start)).toLocaleString() : '—';
-        const end = session.end ? (session.end.toDate ? session.end.toDate() : new Date(session.end)).toLocaleString() : '—';
-        const duration = session.start && session.end ? 
-          formatTimeDetailed(new Date(session.end.seconds * 1000) - new Date(session.start.seconds * 1000)) : 
-          (session.start && !session.end ? 'In Progress' : '—');
-        const status = session.end ? 'Completed' : (session.start ? 'Active' : '—');
-        
-        sessionDetailsHtml += `
-          <tr>
-            <td>${index + 1}</td>
-            <td>${start}</td>
-            <td>${end}</td>
-            <td>${duration}</td>
-            <td>${status}</td>
-          </tr>
-        `;
-      });
-      
-      sessionDetailsHtml += `
-            </tbody>
-          </table>
         </div>
       `;
     }
@@ -1075,7 +1011,6 @@ function renderTablePage(page, tasks) {
           <strong>Assigned By:</strong> ${task['Assigned By'] || ''}<br/>
           <strong>Notes:</strong> ${task.Notes || ''}<br/>
           ${timeInfoHtml}
-          ${sessionDetailsHtml}
           <div style="margin-top: 15px;">
             <button class="edit-btn action-btn" data-id="${task.id}">Edit</button>
             <button class="delete-btn action-btn" data-id="${task.id}">Delete</button>
@@ -1104,6 +1039,18 @@ function formatTimeDetailed(ms) {
   const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((ms % (1000 * 60)) / 1000);
   return `${hours}h ${minutes}m ${seconds}s`;
+}
+
+// Format time for charts (decimal hours)
+function formatTimeForCharts(timeStr) {
+  if (!timeStr) return 0;
+  const match = timeStr.match(/(\d+)h\s*(\d+)m/);
+  if (match) {
+    const hours = parseInt(match[1]);
+    const minutes = parseInt(match[2]);
+    return hours + (minutes / 60);
+  }
+  return 0;
 }
 
 // Attach edit/delete/download button events
@@ -1192,123 +1139,211 @@ async function generateTaskReport(taskId) {
     // Calculate time information
     const timeInfo = calculateAndUpdateTaskTimeInfo(task);
     
-    // Create PDF
+    // Create PDF with better formatting
     const pdf = new jsPDF();
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
     let yPosition = 20;
 
-    // Add header
+    // Add elegant header
     pdf.setFillColor(58, 66, 244);
-    pdf.rect(0, 0, pageWidth, 50, 'F');
+    pdf.rect(0, 0, pageWidth, 60, 'F');
+    
+    // Header content
     pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(20);
-    pdf.text('TASK REPORT', pageWidth / 2, 20, { align: 'center' });
+    pdf.setFontSize(24);
+    pdf.setFont(undefined, 'bold');
+    pdf.text('TASK PERFORMANCE REPORT', pageWidth / 2, 25, { align: 'center' });
+    
     pdf.setFontSize(12);
-    pdf.text(`Generated on: ${new Date().toLocaleString()}`, pageWidth / 2, 30, { align: 'center' });
+    pdf.setFont(undefined, 'normal');
+    pdf.text(`Generated on: ${new Date().toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}`, pageWidth / 2, 35, { align: 'center' });
+    
+    pdf.setFontSize(10);
+    pdf.text('Gliggo Task Management System', pageWidth / 2, 45, { align: 'center' });
 
-    yPosition = 60;
+    yPosition = 75;
 
-    // Task Information Section
-    pdf.setTextColor(0, 0, 0);
+    // Task Information Section with better styling
+    pdf.setTextColor(58, 66, 244);
     pdf.setFontSize(16);
+    pdf.setFont(undefined, 'bold');
     pdf.text('TASK INFORMATION', 20, yPosition);
+    
+    // Add underline
+    pdf.setDrawColor(58, 66, 244);
+    pdf.line(20, yPosition + 2, 80, yPosition + 2);
+    
     yPosition += 15;
 
+    pdf.setTextColor(0, 0, 0);
     pdf.setFontSize(10);
+    pdf.setFont(undefined, 'normal');
+
     const taskInfo = [
-      `Task ID: ${task.SINO || 'N/A'}`,
-      `Company: ${task['Existing Company Name'] || 'N/A'}`,
-      `Type of Work: ${task['TYPE OF WORK'] || 'N/A'}`,
-      `Account Type: ${task['ACCOUNT TYPE'] || 'N/A'}`,
-      `Accounts/Cards: ${task['Accounts / Cards'] || 'N/A'}`,
-      `Task: ${task.Task || 'N/A'}`,
-      `Work For: ${task['WORK FOR'] || 'N/A'}`,
-      `Period: ${task.PERIOD || 'N/A'}`,
-      `Due Date: ${task['Due date'] || 'N/A'}`,
-      `Status: ${task.Status || 'N/A'}`,
-      `Owner: ${task.Owner || 'N/A'}`,
-      `Assigned By: ${task['Assigned By'] || 'N/A'}`,
-      `Notes: ${task.Notes || 'N/A'}`
+      { label: 'Task ID', value: task.SINO || 'N/A' },
+      { label: 'Company', value: task['Existing Company Name'] || 'N/A' },
+      { label: 'Type of Work', value: task['TYPE OF WORK'] || 'N/A' },
+      { label: 'Account Type', value: task['ACCOUNT TYPE'] || 'N/A' },
+      { label: 'Accounts/Cards', value: task['Accounts / Cards'] || 'N/A' },
+      { label: 'Task Description', value: task.Task || 'N/A' },
+      { label: 'Work For', value: task['WORK FOR'] || 'N/A' },
+      { label: 'Period', value: task.PERIOD || 'N/A' },
+      { label: 'Due Date', value: task['Due date'] || 'N/A' },
+      { label: 'Status', value: task.Status || 'N/A' },
+      { label: 'Owner', value: task.Owner || 'N/A' },
+      { label: 'Assigned By', value: task['Assigned By'] || 'N/A' }
     ];
 
-    taskInfo.forEach(info => {
+    // Two column layout for task info
+    const col1X = 20;
+    const col2X = pageWidth / 2 + 10;
+    let currentCol = col1X;
+
+    taskInfo.forEach((info, index) => {
       if (yPosition > pageHeight - 50) {
         pdf.addPage();
         yPosition = 20;
       }
-      pdf.text(info, 20, yPosition);
-      yPosition += 7;
+      
+      pdf.setFont(undefined, 'bold');
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(info.label + ':', currentCol, yPosition);
+      
+      pdf.setFont(undefined, 'normal');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(info.value, currentCol + 35, yPosition);
+      
+      yPosition += 6;
+      
+      // Switch column every 6 items
+      if ((index + 1) % 6 === 0) {
+        currentCol = currentCol === col1X ? col2X : col1X;
+        yPosition = currentCol === col1X ? yPosition : 90;
+      }
     });
 
-    yPosition += 10;
+    // Reset position after task info
+    yPosition = Math.max(yPosition, 150);
 
     // Time Tracking Summary
+    pdf.setTextColor(58, 66, 244);
     pdf.setFontSize(16);
+    pdf.setFont(undefined, 'bold');
     pdf.text('TIME TRACKING SUMMARY', 20, yPosition);
+    pdf.line(20, yPosition + 2, 100, yPosition + 2);
     yPosition += 15;
 
+    pdf.setTextColor(0, 0, 0);
     pdf.setFontSize(10);
+    
     const timeSummary = [
-      `Start Time: ${timeInfo.startTime ? timeInfo.startTime.toLocaleString() : 'Not started'}`,
-      `End Time: ${timeInfo.endTime ? timeInfo.endTime.toLocaleString() : 'In progress'}`,
-      `Total Work Time: ${timeInfo.totalWorkHours}`,
-      `Total Pause Time: ${timeInfo.totalPauseHours}`,
-      `Remarks: ${task.Remarks || 'No remarks'}`
+      { label: 'Start Time', value: timeInfo.startTime ? timeInfo.startTime.toLocaleString() : 'Not started' },
+      { label: 'End Time', value: timeInfo.endTime ? timeInfo.endTime.toLocaleString() : 'In progress' },
+      { label: 'Total Work Time', value: timeInfo.totalWorkHours },
+      { label: 'Total Pause Time', value: timeInfo.totalPauseHours },
+      { label: 'Work Sessions', value: `${timeInfo.sessionCount} sessions` },
+      { label: 'Remarks', value: task.Remarks || 'No remarks provided' }
     ];
 
     timeSummary.forEach(info => {
-      if (yPosition > pageHeight - 50) {
+      if (yPosition > pageHeight - 30) {
         pdf.addPage();
         yPosition = 20;
       }
-      pdf.text(info, 20, yPosition);
-      yPosition += 7;
+      
+      pdf.setFont(undefined, 'bold');
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(info.label + ':', 20, yPosition);
+      
+      pdf.setFont(undefined, 'normal');
+      pdf.setTextColor(0, 0, 0);
+      
+      // Handle long text for remarks
+      if (info.label === 'Remarks' && info.value.length > 80) {
+        const remarksLines = pdf.splitTextToSize(info.value, pageWidth - 50);
+        pdf.text(remarksLines, 60, yPosition);
+        yPosition += (remarksLines.length * 5);
+      } else {
+        pdf.text(info.value, 60, yPosition);
+        yPosition += 7;
+      }
     });
 
     yPosition += 10;
 
-    // Work Sessions Details
+    // Work Sessions Details - Only in PDF, not in web view
     if (task.workSessions && task.workSessions.length > 0) {
+      if (yPosition > pageHeight - 100) {
+        pdf.addPage();
+        yPosition = 20;
+      }
+      
+      pdf.setTextColor(58, 66, 244);
       pdf.setFontSize(16);
-      pdf.text('WORK SESSIONS DETAIL', 20, yPosition);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('DETAILED WORK SESSIONS', 20, yPosition);
+      pdf.line(20, yPosition + 2, 110, yPosition + 2);
       yPosition += 15;
 
-      // Table headers
-      pdf.setFontSize(8);
+      // Table headers with better styling
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(20, yPosition, pageWidth - 40, 8, 'F');
+      
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(9);
+      pdf.setFont(undefined, 'bold');
+      
       const headers = ['Session', 'Start Time', 'End Time', 'Duration', 'Status'];
-      const colWidths = [15, 50, 50, 30, 25];
-      let xPosition = 20;
+      const colWidths = [15, 55, 55, 30, 25];
+      let xPosition = 22;
 
       headers.forEach((header, index) => {
-        pdf.text(header, xPosition, yPosition);
+        pdf.text(header, xPosition, yPosition + 6);
         xPosition += colWidths[index];
       });
 
-      yPosition += 10;
+      yPosition += 12;
 
       // Table rows
+      pdf.setFont(undefined, 'normal');
+      pdf.setFontSize(8);
+
       task.workSessions.forEach((session, index) => {
-        if (yPosition > pageHeight - 30) {
+        if (yPosition > pageHeight - 20) {
           pdf.addPage();
           yPosition = 20;
           // Redraw headers on new page
-          xPosition = 20;
+          pdf.setFillColor(240, 240, 240);
+          pdf.rect(20, yPosition, pageWidth - 40, 8, 'F');
+          pdf.setFont(undefined, 'bold');
+          pdf.setFontSize(9);
+          xPosition = 22;
           headers.forEach((header, i) => {
-            pdf.text(header, xPosition, yPosition);
+            pdf.text(header, xPosition, yPosition + 6);
             xPosition += colWidths[i];
           });
-          yPosition += 10;
+          yPosition += 12;
+          pdf.setFont(undefined, 'normal');
+          pdf.setFontSize(8);
         }
 
-        const start = session.start ? (session.start.toDate ? session.start.toDate() : new Date(session.start)).toLocaleString() : '—';
-        const end = session.end ? (session.end.toDate ? session.end.toDate() : new Date(session.end)).toLocaleString() : '—';
+        const start = session.start ? 
+          (session.start.toDate ? session.start.toDate() : new Date(session.start)).toLocaleString() : '—';
+        const end = session.end ? 
+          (session.end.toDate ? session.end.toDate() : new Date(session.end)).toLocaleString() : '—';
         const duration = session.start && session.end ? 
           formatTimeDetailed(new Date(session.end.seconds * 1000) - new Date(session.start.seconds * 1000)) : 
           (session.start && !session.end ? 'In Progress' : '—');
         const status = session.end ? 'Completed' : (session.start ? 'Active' : '—');
 
-        xPosition = 20;
+        xPosition = 22;
         const rowData = [
           (index + 1).toString(),
           start,
@@ -1317,7 +1352,14 @@ async function generateTaskReport(taskId) {
           status
         ];
 
+        // Alternate row background
+        if (index % 2 === 0) {
+          pdf.setFillColor(250, 250, 250);
+          pdf.rect(20, yPosition - 4, pageWidth - 40, 6, 'F');
+        }
+
         rowData.forEach((data, i) => {
+          pdf.setTextColor(0, 0, 0);
           pdf.text(data, xPosition, yPosition);
           xPosition += colWidths[i];
         });
@@ -1328,12 +1370,22 @@ async function generateTaskReport(taskId) {
       yPosition += 10;
     }
 
-    // Add charts if there are work sessions
+    // Add elegant charts
     if (task.workSessions && task.workSessions.length > 0) {
-      await addChartsToPDF(pdf, task, timeInfo, yPosition);
+      await addElegantChartsToPDF(pdf, task, timeInfo, yPosition);
     }
 
-    // Save PDF
+    // Add footer
+    const totalPages = pdf.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      pdf.setPage(i);
+      pdf.setFontSize(8);
+      pdf.setTextColor(150, 150, 150);
+      pdf.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+      pdf.text('Confidential Task Report - Gliggo System', pageWidth / 2, pageHeight - 5, { align: 'center' });
+    }
+
+    // Save PDF with professional filename
     const fileName = `Task_Report_${task.SINO || task.id}_${new Date().toISOString().split('T')[0]}.pdf`;
     pdf.save(fileName);
 
@@ -1347,38 +1399,43 @@ async function generateTaskReport(taskId) {
   }
 }
 
-// Add charts to PDF
-async function addChartsToPDF(pdf, task, timeInfo, yPosition) {
+// Add elegant charts to PDF
+async function addElegantChartsToPDF(pdf, task, timeInfo, yPosition) {
   const pageWidth = pdf.internal.pageSize.getWidth();
   
-  // Add Time Distribution Chart section
+  // Add new page for charts
+  pdf.addPage();
+  yPosition = 30;
+  
+  // Time Distribution Chart section
+  pdf.setTextColor(58, 66, 244);
   pdf.setFontSize(16);
+  pdf.setFont(undefined, 'bold');
   pdf.text('TIME DISTRIBUTION ANALYSIS', 20, yPosition);
+  pdf.line(20, yPosition + 2, 110, yPosition + 2);
   yPosition += 15;
 
   // Create a canvas for the chart
   const canvas = document.createElement('canvas');
-  canvas.width = 400;
-  canvas.height = 300;
+  canvas.width = 500;
+  canvas.height = 350;
   const ctx = canvas.getContext('2d');
 
   // Parse time values for chart
-  const workMatch = timeInfo.totalWorkHours.match(/(\d+)h\s*(\d+)m/);
-  const pauseMatch = timeInfo.totalPauseHours.match(/(\d+)h\s*(\d+)m/);
+  const workHours = formatTimeForCharts(timeInfo.totalWorkHours);
+  const pauseHours = formatTimeForCharts(timeInfo.totalPauseHours);
   
-  const workHours = workMatch ? parseInt(workMatch[1]) + (parseInt(workMatch[2]) / 60) : 0;
-  const pauseHours = pauseMatch ? parseInt(pauseMatch[1]) + (parseInt(pauseMatch[2]) / 60) : 0;
-  
-  // Create pie chart
+  // Create elegant pie chart
   new Chart(ctx, {
-    type: 'pie',
+    type: 'doughnut',
     data: {
       labels: ['Work Time', 'Pause Time'],
       datasets: [{
         data: [workHours, pauseHours],
         backgroundColor: ['#4caf50', '#ff9800'],
+        borderColor: ['#45a049', '#e68900'],
         borderWidth: 2,
-        borderColor: '#ffffff'
+        hoverOffset: 8
       }]
     },
     options: {
@@ -1387,11 +1444,32 @@ async function addChartsToPDF(pdf, task, timeInfo, yPosition) {
         title: {
           display: true,
           text: 'Time Distribution',
-          font: { size: 16 }
+          font: { size: 16, weight: 'bold' },
+          padding: 20
         },
         legend: {
-          position: 'bottom'
+          position: 'bottom',
+          labels: {
+            font: { size: 12 },
+            padding: 15
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const label = context.label || '';
+              const value = context.raw || 0;
+              const total = workHours + pauseHours;
+              const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+              return `${label}: ${value.toFixed(2)}h (${percentage}%)`;
+            }
+          }
         }
+      },
+      cutout: '50%',
+      animation: {
+        animateScale: true,
+        animateRotate: true
       }
     }
   });
@@ -1399,31 +1477,25 @@ async function addChartsToPDF(pdf, task, timeInfo, yPosition) {
   // Convert canvas to image and add to PDF
   await new Promise((resolve) => {
     setTimeout(() => {
-      const imageData = canvas.toDataURL('image/png');
+      const imageData = canvas.toDataURL('image/png', 1.0);
       pdf.addImage(imageData, 'PNG', 20, yPosition, 170, 120);
       resolve();
-    }, 500);
+    }, 800);
   });
 
-  // Add session duration bar chart on next page if needed
+  // Session duration bar chart for tasks with multiple sessions
   if (task.workSessions && task.workSessions.length > 1) {
-    pdf.addPage();
-    yPosition = 20;
-    
-    pdf.setFontSize(16);
-    pdf.text('SESSION DURATION ANALYSIS', 20, yPosition);
-    yPosition += 15;
-
-    // Create bar chart canvas
     const barCanvas = document.createElement('canvas');
-    barCanvas.width = 400;
-    barCanvas.height = 300;
+    barCanvas.width = 500;
+    barCanvas.height = 350;
     const barCtx = barCanvas.getContext('2d');
 
     const sessionLabels = task.workSessions.map((_, i) => `Session ${i + 1}`);
     const sessionDurations = task.workSessions.map(session => {
       if (session.start && session.end) {
         return (new Date(session.end.seconds * 1000) - new Date(session.start.seconds * 1000)) / (1000 * 60 * 60); // Convert to hours
+      } else if (session.start && !session.end) {
+        return (Date.now() - new Date(session.start.seconds * 1000)) / (1000 * 60 * 60); // Current session
       }
       return 0;
     });
@@ -1437,7 +1509,9 @@ async function addChartsToPDF(pdf, task, timeInfo, yPosition) {
           data: sessionDurations,
           backgroundColor: '#2196f3',
           borderColor: '#1976d2',
-          borderWidth: 1
+          borderWidth: 1,
+          borderRadius: 4,
+          borderSkipped: false,
         }]
       },
       options: {
@@ -1445,8 +1519,12 @@ async function addChartsToPDF(pdf, task, timeInfo, yPosition) {
         plugins: {
           title: {
             display: true,
-            text: 'Session Durations',
-            font: { size: 16 }
+            text: 'Session Duration Analysis',
+            font: { size: 16, weight: 'bold' },
+            padding: 20
+          },
+          legend: {
+            display: false
           }
         },
         scales: {
@@ -1454,7 +1532,16 @@ async function addChartsToPDF(pdf, task, timeInfo, yPosition) {
             beginAtZero: true,
             title: {
               display: true,
-              text: 'Hours'
+              text: 'Hours',
+              font: { weight: 'bold' }
+            },
+            grid: {
+              color: 'rgba(0,0,0,0.1)'
+            }
+          },
+          x: {
+            grid: {
+              display: false
             }
           }
         }
@@ -1463,12 +1550,46 @@ async function addChartsToPDF(pdf, task, timeInfo, yPosition) {
 
     await new Promise((resolve) => {
       setTimeout(() => {
-        const barImageData = barCanvas.toDataURL('image/png');
-        pdf.addImage(barImageData, 'PNG', 20, yPosition, 170, 120);
+        const barImageData = barCanvas.toDataURL('image/png', 1.0);
+        pdf.addImage(barImageData, 'PNG', pageWidth - 170 - 20, yPosition, 170, 120);
         resolve();
-      }, 500);
+      }, 800);
     });
   }
+
+  // Add productivity insights
+  yPosition += 130;
+  pdf.setTextColor(58, 66, 244);
+  pdf.setFontSize(14);
+  pdf.setFont(undefined, 'bold');
+  pdf.text('PRODUCTIVITY INSIGHTS', 20, yPosition);
+  pdf.line(20, yPosition + 2, 90, yPosition + 2);
+  yPosition += 10;
+
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFontSize(9);
+  pdf.setFont(undefined, 'normal');
+
+  const workHoursNum = formatTimeForCharts(timeInfo.totalWorkHours);
+  const pauseHoursNum = formatTimeForCharts(timeInfo.totalPauseHours);
+  const totalHours = workHoursNum + pauseHoursNum;
+  const efficiency = totalHours > 0 ? (workHoursNum / totalHours * 100).toFixed(1) : 0;
+
+  const insights = [
+    `• Work Efficiency: ${efficiency}% of total time was productive`,
+    `• Average Session: ${task.workSessions ? (workHoursNum / task.workSessions.length).toFixed(2) : 0} hours per session`,
+    `• Session Frequency: ${task.workSessions ? task.workSessions.length : 0} work sessions recorded`,
+    `• Completion Status: ${task.Status === 'Complete' ? 'Task completed successfully' : 'Task still in progress'}`
+  ];
+
+  insights.forEach(insight => {
+    if (yPosition > pageHeight - 20) {
+      pdf.addPage();
+      yPosition = 20;
+    }
+    pdf.text(insight, 25, yPosition);
+    yPosition += 6;
+  });
 }
 
 function formatDateTimeLocal(date) {
@@ -1482,6 +1603,9 @@ function formatDateTimeLocal(date) {
   
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
+
+// [Rest of the code remains exactly the same - pagination, filtering, modals, etc.]
+// Only including the essential parts to avoid exceeding character limit
 
 // Render pagination with page numbers
 function renderPagination(tasks) {
