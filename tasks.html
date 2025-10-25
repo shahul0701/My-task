@@ -157,26 +157,6 @@
       background-color: #b83227;
       transform: translateY(-2px);
     }
-    
-    .start-btn {
-      background-color: #2196f3;
-      color: white;
-    }
-
-    .start-btn:hover {
-      background-color: #0b7dda;
-      transform: translateY(-2px);
-    }
-    
-    .complete-btn {
-      background-color: #ff9800;
-      color: white;
-    }
-
-    .complete-btn:hover {
-      background-color: #e68a00;
-      transform: translateY(-2px);
-    }
 
     /* Pagination styles */
     .pagination {
@@ -486,19 +466,6 @@
       border-top: 1px solid #dee2e6;
     }
     
-    /* Timer display */
-    .timer-display {
-      font-family: monospace;
-      font-size: 16px;
-      font-weight: bold;
-      background: #333;
-      color: #fff;
-      padding: 8px 12px;
-      border-radius: 8px;
-      display: inline-block;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    
     /* Form sections */
     .form-section {
       margin-bottom: 20px;
@@ -567,7 +534,7 @@
     <input type="text" id="searchOwner" placeholder="Search Owner" />
     <select id="statusFilter">
       <option value="">All Status</option>
-      <option value="Not Started">Not Started</option>
+      <option value="Pending">Pending</option>
       <option value="In Progress">In Progress</option>
       <option value="Complete">Completed</option>
     </select>
@@ -729,7 +696,6 @@
 <script>
 let editingTaskId = null;
 let currentPersonType = null;
-let activeTimers = {}; // Track active timers for tasks
 
 // Firebase config
 const firebaseConfig = {
@@ -794,12 +760,20 @@ async function loadTasks() {
       return getNumber(a.SINO) - getNumber(b.SINO);
     });
 
-    // Start timers for any in-progress tasks
-    allTasks
-      .filter(task => task.Status === "In Progress" && task.taskStart)
-      .forEach(task => {
-        startTimerForTask(task.id);
-      });
+    // Auto update completed tasks with time calculations
+    await Promise.all(
+      allTasks
+        .filter(task =>
+          task.Status === "Complete" &&
+          task.taskStart &&
+          task.taskEnd &&
+          (!task.TotalWorkHours || task.TotalWorkHours === '')
+        )
+        .map(task => {
+          console.log(`Auto-calculating times for completed task: ${task.SINO} (${task.id})`);
+          return updateTaskTimeInfo(task.id);
+        })
+    );
     
     populateCompanyList();
     applyFilters(); // Initial render with sorting applied
@@ -840,7 +814,7 @@ function renderTablePage(page, tasks) {
     
     // Create status badge
     let statusClass = '';
-    if (task.Status === 'Not Started') statusClass = 'status-pending';
+    if (task.Status === 'Pending') statusClass = 'status-pending';
     else if (task.Status === 'Complete') statusClass = 'status-complete';
     else if (task.Status === 'In Progress') statusClass = 'status-progress';
     
@@ -869,38 +843,6 @@ function renderTablePage(page, tasks) {
       `;
     }
     
-    // Add timer display for in-progress tasks
-    let timerHtml = '';
-    if (task.Status === 'In Progress') {
-      timerHtml = `
-        <div style="margin: 10px 0;">
-          <strong>Elapsed Time:</strong> 
-          <span class="timer-display" id="timer-${task.id}">${calculateElapsedTime(task.taskStart)}</span>
-        </div>
-      `;
-    }
-    
-    // Action buttons based on status
-    let actionButtons = '';
-    if (task.Status === 'Not Started') {
-      actionButtons = `
-        <button class="start-btn action-btn" data-id="${task.id}">Start Task</button>
-        <button class="edit-btn action-btn" data-id="${task.id}">Edit</button>
-        <button class="delete-btn action-btn" data-id="${task.id}">Delete</button>
-      `;
-    } else if (task.Status === 'In Progress') {
-      actionButtons = `
-        <button class="complete-btn action-btn" data-id="${task.id}">Complete Task</button>
-        <button class="edit-btn action-btn" data-id="${task.id}">Edit</button>
-        <button class="delete-btn action-btn" data-id="${task.id}">Delete</button>
-      `;
-    } else {
-      actionButtons = `
-        <button class="edit-btn action-btn" data-id="${task.id}">Edit</button>
-        <button class="delete-btn action-btn" data-id="${task.id}">Delete</button>
-      `;
-    }
-    
     detailsTr.innerHTML = `
       <td colspan="6">
         <div class="details-box">
@@ -913,8 +855,8 @@ function renderTablePage(page, tasks) {
           <strong>Assigned By:</strong> ${task['Assigned By'] || ''}<br/>
           <strong>Notes:</strong> ${task.Notes || ''}<br/>
           ${timeInfoHtml}
-          ${timerHtml}
-          ${actionButtons}
+          <button class="edit-btn action-btn" data-id="${task.id}">Edit</button>
+          <button class="delete-btn action-btn" data-id="${task.id}">Delete</button>
         </div>
       </td>
     `;
@@ -941,100 +883,30 @@ function formatTimestamp(ts) {
   return '';
 }
 
-function calculateElapsedTime(startTime) {
-  if (!startTime) return '00:00:00';
-  
-  const start = startTime.toDate ? startTime.toDate() : new Date(startTime);
-  const now = new Date();
-  const diffMs = now - start;
-  
-  const hours = Math.floor(diffMs / (1000 * 60 * 60));
-  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
-  
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-}
-
-function startTimerForTask(taskId) {
-  // Clear any existing timer for this task
-  if (activeTimers[taskId]) {
-    clearInterval(activeTimers[taskId]);
-  }
-  
-  // Start a new timer
-  activeTimers[taskId] = setInterval(() => {
-    const timerElement = document.getElementById(`timer-${taskId}`);
-    if (timerElement) {
-      const task = allTasks.find(t => t.id === taskId);
-      if (task && task.taskStart) {
-        timerElement.textContent = calculateElapsedTime(task.taskStart);
-      }
-    }
-  }, 1000);
-}
-
-// Start a task
-async function startTask(taskId) {
+// Auto-calculate and update time info for completed tasks
+async function updateTaskTimeInfo(taskId) {
   const task = allTasks.find(t => t.id === taskId);
-  if (!task) return alert('Task not found');
-  
-  try {
-    const now = firebase.firestore.Timestamp.now();
-    await db.collection('tasks').doc(taskId).update({
-      Status: "In Progress",
-      taskStart: now,
-      TimeStarted: formatTimestamp(now)
-    });
-    
-    // Start timer for this task
-    startTimerForTask(taskId);
-    
-    alert('Task started!');
-    loadTasks(); // Reload to reflect changes
-  } catch (err) {
-    console.error(err);
-    alert('Failed to start task');
-  }
-}
+  if (!task || task.Status !== 'Complete') return;
 
-// Complete a task
-async function completeTask(taskId) {
-  const task = allTasks.find(t => t.id === taskId);
-  if (!task) return alert('Task not found');
-  
   try {
-    const now = firebase.firestore.Timestamp.now();
     const taskRef = db.collection('tasks').doc(taskId);
     
-    // Stop timer for this task
-    if (activeTimers[taskId]) {
-      clearInterval(activeTimers[taskId]);
-      delete activeTimers[taskId];
-    }
-    
-    // Calculate work hours
-    const startTime = task.taskStart;
-    const endTime = now;
-    
-    const workHours = calculateTimeDifference(startTime, endTime);
+    // Calculate work hours from start to end time
+    const workHours = calculateTimeDifference(task.taskStart, task.taskEnd);
     const totalWorkHours = `${workHours.hours}h ${workHours.minutes}m`;
     
     await taskRef.update({
-      Status: "Complete",
-      taskEnd: now,
-      TimeEnd: formatTimestamp(now),
-      TotalWorkHours: totalWorkHours
+      TotalWorkHours: totalWorkHours,
+      TotalPauseHours: task.TotalPauseHours || '0h 0m'
     });
     
-    alert('Task completed!');
-    loadTasks(); // Reload to reflect changes
+    console.log(`Updated time info for task ${task.SINO}`);
   } catch (err) {
-    console.error(err);
-    alert('Failed to complete task');
+    console.error('Failed to update task time info:', err);
   }
 }
 
-// Attach edit/delete/complete button events
+// Attach edit/delete button events
 function attachRowEventListeners() {
   document.querySelectorAll('.delete-btn').forEach(btn => {
     btn.addEventListener('click', async e => {
@@ -1042,12 +914,6 @@ function attachRowEventListeners() {
       const id = e.target.dataset.id;
       if (confirm('Delete this task?')) {
         try {
-          // Stop timer if running
-          if (activeTimers[id]) {
-            clearInterval(activeTimers[id]);
-            delete activeTimers[id];
-          }
-          
           await db.collection('tasks').doc(id).delete();
           alert('Deleted');
           loadTasks();
@@ -1095,22 +961,6 @@ function attachRowEventListeners() {
       document.getElementById('remarksInput').value = task.Remarks || '';
 
       taskModal.style.display = 'flex';
-    });
-  });
-  
-  document.querySelectorAll('.start-btn').forEach(btn => {
-    btn.addEventListener('click', async e => {
-      e.stopPropagation();
-      const id = e.target.dataset.id;
-      await startTask(id);
-    });
-  });
-  
-  document.querySelectorAll('.complete-btn').forEach(btn => {
-    btn.addEventListener('click', async e => {
-      e.stopPropagation();
-      const id = e.target.dataset.id;
-      await completeTask(id);
     });
   });
 }
@@ -1255,7 +1105,7 @@ function applyFilters() {
         // Start of last month
         const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
         
-               // End of last month
+        // End of last month
         const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
         endOfLastMonth.setHours(23, 59, 59, 999);
         
@@ -1586,7 +1436,7 @@ taskForm.addEventListener('submit', async (e) => {
 
   const taskData = {
     SINO: editingTaskId ? undefined : generateSINO(),
-    Status: editingTaskId ? undefined : 'Not Started',
+    Status: editingTaskId ? undefined : 'Pending',
     'Existing Company Name': data.company,
     'TYPE OF WORK': data.typeOfWork,
     'ACCOUNT TYPE': data.accountType || '',
@@ -1740,7 +1590,7 @@ async function handleCSVUpload(event) {
           'Due date': row['DueDate'],
           'Assigned By': row['Assigned By'],
           Notes: row['Notes'],
-          Status: row['Status'] || 'Not Started',
+          Status: row['Status'] || 'Pending',
 
           TimeStarted: timeStart ? timeStart.toLocaleString() : '',
           TimeEnd: timeEnd ? timeEnd.toLocaleString() : '',
@@ -1799,7 +1649,7 @@ function downloadCSVTemplate() {
       'DueDate': '2023-01-31',
       'Assigned By': 'Manager',
       'Notes': 'Complete reconciliation by end of month',
-      'Status': 'Not Started',
+      'Status': 'Pending',
       'Time Started': '2023-01-15T09:00',
       'Time End': '2023-01-15T17:00',
       'Total Work Hours': '8h 0m',
