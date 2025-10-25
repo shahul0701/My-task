@@ -9,6 +9,10 @@
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- SheetJS for Excel Export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <!-- jsPDF for PDF Export -->
@@ -457,6 +461,36 @@
       display: inline-block;
     }
 
+    .status-pending {
+      background: #fff3cd;
+      color: #856404;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .status-approved {
+      background: #d4edda;
+      color: #155724;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .status-rejected {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
     .highlight-good {
       background: #d4edda;
       font-weight: 600;
@@ -465,6 +499,45 @@
     .highlight-bad {
       background: #f8d7da;
       font-weight: 600;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 5px;
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 0.875rem;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-edit {
+      background: #3498db;
+      color: white;
+    }
+
+    .btn-delete {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .btn-approve {
+      background: #27ae60;
+      color: white;
+    }
+
+    .btn-reject {
+      background: #e67e22;
+      color: white;
+    }
+
+    .btn-sm:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
     }
 
     /* Toast Notification */
@@ -513,6 +586,25 @@
       font-family: monospace;
       font-size: 12px;
       border-left: 4px solid #dc3545;
+    }
+
+    /* Modal Styles */
+    .modal-content {
+      border-radius: 15px;
+      border: none;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border-radius: 15px 15px 0 0;
+      border-bottom: none;
+    }
+
+    .modal-footer {
+      border-top: 1px solid #e9ecef;
+      border-radius: 0 0 15px 15px;
     }
 
     /* Responsive Design */
@@ -686,6 +778,16 @@
         <div class="stat-number" id="overtimeHours">0h</div>
         <div class="stat-label">Total Overtime</div>
       </div>
+      <div class="stat-card">
+        <div class="stat-icon">📋</div>
+        <div class="stat-number" id="pendingLeaves">0</div>
+        <div class="stat-label">Pending Leaves</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-number" id="approvedLeaves">0</div>
+        <div class="stat-label">Approved Leaves</div>
+      </div>
     </div>
 
     <!-- Charts Grid -->
@@ -762,6 +864,7 @@
       <div class="tabs">
         <button class="tab active" onclick="switchTab('detailedView')">Detailed Attendance</button>
         <button class="tab" onclick="switchTab('employeeSummary')">Employee Summary</button>
+        <button class="tab" onclick="switchTab('leaveManagement')">Leave Management</button>
         <button class="tab" onclick="switchTab('analytics')">Advanced Analytics</button>
         <button class="tab" onclick="switchTab('reports')">Custom Reports</button>
       </div>
@@ -782,11 +885,12 @@
                 <th>Status</th>
                 <th>Remarks</th>
                 <th>Overtime</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="detailedTableBody">
               <tr>
-                <td colspan="10" class="no-data">
+                <td colspan="11" class="no-data">
                   <div>Loading detailed data...</div>
                 </td>
               </tr>
@@ -817,6 +921,34 @@
               <tr>
                 <td colspan="10" class="no-data">
                   <div>Loading employee summary...</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Leave Management Tab -->
+      <div class="tab-content" id="leaveManagement">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Leave Type</th>
+                <th>From Date</th>
+                <th>To Date</th>
+                <th>Duration</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Applied On</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="leaveTableBody">
+              <tr>
+                <td colspan="9" class="no-data">
+                  <div>Loading leave data...</div>
                 </td>
               </tr>
             </tbody>
@@ -899,6 +1031,122 @@
   <!-- Toast Notification -->
   <div id="toast" class="toast"></div>
 
+  <!-- Edit Attendance Modal -->
+  <div class="modal fade" id="editAttendanceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Attendance Record</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editAttendanceForm">
+            <input type="hidden" id="editAttendanceId">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Employee</label>
+                <input type="text" class="form-control" id="editEmployeeName" disabled>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-control" id="editAttendanceDate" required>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Check In Time</label>
+                <input type="time" class="form-control" id="editCheckIn">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Check Out Time</label>
+                <input type="time" class="form-control" id="editCheckOut">
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Status</label>
+                <select class="form-select" id="editAttendanceStatus" required>
+                  <option value="present">Present</option>
+                  <option value="absent">Absent</option>
+                  <option value="leave">Leave</option>
+                  <option value="holiday">Holiday</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Remarks</label>
+                <input type="text" class="form-control" id="editAttendanceRemarks">
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="saveAttendanceChanges()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Leave Modal -->
+  <div class="modal fade" id="editLeaveModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Leave Request</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editLeaveForm">
+            <input type="hidden" id="editLeaveId">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Employee</label>
+                <input type="text" class="form-control" id="editLeaveEmployee" disabled>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Leave Type</label>
+                <select class="form-select" id="editLeaveType" required>
+                  <option value="sick">Sick Leave</option>
+                  <option value="casual">Casual Leave</option>
+                  <option value="earned">Earned Leave</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">From Date</label>
+                <input type="date" class="form-control" id="editLeaveFrom" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">To Date</label>
+                <input type="date" class="form-control" id="editLeaveTo" required>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Reason</label>
+              <textarea class="form-control" id="editLeaveReason" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Status</label>
+              <select class="form-select" id="editLeaveStatus" required>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="saveLeaveChanges()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
   <script>
     // Firebase configuration
     const firebaseConfig = {
@@ -921,6 +1169,7 @@
     let userData = null;
     let allUsers = [];
     let allAttendanceData = [];
+    let allLeaveData = [];
     let dashboardData = null;
     let charts = {};
 
@@ -981,6 +1230,11 @@
       
       // Add active class to clicked tab
       event.target.classList.add('active');
+      
+      // Load specific data for the tab
+      if (tabName === 'leaveManagement') {
+        loadLeaveData();
+      }
     }
 
     // Get date range based on filter selection
@@ -1119,7 +1373,14 @@
           allAttendanceData.push({ id: doc.id, ...doc.data() });
         });
 
-        updateDebugInfo(`Loaded ${allUsers.length} users and ${allAttendanceData.length} attendance records`);
+        // Load all leave data
+        const leaveQuery = await db.collection("leaves").get();
+        allLeaveData = [];
+        leaveQuery.forEach(doc => {
+          allLeaveData.push({ id: doc.id, ...doc.data() });
+        });
+
+        updateDebugInfo(`Loaded ${allUsers.length} users, ${allAttendanceData.length} attendance records, and ${allLeaveData.length} leave records`);
 
         // Populate filters
         populateFilters();
@@ -1319,7 +1580,8 @@
         monthlyTrends: {},
         performanceMetrics: {},
         hoursDistribution: {},
-        attendanceTrends: {}
+        attendanceTrends: {},
+        leaveStats: {}
       };
 
       // Department-wise statistics
@@ -1423,22 +1685,17 @@
         }
       });
 
-      // Leave distribution
-      analytics.leaveDistribution = { 'Sick Leave': 0, 'Vacation': 0, 'Personal': 0, 'Other': 0 };
-      data.detailed.forEach(record => {
-        if (record.status === 'leave') {
-          const leaveType = record.remarks || 'Other';
-          if (leaveType.includes('Sick') || leaveType.includes('sick')) {
-            analytics.leaveDistribution['Sick Leave']++;
-          } else if (leaveType.includes('Vacation') || leaveType.includes('vacation') || leaveType.includes('Holiday')) {
-            analytics.leaveDistribution['Vacation']++;
-          } else if (leaveType.includes('Personal') || leaveType.includes('personal')) {
-            analytics.leaveDistribution['Personal']++;
-          } else {
-            analytics.leaveDistribution['Other']++;
-          }
+      // Leave statistics
+      analytics.leaveStats = {
+        pending: allLeaveData.filter(leave => leave.status === 'pending').length,
+        approved: allLeaveData.filter(leave => leave.status === 'approved').length,
+        rejected: allLeaveData.filter(leave => leave.status === 'rejected').length,
+        byType: {
+          sick: allLeaveData.filter(leave => leave.type === 'sick').length,
+          casual: allLeaveData.filter(leave => leave.type === 'casual').length,
+          earned: allLeaveData.filter(leave => leave.type === 'earned').length
         }
-      });
+      };
 
       data.analytics = analytics;
     }
@@ -1478,6 +1735,13 @@
       const avgHours = totalPresent > 0 ? (totalHours / totalPresent).toFixed(1) : 0;
       const attendanceRate = totalEmployees > 0 ? Math.round((presentToday / totalEmployees) * 100) : 0;
 
+      // Leave statistics
+      const leaveStats = data.analytics.leaveStats || {
+        pending: 0,
+        approved: 0,
+        rejected: 0
+      };
+
       // Update DOM
       document.getElementById('totalEmployees').textContent = totalEmployees;
       document.getElementById('presentToday').textContent = presentToday;
@@ -1485,6 +1749,8 @@
       document.getElementById('attendanceRate').textContent = attendanceRate + '%';
       document.getElementById('avgHours').textContent = avgHours + 'h';
       document.getElementById('overtimeHours').textContent = totalOvertime.toFixed(1) + 'h';
+      document.getElementById('pendingLeaves').textContent = leaveStats.pending;
+      document.getElementById('approvedLeaves').textContent = leaveStats.approved;
     }
 
     // Update tables
@@ -1501,7 +1767,7 @@
       if (data.detailed.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="10" class="no-data">
+            <td colspan="11" class="no-data">
               <div>No data available for the selected period</div>
             </td>
           </tr>
@@ -1603,6 +1869,16 @@
           <td>${statusBadge}</td>
           <td>${record.remarks || '-'}</td>
           <td>${overtime || '-'}</td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn-sm btn-edit" onclick="editAttendance('${record.id}')" title="Edit">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn-sm btn-delete" onclick="deleteAttendance('${record.id}')" title="Delete">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
         `;
         
         tbody.appendChild(row);
@@ -1660,6 +1936,380 @@
         
         tbody.appendChild(row);
       });
+    }
+
+    // Load leave data
+    async function loadLeaveData() {
+      try {
+        updateDebugInfo('Loading leave data...');
+        
+        const tbody = document.getElementById('leaveTableBody');
+        tbody.innerHTML = '';
+
+        if (allLeaveData.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="9" class="no-data">
+                <div>No leave records found</div>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        // Sort by applied date descending
+        allLeaveData.sort((a, b) => new Date(b.appliedDate) - new Date(a.appliedDate));
+
+        allLeaveData.forEach(leave => {
+          const user = allUsers.find(u => u.id === leave.userId);
+          const userName = user ? `${user.username} (${user.empId || 'N/A'})` : 'Unknown';
+
+          // Format dates
+          const fromDate = new Date(leave.fromDate).toLocaleDateString('en-US');
+          const toDate = new Date(leave.toDate).toLocaleDateString('en-US');
+          const appliedDate = new Date(leave.appliedDate).toLocaleDateString('en-US');
+
+          // Calculate duration
+          const from = new Date(leave.fromDate);
+          const to = new Date(leave.toDate);
+          const duration = Math.ceil((to - from) / (1000 * 60 * 60 * 24)) + 1;
+
+          // Get status badge
+          let statusBadge = '';
+          if (leave.status === 'pending') {
+            statusBadge = '<span class="status-pending">Pending</span>';
+          } else if (leave.status === 'approved') {
+            statusBadge = '<span class="status-approved">Approved</span>';
+          } else {
+            statusBadge = '<span class="status-rejected">Rejected</span>';
+          }
+
+          // Get leave type display
+          let typeDisplay = '';
+          if (leave.type === 'sick') {
+            typeDisplay = 'Sick Leave';
+          } else if (leave.type === 'casual') {
+            typeDisplay = 'Casual Leave';
+          } else {
+            typeDisplay = 'Earned Leave';
+          }
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${userName}</td>
+            <td>${typeDisplay}</td>
+            <td>${fromDate}</td>
+            <td>${toDate}</td>
+            <td>${duration} Days</td>
+            <td>${leave.reason || '-'}</td>
+            <td>${statusBadge}</td>
+            <td>${appliedDate}</td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-sm btn-edit" onclick="editLeave('${leave.id}')" title="Edit">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-sm btn-delete" onclick="deleteLeave('${leave.id}')" title="Delete">
+                  <i class="fas fa-trash"></i>
+                </button>
+                ${leave.status === 'pending' ? `
+                <button class="btn-sm btn-approve" onclick="approveLeave('${leave.id}')" title="Approve">
+                  <i class="fas fa-check"></i>
+                </button>
+                <button class="btn-sm btn-reject" onclick="rejectLeave('${leave.id}')" title="Reject">
+                  <i class="fas fa-times"></i>
+                </button>
+                ` : ''}
+              </div>
+            </td>
+          `;
+          
+          tbody.appendChild(row);
+        });
+
+        updateDebugInfo('Leave data loaded successfully');
+
+      } catch (error) {
+        updateDebugInfo('Error loading leave data: ' + error.message);
+        console.error("Error loading leave data:", error);
+        const tbody = document.getElementById('leaveTableBody');
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-danger">Error loading leave data</td></tr>';
+      }
+    }
+
+    // Edit attendance record
+    async function editAttendance(attendanceId) {
+      try {
+        const attendance = allAttendanceData.find(a => a.id === attendanceId);
+        if (!attendance) {
+          showToast('Attendance record not found', 'error');
+          return;
+        }
+
+        const user = allUsers.find(u => u.id === attendance.userId);
+        
+        // Populate modal
+        document.getElementById('editAttendanceId').value = attendanceId;
+        document.getElementById('editEmployeeName').value = user ? `${user.username} (${user.empId || 'N/A'})` : 'Unknown';
+        document.getElementById('editAttendanceDate').value = attendance.date;
+        document.getElementById('editCheckIn').value = attendance.loginTime || '';
+        document.getElementById('editCheckOut').value = attendance.logoutTime || '';
+        document.getElementById('editAttendanceStatus').value = attendance.status || 'present';
+        document.getElementById('editAttendanceRemarks').value = attendance.remarks || '';
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('editAttendanceModal'));
+        modal.show();
+
+      } catch (error) {
+        console.error("Error editing attendance:", error);
+        showToast('Error loading attendance data', 'error');
+      }
+    }
+
+    // Save attendance changes
+    async function saveAttendanceChanges() {
+      try {
+        const attendanceId = document.getElementById('editAttendanceId').value;
+        const date = document.getElementById('editAttendanceDate').value;
+        const checkIn = document.getElementById('editCheckIn').value;
+        const checkOut = document.getElementById('editCheckOut').value;
+        const status = document.getElementById('editAttendanceStatus').value;
+        const remarks = document.getElementById('editAttendanceRemarks').value;
+
+        // Update in Firestore
+        await db.collection("attendance").doc(attendanceId).update({
+          date: date,
+          loginTime: checkIn || null,
+          logoutTime: checkOut || null,
+          status: status,
+          remarks: remarks,
+          lastUpdated: new Date().toISOString(),
+          updatedBy: userData.username
+        });
+
+        // Update local data
+        const index = allAttendanceData.findIndex(a => a.id === attendanceId);
+        if (index !== -1) {
+          allAttendanceData[index] = {
+            ...allAttendanceData[index],
+            date: date,
+            loginTime: checkIn || null,
+            logoutTime: checkOut || null,
+            status: status,
+            remarks: remarks
+          };
+        }
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('editAttendanceModal'));
+        modal.hide();
+
+        // Reload data
+        await loadDashboardData();
+        showToast('Attendance record updated successfully!', 'success');
+
+      } catch (error) {
+        console.error("Error saving attendance changes:", error);
+        showToast('Error updating attendance record', 'error');
+      }
+    }
+
+    // Delete attendance record
+    async function deleteAttendance(attendanceId) {
+      if (!confirm('Are you sure you want to delete this attendance record?')) {
+        return;
+      }
+
+      try {
+        await db.collection("attendance").doc(attendanceId).delete();
+        
+        // Remove from local data
+        allAttendanceData = allAttendanceData.filter(a => a.id !== attendanceId);
+        
+        // Reload data
+        await loadDashboardData();
+        showToast('Attendance record deleted successfully!', 'success');
+
+      } catch (error) {
+        console.error("Error deleting attendance:", error);
+        showToast('Error deleting attendance record', 'error');
+      }
+    }
+
+    // Edit leave record
+    async function editLeave(leaveId) {
+      try {
+        const leave = allLeaveData.find(l => l.id === leaveId);
+        if (!leave) {
+          showToast('Leave record not found', 'error');
+          return;
+        }
+
+        const user = allUsers.find(u => u.id === leave.userId);
+        
+        // Populate modal
+        document.getElementById('editLeaveId').value = leaveId;
+        document.getElementById('editLeaveEmployee').value = user ? `${user.username} (${user.empId || 'N/A'})` : 'Unknown';
+        document.getElementById('editLeaveType').value = leave.type;
+        document.getElementById('editLeaveFrom').value = leave.fromDate;
+        document.getElementById('editLeaveTo').value = leave.toDate;
+        document.getElementById('editLeaveReason').value = leave.reason || '';
+        document.getElementById('editLeaveStatus').value = leave.status;
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('editLeaveModal'));
+        modal.show();
+
+      } catch (error) {
+        console.error("Error editing leave:", error);
+        showToast('Error loading leave data', 'error');
+      }
+    }
+
+    // Save leave changes
+    async function saveLeaveChanges() {
+      try {
+        const leaveId = document.getElementById('editLeaveId').value;
+        const type = document.getElementById('editLeaveType').value;
+        const fromDate = document.getElementById('editLeaveFrom').value;
+        const toDate = document.getElementById('editLeaveTo').value;
+        const reason = document.getElementById('editLeaveReason').value;
+        const status = document.getElementById('editLeaveStatus').value;
+
+        // Calculate duration
+        const from = new Date(fromDate);
+        const to = new Date(toDate);
+        const duration = Math.ceil((to - from) / (1000 * 60 * 60 * 24)) + 1;
+
+        // Update in Firestore
+        await db.collection("leaves").doc(leaveId).update({
+          type: type,
+          fromDate: fromDate,
+          toDate: toDate,
+          duration: duration,
+          reason: reason,
+          status: status,
+          lastUpdated: new Date().toISOString(),
+          updatedBy: userData.username
+        });
+
+        // Update local data
+        const index = allLeaveData.findIndex(l => l.id === leaveId);
+        if (index !== -1) {
+          allLeaveData[index] = {
+            ...allLeaveData[index],
+            type: type,
+            fromDate: fromDate,
+            toDate: toDate,
+            duration: duration,
+            reason: reason,
+            status: status
+          };
+        }
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('editLeaveModal'));
+        modal.hide();
+
+        // Reload data
+        await loadLeaveData();
+        await loadDashboardData();
+        showToast('Leave request updated successfully!', 'success');
+
+      } catch (error) {
+        console.error("Error saving leave changes:", error);
+        showToast('Error updating leave request', 'error');
+      }
+    }
+
+    // Delete leave record
+    async function deleteLeave(leaveId) {
+      if (!confirm('Are you sure you want to delete this leave request?')) {
+        return;
+      }
+
+      try {
+        await db.collection("leaves").doc(leaveId).delete();
+        
+        // Remove from local data
+        allLeaveData = allLeaveData.filter(l => l.id !== leaveId);
+        
+        // Reload data
+        await loadLeaveData();
+        await loadDashboardData();
+        showToast('Leave request deleted successfully!', 'success');
+
+      } catch (error) {
+        console.error("Error deleting leave:", error);
+        showToast('Error deleting leave request', 'error');
+      }
+    }
+
+    // Approve leave
+    async function approveLeave(leaveId) {
+      try {
+        await db.collection("leaves").doc(leaveId).update({
+          status: 'approved',
+          approvedDate: new Date().toISOString(),
+          approvedBy: userData.username
+        });
+
+        // Update local data
+        const index = allLeaveData.findIndex(l => l.id === leaveId);
+        if (index !== -1) {
+          allLeaveData[index].status = 'approved';
+          allLeaveData[index].approvedDate = new Date().toISOString();
+          allLeaveData[index].approvedBy = userData.username;
+        }
+
+        // Reload data
+        await loadLeaveData();
+        await loadDashboardData();
+        showToast('Leave request approved successfully!', 'success');
+
+      } catch (error) {
+        console.error("Error approving leave:", error);
+        showToast('Error approving leave request', 'error');
+      }
+    }
+
+    // Reject leave
+    async function rejectLeave(leaveId) {
+      const reason = prompt('Please enter reason for rejection:');
+      if (reason === null) return;
+      
+      if (!reason.trim()) {
+        showToast('Please provide a rejection reason', 'error');
+        return;
+      }
+
+      try {
+        await db.collection("leaves").doc(leaveId).update({
+          status: 'rejected',
+          rejectedDate: new Date().toISOString(),
+          rejectedBy: userData.username,
+          rejectionReason: reason
+        });
+
+        // Update local data
+        const index = allLeaveData.findIndex(l => l.id === leaveId);
+        if (index !== -1) {
+          allLeaveData[index].status = 'rejected';
+          allLeaveData[index].rejectedDate = new Date().toISOString();
+          allLeaveData[index].rejectedBy = userData.username;
+          allLeaveData[index].rejectionReason = reason;
+        }
+
+        // Reload data
+        await loadLeaveData();
+        await loadDashboardData();
+        showToast('Leave request rejected successfully!', 'success');
+
+      } catch (error) {
+        console.error("Error rejecting leave:", error);
+        showToast('Error rejecting leave request', 'error');
+      }
     }
 
     // Initialize charts
@@ -1827,10 +2477,10 @@
       charts.leave = new Chart(leaveCtx, {
         type: 'doughnut',
         data: {
-          labels: ['Sick Leave', 'Vacation', 'Personal', 'Other'],
+          labels: ['Sick Leave', 'Casual Leave', 'Earned Leave'],
           datasets: [{
-            data: [0, 0, 0, 0],
-            backgroundColor: ['#9b59b6', '#3498db', '#e74c3c', '#f39c12']
+            data: [0, 0, 0],
+            backgroundColor: ['#9b59b6', '#3498db', '#e74c3c']
           }]
         },
         options: {
@@ -1946,12 +2596,11 @@
       }
 
       // Update leave chart
-      if (charts.leave && analytics.leaveDistribution) {
+      if (charts.leave && analytics.leaveStats) {
         charts.leave.data.datasets[0].data = [
-          analytics.leaveDistribution['Sick Leave'],
-          analytics.leaveDistribution['Vacation'],
-          analytics.leaveDistribution['Personal'],
-          analytics.leaveDistribution['Other']
+          analytics.leaveStats.byType.sick,
+          analytics.leaveStats.byType.casual,
+          analytics.leaveStats.byType.earned
         ];
         charts.leave.update();
       }
