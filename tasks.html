@@ -440,6 +440,11 @@
       color: white;
     }
     
+    .status-not-started {
+      background: linear-gradient(135deg, #6c757d, #495057);
+      color: white;
+    }
+    
     /* Date filter section */
     .date-filter-section {
       display: flex;
@@ -488,6 +493,39 @@
       margin-right: 10px;
     }
     
+    /* Time info display */
+    .time-info {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 8px;
+      margin: 10px 0;
+      border-left: 3px solid #007bff;
+    }
+    
+    .time-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+    
+    .time-info-item {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .time-info-label {
+      font-size: 12px;
+      color: #666;
+      font-weight: 600;
+    }
+    
+    .time-info-value {
+      font-size: 14px;
+      color: #333;
+      font-weight: 500;
+    }
+    
     /* Responsive tweaks */
     @media (max-width: 768px) {
       .filters {
@@ -516,6 +554,10 @@
       .time-input-group {
         flex-direction: column;
       }
+      
+      .time-info-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -534,8 +576,9 @@
     <input type="text" id="searchOwner" placeholder="Search Owner" />
     <select id="statusFilter">
       <option value="">All Status</option>
-      <option value="Pending">Pending</option>
+      <option value="Not Started">Not Started</option>
       <option value="In Progress">In Progress</option>
+      <option value="Pending">Pending</option>
       <option value="Complete">Completed</option>
     </select>
     
@@ -760,26 +803,84 @@ async function loadTasks() {
       return getNumber(a.SINO) - getNumber(b.SINO);
     });
 
-    // Auto update completed tasks with time calculations
-    await Promise.all(
-      allTasks
-        .filter(task =>
-          task.Status === "Complete" &&
-          task.taskStart &&
-          task.taskEnd &&
-          (!task.TotalWorkHours || task.TotalWorkHours === '')
-        )
-        .map(task => {
-          console.log(`Auto-calculating times for completed task: ${task.SINO} (${task.id})`);
-          return updateTaskTimeInfo(task.id);
-        })
-    );
+    // Auto-calculate time information for all tasks
+    allTasks.forEach(task => {
+      calculateAndUpdateTaskTimeInfo(task);
+    });
     
     populateCompanyList();
     applyFilters(); // Initial render with sorting applied
   } catch (error) {
     console.error(error);
   }
+}
+
+// Calculate time information from work sessions
+function calculateAndUpdateTaskTimeInfo(task) {
+  if (!task.workSessions || task.workSessions.length === 0) {
+    return {
+      totalWorkHours: '0h 0m',
+      totalPauseHours: '0h 0m',
+      startTime: null,
+      endTime: null
+    };
+  }
+
+  let totalWorkMs = 0;
+  let totalPauseMs = 0;
+  let lastEndTime = null;
+
+  // Calculate work time and pause time from sessions
+  task.workSessions.forEach(session => {
+    const start = session.start ? (session.start.toDate ? session.start.toDate() : new Date(session.start)) : null;
+    const end = session.end ? (session.end.toDate ? session.end.toDate() : new Date(session.end)) : null;
+    
+    if (start) {
+      const sessionStartMs = start.getTime();
+      const sessionEndMs = end ? end.getTime() : Date.now(); // Use current time if session is still active
+      
+      // Add work time for this session
+      totalWorkMs += sessionEndMs - sessionStartMs;
+      
+      // Calculate pause time between sessions
+      if (lastEndTime !== null) {
+        const pauseTime = sessionStartMs - lastEndTime;
+        if (pauseTime > 0) {
+          totalPauseMs += pauseTime;
+        }
+      }
+      
+      lastEndTime = sessionEndMs;
+    }
+  });
+
+  // Convert milliseconds to hours and minutes
+  const formatTime = (ms) => {
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
+  };
+
+  const firstSession = task.workSessions[0];
+  const lastSession = task.workSessions[task.workSessions.length - 1];
+  
+  const startTime = firstSession.start ? 
+    (firstSession.start.toDate ? firstSession.start.toDate() : new Date(firstSession.start)) : null;
+  const endTime = lastSession.end ? 
+    (lastSession.end.toDate ? lastSession.end.toDate() : new Date(lastSession.end)) : null;
+
+  // Update task object with calculated times
+  task.calculatedWorkHours = formatTime(totalWorkMs);
+  task.calculatedPauseHours = formatTime(totalPauseMs);
+  task.calculatedStartTime = startTime;
+  task.calculatedEndTime = endTime;
+
+  return {
+    totalWorkHours: task.calculatedWorkHours,
+    totalPauseHours: task.calculatedPauseHours,
+    startTime: task.calculatedStartTime,
+    endTime: task.calculatedEndTime
+  };
 }
 
 function populateCompanyList() {
@@ -814,9 +915,10 @@ function renderTablePage(page, tasks) {
     
     // Create status badge
     let statusClass = '';
-    if (task.Status === 'Pending') statusClass = 'status-pending';
+    if (task.Status === 'Not Started') statusClass = 'status-not-started';
     else if (task.Status === 'Complete') statusClass = 'status-complete';
     else if (task.Status === 'In Progress') statusClass = 'status-progress';
+    else if (task.Status === 'Pending') statusClass = 'status-pending';
     
     tr.innerHTML = `
       <td>${task.SINO || ''}</td>
@@ -831,15 +933,34 @@ function renderTablePage(page, tasks) {
     detailsTr.classList.add('details-row');
     detailsTr.style.display = 'none';
     
-    // Show time information for completed and in-progress tasks
+    // Calculate time information for this task
+    const timeInfo = calculateAndUpdateTaskTimeInfo(task);
+    
+    // Show time information for all tasks that have work sessions
     let timeInfoHtml = '';
-    if (task.Status === 'Complete' || task.Status === 'In Progress') {
+    if (task.workSessions && task.workSessions.length > 0) {
       timeInfoHtml = `
-        <strong>Time Started:</strong> ${formatTimestamp(task.taskStart)}<br/>
-        ${task.Status === 'Complete' ? `<strong>Time End:</strong> ${formatTimestamp(task.taskEnd)}<br/>` : ''}
-        <strong>Total Work Hours:</strong> ${task.TotalWorkHours || ''}<br/>
-        <strong>Total Pause Hours:</strong> ${task.TotalPauseHours || ''}<br/>
-        <strong>Remarks:</strong> ${task.Remarks || ''}<br/><br/>
+        <div class="time-info">
+          <strong><i class="fas fa-clock"></i> Time Tracking Information</strong>
+          <div class="time-info-grid">
+            <div class="time-info-item">
+              <span class="time-info-label">Start Time</span>
+              <span class="time-info-value">${timeInfo.startTime ? timeInfo.startTime.toLocaleString() : 'Not started'}</span>
+            </div>
+            <div class="time-info-item">
+              <span class="time-info-label">End Time</span>
+              <span class="time-info-value">${timeInfo.endTime ? timeInfo.endTime.toLocaleString() : 'In progress'}</span>
+            </div>
+            <div class="time-info-item">
+              <span class="time-info-label">Total Work</span>
+              <span class="time-info-value">${timeInfo.totalWorkHours}</span>
+            </div>
+            <div class="time-info-item">
+              <span class="time-info-label">Total Pause</span>
+              <span class="time-info-value">${timeInfo.totalPauseHours}</span>
+            </div>
+          </div>
+        </div>
       `;
     }
     
@@ -855,8 +976,10 @@ function renderTablePage(page, tasks) {
           <strong>Assigned By:</strong> ${task['Assigned By'] || ''}<br/>
           <strong>Notes:</strong> ${task.Notes || ''}<br/>
           ${timeInfoHtml}
-          <button class="edit-btn action-btn" data-id="${task.id}">Edit</button>
-          <button class="delete-btn action-btn" data-id="${task.id}">Delete</button>
+          <div style="margin-top: 15px;">
+            <button class="edit-btn action-btn" data-id="${task.id}">Edit</button>
+            <button class="delete-btn action-btn" data-id="${task.id}">Delete</button>
+          </div>
         </div>
       </td>
     `;
@@ -870,40 +993,6 @@ function renderTablePage(page, tasks) {
   });
 
   attachRowEventListeners();
-}
-
-function formatTimestamp(ts) {
-  if (!ts) return '';
-  if (typeof ts.toDate === 'function') {
-    return ts.toDate().toLocaleString();
-  }
-  if (ts instanceof Date) {
-    return ts.toLocaleString();
-  }
-  return '';
-}
-
-// Auto-calculate and update time info for completed tasks
-async function updateTaskTimeInfo(taskId) {
-  const task = allTasks.find(t => t.id === taskId);
-  if (!task || task.Status !== 'Complete') return;
-
-  try {
-    const taskRef = db.collection('tasks').doc(taskId);
-    
-    // Calculate work hours from start to end time
-    const workHours = calculateTimeDifference(task.taskStart, task.taskEnd);
-    const totalWorkHours = `${workHours.hours}h ${workHours.minutes}m`;
-    
-    await taskRef.update({
-      TotalWorkHours: totalWorkHours,
-      TotalPauseHours: task.TotalPauseHours || '0h 0m'
-    });
-    
-    console.log(`Updated time info for task ${task.SINO}`);
-  } catch (err) {
-    console.error('Failed to update task time info:', err);
-  }
 }
 
 // Attach edit/delete button events
@@ -953,11 +1042,12 @@ function attachRowEventListeners() {
       taskForm.elements['assignedBy'].value = task['Assigned By'] || '';
       taskForm.elements['notes'].value = task.Notes || '';
       
-      // Populate time fields
-      document.getElementById('timeStartInput').value = task.taskStart ? formatDateTimeLocal(task.taskStart.toDate()) : '';
-      document.getElementById('timeEndInput').value = task.taskEnd ? formatDateTimeLocal(task.taskEnd.toDate()) : '';
-      document.getElementById('totalWorkHours').value = task.TotalWorkHours || '';
-      document.getElementById('totalPauseHours').value = task.TotalPauseHours || '';
+      // Populate time fields with calculated values
+      const timeInfo = calculateAndUpdateTaskTimeInfo(task);
+      document.getElementById('timeStartInput').value = timeInfo.startTime ? formatDateTimeLocal(timeInfo.startTime) : '';
+      document.getElementById('timeEndInput').value = timeInfo.endTime ? formatDateTimeLocal(timeInfo.endTime) : '';
+      document.getElementById('totalWorkHours').value = timeInfo.totalWorkHours || '';
+      document.getElementById('totalPauseHours').value = timeInfo.totalPauseHours || '';
       document.getElementById('remarksInput').value = task.Remarks || '';
 
       taskModal.style.display = 'flex';
@@ -1436,7 +1526,7 @@ taskForm.addEventListener('submit', async (e) => {
 
   const taskData = {
     SINO: editingTaskId ? undefined : generateSINO(),
-    Status: editingTaskId ? undefined : 'Pending',
+    Status: editingTaskId ? undefined : 'Not Started',
     'Existing Company Name': data.company,
     'TYPE OF WORK': data.typeOfWork,
     'ACCOUNT TYPE': data.accountType || '',
@@ -1590,7 +1680,7 @@ async function handleCSVUpload(event) {
           'Due date': row['DueDate'],
           'Assigned By': row['Assigned By'],
           Notes: row['Notes'],
-          Status: row['Status'] || 'Pending',
+          Status: row['Status'] || 'Not Started',
 
           TimeStarted: timeStart ? timeStart.toLocaleString() : '',
           TimeEnd: timeEnd ? timeEnd.toLocaleString() : '',
@@ -1649,7 +1739,7 @@ function downloadCSVTemplate() {
       'DueDate': '2023-01-31',
       'Assigned By': 'Manager',
       'Notes': 'Complete reconciliation by end of month',
-      'Status': 'Pending',
+      'Status': 'Not Started',
       'Time Started': '2023-01-15T09:00',
       'Time End': '2023-01-15T17:00',
       'Total Work Hours': '8h 0m',
