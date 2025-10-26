@@ -457,6 +457,36 @@
       display: inline-block;
     }
 
+    .status-pending {
+      background: #fff3cd;
+      color: #856404;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .status-approved {
+      background: #d4edda;
+      color: #155724;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .status-rejected {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
     .highlight-good {
       background: #d4edda;
       font-weight: 600;
@@ -709,6 +739,7 @@
             <option value="summary">Summary Report</option>
             <option value="detailed">Detailed Report</option>
             <option value="comparison" class="admin-only-element">Comparison Report</option>
+            <option value="leaves">Leave Report</option>
           </select>
         </div>
         <div class="filter-group">
@@ -737,9 +768,9 @@
         <div class="stat-label" id="attendanceLabel">Attendance Rate</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">⏱️</div>
-        <div class="stat-number" id="avgHours">0h</div>
-        <div class="stat-label" id="hoursLabel">Avg Daily Hours</div>
+        <div class="stat-icon">📋</div>
+        <div class="stat-number" id="totalLeaves">0</div>
+        <div class="stat-label" id="leavesLabel">Total Leaves</div>
       </div>
     </div>
 
@@ -766,6 +797,9 @@
         </button>
         <button class="tab admin-only-element" onclick="switchTab('comparisonReport')" id="comparisonTab">
           <span>Comparison Report</span>
+        </button>
+        <button class="tab" onclick="switchTab('leaveReport')">
+          <span>Leave Report</span>
         </button>
       </div>
 
@@ -844,6 +878,34 @@
           </table>
         </div>
       </div>
+
+      <!-- Leave Report Tab -->
+      <div class="tab-content" id="leaveReport">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th id="leaveEmployeeHeader">Employee</th>
+                <th>Leave Type</th>
+                <th>From Date</th>
+                <th>To Date</th>
+                <th>Duration</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Applied On</th>
+                <th>Contact Number</th>
+              </tr>
+            </thead>
+            <tbody id="leaveTableBody">
+              <tr>
+                <td colspan="9" class="no-data">
+                  <div>Generate report to view leave data</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -873,6 +935,7 @@
     let userRole = null;
     let allUsers = [];
     let reportData = [];
+    let leaveData = [];
     let attendanceChart = null;
     let trendChart = null;
     let currentReportData = null;
@@ -1022,8 +1085,10 @@
         document.getElementById('detailedTabText').textContent = 'Team Details';
         document.getElementById('summaryEmployeeHeader').textContent = 'Employee';
         document.getElementById('detailedEmployeeHeader').textContent = 'Employee';
+        document.getElementById('leaveEmployeeHeader').textContent = 'Employee';
         document.getElementById('attendanceChartTitle').textContent = 'Team Attendance Distribution';
         document.getElementById('trendChartTitle').textContent = 'Team Weekly Trend';
+        document.getElementById('leavesLabel').textContent = 'Team Leaves';
         
         // Show admin elements
         document.querySelectorAll('.admin-only-element').forEach(el => {
@@ -1037,11 +1102,12 @@
         document.getElementById('detailedTabText').textContent = 'My Details';
         document.getElementById('summaryEmployeeHeader').textContent = 'Period';
         document.getElementById('detailedEmployeeHeader').textContent = 'Day';
+        document.getElementById('leaveEmployeeHeader').textContent = 'Leave Type';
         document.getElementById('attendanceChartTitle').textContent = 'My Attendance Distribution';
         document.getElementById('trendChartTitle').textContent = 'My Weekly Trend';
         document.getElementById('daysLabel').textContent = 'Days Tracked';
         document.getElementById('attendanceLabel').textContent = 'My Attendance';
-        document.getElementById('hoursLabel').textContent = 'My Avg Hours';
+        document.getElementById('leavesLabel').textContent = 'My Leaves';
         
         // Hide admin elements
         document.querySelectorAll('.admin-only-element').forEach(el => {
@@ -1145,7 +1211,7 @@
       };
     }
 
-    // Generate report - UPDATED TO AVOID COMPOSITE INDEX ISSUES
+    // Generate report - UPDATED TO INCLUDE LEAVE DATA
     async function generateReport() {
       try {
         updateDebugInfo('Generating report...');
@@ -1158,6 +1224,7 @@
         updateDebugInfo(`Date range: ${dateRange.start} to ${dateRange.end}, Employee: ${employeeFilter}, Report Type: ${reportType}`);
 
         let attendanceQuery;
+        let leaveQuery;
         
         if (isAdmin && employeeFilter === 'all') {
           // Admin viewing all data - load all records and filter by date client-side
@@ -1168,6 +1235,17 @@
             const record = { id: doc.id, ...doc.data() };
             if (record.date >= dateRange.start && record.date <= dateRange.end) {
               reportData.push(record);
+            }
+          });
+
+          // Load all leave data for admin
+          leaveQuery = await db.collection("leaves").get();
+          leaveData = [];
+          leaveQuery.forEach(doc => {
+            const record = { id: doc.id, ...doc.data() };
+            // Check if leave overlaps with the date range
+            if (record.fromDate <= dateRange.end && record.toDate >= dateRange.start) {
+              leaveData.push(record);
             }
           });
         } else {
@@ -1184,12 +1262,25 @@
               reportData.push(record);
             }
           });
+
+          // Load leave data for specific user
+          leaveQuery = await db.collection("leaves")
+            .where("userId", "==", userId)
+            .get();
+          leaveData = [];
+          leaveQuery.forEach(doc => {
+            const record = { id: doc.id, ...doc.data() };
+            // Check if leave overlaps with the date range
+            if (record.fromDate <= dateRange.end && record.toDate >= dateRange.start) {
+              leaveData.push(record);
+            }
+          });
         }
 
-        updateDebugInfo(`Loaded ${reportData.length} attendance records after filtering`);
+        updateDebugInfo(`Loaded ${reportData.length} attendance records and ${leaveData.length} leave records after filtering`);
 
         // Process and display report data
-        currentReportData = processReportData(reportData, dateRange);
+        currentReportData = processReportData(reportData, leaveData, dateRange);
         displayReport(currentReportData, reportType);
 
         // Update statistics
@@ -1207,11 +1298,12 @@
       }
     }
 
-    // Process report data
-    function processReportData(rawData, dateRange) {
+    // Process report data - UPDATED TO INCLUDE LEAVE DATA
+    function processReportData(rawData, leaveRecords, dateRange) {
       const processedData = {
         summary: {},
         detailed: rawData,
+        leaves: leaveRecords,
         comparison: {},
         dateRange: dateRange
       };
@@ -1294,11 +1386,40 @@
         }
       });
 
+      // Process leave records to calculate actual leave days in the date range
+      Object.values(userData).forEach(userDataItem => {
+        const userLeaves = leaveRecords.filter(leave => leave.userId === userDataItem.user.id);
+        let leaveDaysInRange = 0;
+
+        userLeaves.forEach(leave => {
+          const fromDate = new Date(leave.fromDate);
+          const toDate = new Date(leave.toDate);
+          const startDate = new Date(dateRange.start);
+          const endDate = new Date(dateRange.end);
+
+          // Calculate overlapping days
+          const overlapStart = fromDate < startDate ? startDate : fromDate;
+          const overlapEnd = toDate > endDate ? endDate : toDate;
+          
+          if (overlapStart <= overlapEnd) {
+            // Calculate working days in the overlap period
+            for (let date = new Date(overlapStart); date <= overlapEnd; date.setDate(date.getDate() + 1)) {
+              // Skip weekends
+              if (date.getDay() !== 0 && date.getDay() !== 6) {
+                leaveDaysInRange++;
+              }
+            }
+          }
+        });
+
+        userDataItem.leaveDays = leaveDaysInRange;
+      });
+
       processedData.summary = userData;
       return processedData;
     }
 
-    // Display report based on type
+    // Display report based on type - UPDATED TO INCLUDE LEAVE REPORT
     function displayReport(data, reportType) {
       switch (reportType) {
         case 'summary':
@@ -1311,6 +1432,9 @@
           if (isAdmin) {
             displayComparisonReport(data);
           }
+          break;
+        case 'leaves':
+          displayLeaveReport(data);
           break;
       }
     }
@@ -1503,6 +1627,92 @@
       }
     }
 
+    // Display leave report - NEW FUNCTION
+    function displayLeaveReport(data) {
+      const tbody = document.getElementById('leaveTableBody');
+      tbody.innerHTML = '';
+
+      data.leaves.forEach(leave => {
+        // For regular users, only show their data
+        if (!isAdmin && leave.userId !== currentUser) {
+          return;
+        }
+
+        const user = allUsers.find(u => u.id === leave.userId);
+        const userName = user ? `${user.username} (${user.empId || 'N/A'})` : 'Unknown';
+
+        // Format dates
+        const fromDate = new Date(leave.fromDate).toLocaleDateString('en-US');
+        const toDate = new Date(leave.toDate).toLocaleDateString('en-US');
+        const appliedDate = new Date(leave.appliedDate).toLocaleDateString('en-US');
+
+        // Calculate duration
+        const from = new Date(leave.fromDate);
+        const to = new Date(leave.toDate);
+        const duration = Math.ceil((to - from) / (1000 * 60 * 60 * 24)) + 1;
+
+        // Get status badge
+        let statusBadge = '';
+        if (leave.status === 'pending') {
+          statusBadge = '<span class="status-pending">Pending</span>';
+        } else if (leave.status === 'approved') {
+          statusBadge = '<span class="status-approved">Approved</span>';
+        } else {
+          statusBadge = '<span class="status-rejected">Rejected</span>';
+        }
+
+        // Get leave type display
+        let typeDisplay = '';
+        if (leave.type === 'sick') {
+          typeDisplay = 'Sick Leave';
+        } else if (leave.type === 'casual') {
+          typeDisplay = 'Casual Leave';
+        } else {
+          typeDisplay = 'Earned Leave';
+        }
+
+        const row = document.createElement('tr');
+        
+        if (isAdmin) {
+          row.innerHTML = `
+            <td>${userName}</td>
+            <td>${typeDisplay}</td>
+            <td>${fromDate}</td>
+            <td>${toDate}</td>
+            <td>${duration} Days</td>
+            <td>${leave.reason || '-'}</td>
+            <td>${statusBadge}</td>
+            <td>${appliedDate}</td>
+            <td>${leave.contactNumber || '-'}</td>
+          `;
+        } else {
+          row.innerHTML = `
+            <td>${typeDisplay}</td>
+            <td>${fromDate}</td>
+            <td>${toDate}</td>
+            <td>${duration} Days</td>
+            <td>${leave.reason || '-'}</td>
+            <td>${statusBadge}</td>
+            <td>${appliedDate}</td>
+            <td>${leave.contactNumber || '-'}</td>
+            <td></td> <!-- Empty cell to match column count -->
+          `;
+        }
+        
+        tbody.appendChild(row);
+      });
+
+      if (tbody.children.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" class="no-data">
+              <div>No leave data available for the selected period</div>
+            </td>
+          </tr>
+        `;
+      }
+    }
+
     // Display comparison report (Admin only)
     function displayComparisonReport(data) {
       const thead = document.querySelector('#comparisonReport thead tr');
@@ -1639,7 +1849,7 @@
       }
     }
 
-    // Update statistics
+    // Update statistics - UPDATED TO INCLUDE LEAVES
     function updateStatistics(data) {
       // Calculate working days in period
       const start = new Date(data.dateRange.start);
@@ -1653,6 +1863,10 @@
       }
 
       document.getElementById('totalDays').textContent = workingDays;
+
+      // Update total leaves count
+      const totalLeaves = data.leaves.length;
+      document.getElementById('totalLeaves').textContent = totalLeaves;
 
       if (isAdmin) {
         // Admin statistics
@@ -1833,7 +2047,7 @@
       }
     }
 
-    // Export to Excel
+    // Export to Excel - UPDATED TO INCLUDE LEAVE DATA
     function exportToExcel() {
       if (!currentReportData) {
         showToast('Please generate a report first', 'warning');
@@ -1857,6 +2071,9 @@
             } else {
               dataToExport = prepareSummaryDataForExport(currentReportData);
             }
+            break;
+          case 'leaves':
+            dataToExport = prepareLeaveDataForExport(currentReportData);
             break;
         }
 
@@ -2006,6 +2223,48 @@
       return exportData;
     }
 
+    // Prepare leave data for Excel export - NEW FUNCTION
+    function prepareLeaveDataForExport(data) {
+      const exportData = [];
+      
+      data.leaves.forEach(leave => {
+        // For regular users, only export their data
+        if (!isAdmin && leave.userId !== currentUser) {
+          return;
+        }
+
+        const user = allUsers.find(u => u.id === leave.userId);
+        
+        if (isAdmin) {
+          exportData.push({
+            'Employee Name': user ? user.username : 'Unknown',
+            'Employee ID': user ? (user.empId || 'N/A') : 'N/A',
+            'Leave Type': leave.type,
+            'From Date': leave.fromDate,
+            'To Date': leave.toDate,
+            'Duration': leave.duration + ' Days',
+            'Reason': leave.reason || '-',
+            'Status': leave.status,
+            'Applied On': leave.appliedDate,
+            'Contact Number': leave.contactNumber || '-'
+          });
+        } else {
+          exportData.push({
+            'Leave Type': leave.type,
+            'From Date': leave.fromDate,
+            'To Date': leave.toDate,
+            'Duration': leave.duration + ' Days',
+            'Reason': leave.reason || '-',
+            'Status': leave.status,
+            'Applied On': leave.appliedDate,
+            'Contact Number': leave.contactNumber || '-'
+          });
+        }
+      });
+
+      return exportData;
+    }
+
     // Prepare comparison data for Excel export
     function prepareComparisonDataForExport(data) {
       // This would require a more complex structure for Excel
@@ -2013,7 +2272,7 @@
       return prepareSummaryDataForExport(data);
     }
 
-    // Export to PDF
+    // Export to PDF - UPDATED TO INCLUDE LEAVE DATA
     function exportToPDF() {
       if (!currentReportData) {
         showToast('Please generate a report first', 'warning');
