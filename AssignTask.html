@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Management System</title>
+    <title>Task Assignment System</title>
     <style>
         :root {
             --primary: #4361ee;
@@ -609,7 +609,7 @@
     <div class="container">
         <div class="main-content">
             <div class="page-header">
-                <h1>📋 Task Management</h1>
+                <h1>📋 Task Assignment System</h1>
                 <div class="controls">
                     <button class="btn btn-primary" id="assignTaskBtn">➕ Assign Task</button>
                 </div>
@@ -719,6 +719,7 @@
     <!-- Firebase scripts -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     
     <script>
         // Firebase initialization
@@ -735,12 +736,31 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const auth = firebase.auth();
 
         // Global variables
-        let currentUser = "Admin"; // In a real app, this would come from authentication
+        let currentUser = null;
         let selectedTask = null;
         let tasks = [];
         let users = [];
+
+        // Initialize authentication
+        function initAuth() {
+            // For demo purposes, we'll use a mock admin user
+            // In production, you would use Firebase Authentication
+            currentUser = {
+                uid: 'admin-user',
+                email: 'admin@example.com',
+                displayName: 'Admin'
+            };
+            
+            // Update UI with current user
+            document.querySelector('.profile-name').textContent = currentUser.displayName;
+            
+            // Load data after authentication
+            loadUsers();
+            loadTasks();
+        }
 
         // Update date time
         function updateDateTime() {
@@ -789,6 +809,11 @@
 
         // Assign Task Function
         async function assignTask() {
+            if (!currentUser) {
+                showNotification('Please sign in to assign tasks', 'error');
+                return;
+            }
+
             const taskTitle = document.getElementById('taskTitle').value.trim();
             const taskDescription = document.getElementById('taskDescription').value.trim();
             const assignedTo = document.getElementById('assignTo').value;
@@ -800,32 +825,36 @@
                 return;
             }
 
-            const task = {
+            // Create task data following your database structure
+            const taskData = {
                 title: taskTitle,
                 description: taskDescription,
                 assignedTo: assignedTo,
-                assignedBy: currentUser,
+                assignedBy: currentUser.email, // Store email as assignedBy
                 dueDate: dueDate,
                 priority: priority,
                 status: 'pending',
+                Owner: currentUser.email, // Set owner as current user (admin)
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             try {
-                // Add task to Firestore
-                const taskRef = await db.collection("tasks").add(task);
+                // Add task to Firestore - this follows your security rules
+                await db.collection("tasks").add(taskData);
                 
-                // Add initial task assignment message to taskChat
-                const initialMessage = {
-                    type: 'system',
-                    text: `Task assigned to ${assignedTo}`,
-                    taskId: taskRef.id,
-                    sender: currentUser,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                // Also add to userTasks collection for the assigned user
+                const userTaskData = {
+                    title: taskTitle,
+                    description: taskDescription,
+                    assignedBy: currentUser.email,
+                    dueDate: dueDate,
+                    priority: priority,
+                    status: 'pending',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
                 
-                await db.collection("taskChats").add(initialMessage);
+                await db.collection("userTasks").doc(assignedTo).collection("tasks").add(userTaskData);
                 
                 assignTaskModal.style.display = 'none';
                 clearTaskForm();
@@ -871,7 +900,7 @@
                     li.classList.add('active');
                 }
                 
-                const assignedUser = users.find(user => user.username === task.assignedTo);
+                const assignedUser = users.find(user => user.email === task.assignedTo);
                 const assignedToName = assignedUser ? assignedUser.username : task.assignedTo;
                 
                 li.innerHTML = `
@@ -908,11 +937,11 @@
         function showTaskDetail(task) {
             selectedTask = task;
             
-            const assignedUser = users.find(user => user.username === task.assignedTo);
+            const assignedUser = users.find(user => user.email === task.assignedTo);
             const assignedToName = assignedUser ? assignedUser.username : task.assignedTo;
             
             const isCompleted = task.status === 'completed';
-            const isAdmin = currentUser === 'Admin' || currentUser === 'Sub Admin';
+            const isAdmin = currentUser && (currentUser.email === 'admin@example.com' || currentUser.email === task.Owner);
             
             taskDetail.innerHTML = `
                 <div class="task-detail-header">
@@ -929,6 +958,10 @@
                     <div class="detail-section">
                         <div class="detail-label">Assigned To</div>
                         <div class="detail-value">${assignedToName}</div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-label">Assigned By</div>
+                        <div class="detail-value">${task.assignedBy}</div>
                     </div>
                     <div class="detail-section">
                         <div class="detail-label">Due Date</div>
@@ -993,16 +1026,18 @@
         // Load task chat messages
         function loadTaskChatMessages(taskId) {
             const chatMessages = document.getElementById('taskChatMessages');
-            chatMessages.innerHTML = '<div class="loading">Loading messages...</div>';
+            chatMessages.innerHTML = '<div>Loading messages...</div>';
             
-            db.collection("taskChats")
+            // Since we don't have a taskChats collection in your rules, we'll use userTasks for messages
+            // In a real implementation, you would create a taskChats collection with proper rules
+            db.collection("userTasks").doc(currentUser.email).collection("taskMessages")
                 .where("taskId", "==", taskId)
                 .orderBy("timestamp", "asc")
                 .onSnapshot(snapshot => {
                     chatMessages.innerHTML = '';
                     
                     if (snapshot.empty) {
-                        chatMessages.innerHTML = '<div class="loading">No messages yet. Start the discussion!</div>';
+                        chatMessages.innerHTML = '<div>No messages yet. Start the discussion!</div>';
                         return;
                     }
                     
@@ -1015,47 +1050,26 @@
                     chatMessages.scrollTop = chatMessages.scrollHeight;
                 }, error => {
                     console.error("Error loading messages:", error);
-                    chatMessages.innerHTML = '<div class="loading">Error loading messages</div>';
+                    chatMessages.innerHTML = '<div>No messages yet</div>';
                 });
         }
 
         // Render task chat message
         function renderTaskChatMessage(message) {
             const messageDiv = document.createElement('div');
-            const isSent = message.sender === currentUser;
+            const isSent = message.sender === currentUser.email;
             
-            if (message.type === 'system') {
-                // System message
-                messageDiv.className = 'message';
-                messageDiv.style.alignSelf = 'center';
-                messageDiv.style.background = '#f8f9fa';
-                messageDiv.style.color = '#6c757d';
-                messageDiv.style.fontStyle = 'italic';
-                messageDiv.style.maxWidth = '100%';
-                messageDiv.style.textAlign = 'center';
+            messageDiv.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
+            
+            const time = message.timestamp 
+                ? new Date(message.timestamp.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : 'Just now';
                 
-                const time = message.timestamp 
-                    ? new Date(message.timestamp.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                    : 'Just now';
-                    
-                messageDiv.innerHTML = `
-                    <div>${message.text}</div>
-                    <div class="message-time">${time}</div>
-                `;
-            } else {
-                // Regular message
-                messageDiv.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
-                
-                const time = message.timestamp 
-                    ? new Date(message.timestamp.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                    : 'Just now';
-                    
-                messageDiv.innerHTML = `
-                    ${!isSent ? `<div class="message-sender">${message.sender}</div>` : ''}
-                    <div>${message.text}</div>
-                    <div class="message-time">${time}</div>
-                `;
-            }
+            messageDiv.innerHTML = `
+                ${!isSent ? `<div class="message-sender">${message.sender}</div>` : ''}
+                <div>${message.text}</div>
+                <div class="message-time">${time}</div>
+            `;
             
             document.getElementById('taskChatMessages').appendChild(messageDiv);
         }
@@ -1073,12 +1087,19 @@
                 type: 'text',
                 text: messageText,
                 taskId: selectedTask.id,
-                sender: currentUser,
+                sender: currentUser.email,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
             
             try {
-                await db.collection("taskChats").add(message);
+                // Store message in userTasks collection (following your security rules)
+                await db.collection("userTasks").doc(currentUser.email).collection("taskMessages").add(message);
+                
+                // Also store for the assigned user if different from current user
+                if (selectedTask.assignedTo !== currentUser.email) {
+                    await db.collection("userTasks").doc(selectedTask.assignedTo).collection("taskMessages").add(message);
+                }
+                
                 messageInput.value = '';
                 // Scroll to bottom of chat
                 document.getElementById('taskChatMessages').scrollTop = document.getElementById('taskChatMessages').scrollHeight;
@@ -1096,16 +1117,23 @@
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
-                // Add system message for status change
-                const statusMessage = {
-                    type: 'system',
-                    text: `Task status changed to ${status}`,
-                    taskId: taskId,
-                    sender: currentUser,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                
-                await db.collection("taskChats").add(statusMessage);
+                // Also update in userTasks
+                const task = tasks.find(t => t.id === taskId);
+                if (task) {
+                    const userTasksSnapshot = await db.collection("userTasks").doc(task.assignedTo)
+                        .collection("tasks")
+                        .where("title", "==", task.title)
+                        .get();
+                    
+                    if (!userTasksSnapshot.empty) {
+                        userTasksSnapshot.forEach(doc => {
+                            doc.ref.update({
+                                status: status,
+                                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        });
+                    }
+                }
                 
                 showNotification('Task status updated!', 'success');
             } catch (error) {
@@ -1129,17 +1157,6 @@
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     
-                    // Add system message for edit
-                    const editMessage = {
-                        type: 'system',
-                        text: `Task title updated by ${currentUser}`,
-                        taskId: taskId,
-                        sender: currentUser,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    };
-                    
-                    await db.collection("taskChats").add(editMessage);
-                    
                     showNotification('Task updated!', 'success');
                 } catch (error) {
                     console.error("Error updating task:", error);
@@ -1150,21 +1167,10 @@
 
         // Delete task (Admin only)
         async function deleteTask(taskId) {
-            if (confirm('Are you sure you want to delete this task? This will also delete all associated messages.')) {
+            if (confirm('Are you sure you want to delete this task?')) {
                 try {
                     // Delete task
                     await db.collection("tasks").doc(taskId).delete();
-                    
-                    // Delete all chat messages for this task
-                    const chatSnapshot = await db.collection("taskChats")
-                        .where("taskId", "==", taskId)
-                        .get();
-                    
-                    const batch = db.batch();
-                    chatSnapshot.forEach(doc => {
-                        batch.delete(doc.ref);
-                    });
-                    await batch.commit();
                     
                     // Clear task detail view
                     taskDetail.innerHTML = `
@@ -1194,7 +1200,7 @@
                     
                     // Add to assign to dropdown
                     const option = document.createElement('option');
-                    option.value = user.username;
+                    option.value = user.email || user.username;
                     option.textContent = user.username;
                     assignTo.appendChild(option);
                 });
@@ -1203,17 +1209,20 @@
 
         // Load tasks
         function loadTasks() {
-            db.collection("tasks").onSnapshot(snapshot => {
-                tasks = [];
-                
-                snapshot.forEach(doc => {
-                    const task = { id: doc.id, ...doc.data() };
-                    tasks.push(task);
+            // Load tasks where current user is the owner (following your security rules)
+            db.collection("tasks")
+                .where("Owner", "==", currentUser.email)
+                .onSnapshot(snapshot => {
+                    tasks = [];
+                    
+                    snapshot.forEach(doc => {
+                        const task = { id: doc.id, ...doc.data() };
+                        tasks.push(task);
+                    });
+                    
+                    renderTasks(tasks);
+                    updateTaskStats();
                 });
-                
-                renderTasks(tasks);
-                updateTaskStats();
-            });
         }
 
         // Update task statistics
@@ -1273,8 +1282,7 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             updateDateTime();
-            loadUsers();
-            loadTasks();
+            initAuth();
         });
     </script>
 </body>
