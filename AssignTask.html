@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Assignment & Chat System</title>
+    <title>Task Management System</title>
     <style>
         :root {
             --primary: #4361ee;
@@ -142,7 +142,6 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 30px;
-            margin-bottom: 30px;
         }
         
         .card {
@@ -217,10 +216,16 @@
             justify-content: space-between;
             align-items: center;
             transition: all 0.3s ease;
+            cursor: pointer;
         }
         
         .task-item:hover {
             background: #f8f9ff;
+        }
+        
+        .task-item.active {
+            background: #e3f2fd;
+            border-left: 4px solid #4361ee;
         }
         
         .task-info {
@@ -272,11 +277,54 @@
             color: #155724;
         }
         
+        /* Task Detail Styles */
+        .task-detail {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .task-detail-header {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .task-detail-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .task-detail-footer {
+            padding: 15px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .detail-section {
+            margin-bottom: 20px;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            color: #6c757d;
+        }
+        
         /* Chat Styles */
         .chat-container {
             display: flex;
             flex-direction: column;
-            height: 400px;
+            height: 300px;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            margin-top: 20px;
         }
         
         .chat-header {
@@ -285,6 +333,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: #f8f9fa;
         }
         
         .chat-messages {
@@ -330,25 +379,6 @@
             opacity: 0.7;
         }
         
-        .task-message {
-            border-left: 4px solid #4361ee;
-            background: #f0f4ff !important;
-        }
-        
-        .task-message .task-title {
-            color: #4361ee;
-            font-weight: 700;
-        }
-        
-        .task-message .task-details {
-            margin-top: 8px;
-            font-size: 0.85rem;
-        }
-        
-        .task-message .task-details div {
-            margin-bottom: 3px;
-        }
-        
         .chat-input {
             display: flex;
             padding: 15px;
@@ -376,6 +406,11 @@
         
         .chat-input button:hover {
             background: #3a56d4;
+        }
+        
+        .chat-input button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
         }
         
         /* Modal Styles */
@@ -574,7 +609,7 @@
     <div class="container">
         <div class="main-content">
             <div class="page-header">
-                <h1>📋 Task Assignment & Chat</h1>
+                <h1>📋 Task Management</h1>
                 <div class="controls">
                     <button class="btn btn-primary" id="assignTaskBtn">➕ Assign Task</button>
                 </div>
@@ -602,10 +637,10 @@
 
             <!-- Dashboard -->
             <div class="dashboard">
-                <!-- Task Assignment Section -->
+                <!-- Task List Section -->
                 <div class="card">
                     <div class="card-header">
-                        <span>📋 Task Assignment</span>
+                        <span>📋 Task List</span>
                         <select id="taskFilter">
                             <option value="all">All Tasks</option>
                             <option value="pending">Pending</option>
@@ -620,23 +655,16 @@
                     </div>
                 </div>
 
-                <!-- Chat Section -->
+                <!-- Task Detail Section -->
                 <div class="card">
                     <div class="card-header">
-                        <span>💬 Team Chat</span>
-                        <select id="userSelector">
-                            <option value="">Select User to Chat</option>
-                            <!-- Users will be populated here -->
-                        </select>
+                        <span>📄 Task Details</span>
                     </div>
                     <div class="card-body">
-                        <div class="chat-container">
-                            <div class="chat-messages" id="chatMessages">
-                                <!-- Messages will be populated here -->
-                            </div>
-                            <div class="chat-input">
-                                <input type="text" id="messageInput" placeholder="Type your message..." disabled>
-                                <button id="sendMessageBtn" disabled>Send</button>
+                        <div class="task-detail" id="taskDetail">
+                            <div class="task-detail-header">
+                                <h3>Select a task to view details</h3>
+                                <p>Click on any task from the list to see its details and chat</p>
                             </div>
                         </div>
                     </div>
@@ -680,12 +708,6 @@
                         <option value="high">High</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="sendAsMessage" checked> 
-                        Send as message to user
-                    </label>
-                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn" id="cancelTaskBtn">Cancel</button>
@@ -716,7 +738,7 @@
 
         // Global variables
         let currentUser = "Admin"; // In a real app, this would come from authentication
-        let selectedChatUser = null;
+        let selectedTask = null;
         let tasks = [];
         let users = [];
 
@@ -745,11 +767,8 @@
         const saveTaskBtn = document.getElementById('saveTaskBtn');
         const taskList = document.getElementById('taskList');
         const taskFilter = document.getElementById('taskFilter');
-        const userSelector = document.getElementById('userSelector');
+        const taskDetail = document.getElementById('taskDetail');
         const assignTo = document.getElementById('assignTo');
-        const chatMessages = document.getElementById('chatMessages');
-        const messageInput = document.getElementById('messageInput');
-        const sendMessageBtn = document.getElementById('sendMessageBtn');
 
         // Event Listeners
         assignTaskBtn.addEventListener('click', () => {
@@ -768,27 +787,6 @@
 
         taskFilter.addEventListener('change', filterTasks);
 
-        userSelector.addEventListener('change', (e) => {
-            selectedChatUser = e.target.value;
-            if (selectedChatUser) {
-                messageInput.disabled = false;
-                sendMessageBtn.disabled = false;
-                loadChatMessages(selectedChatUser);
-            } else {
-                messageInput.disabled = true;
-                sendMessageBtn.disabled = true;
-                chatMessages.innerHTML = '';
-            }
-        });
-
-        sendMessageBtn.addEventListener('click', sendMessage);
-
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
         // Assign Task Function
         async function assignTask() {
             const taskTitle = document.getElementById('taskTitle').value.trim();
@@ -796,7 +794,6 @@
             const assignedTo = document.getElementById('assignTo').value;
             const dueDate = document.getElementById('dueDate').value;
             const priority = document.getElementById('priority').value;
-            const sendAsMessage = document.getElementById('sendAsMessage').checked;
 
             if (!taskTitle || !taskDescription || !assignedTo) {
                 showNotification('Please fill all required fields', 'error');
@@ -819,25 +816,16 @@
                 // Add task to Firestore
                 const taskRef = await db.collection("tasks").add(task);
                 
-                // If send as message is checked, send task as a message
-                if (sendAsMessage) {
-                    const taskMessage = {
-                        type: 'task',
-                        taskId: taskRef.id,
-                        title: taskTitle,
-                        description: taskDescription,
-                        assignedTo: assignedTo,
-                        assignedBy: currentUser,
-                        dueDate: dueDate,
-                        priority: priority,
-                        sender: currentUser,
-                        receiver: assignedTo,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                        read: false
-                    };
-                    
-                    await db.collection("messages").add(taskMessage);
-                }
+                // Add initial task assignment message to taskChat
+                const initialMessage = {
+                    type: 'system',
+                    text: `Task assigned to ${assignedTo}`,
+                    taskId: taskRef.id,
+                    sender: currentUser,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await db.collection("taskChats").add(initialMessage);
                 
                 assignTaskModal.style.display = 'none';
                 clearTaskForm();
@@ -855,7 +843,6 @@
             document.getElementById('assignTo').value = '';
             document.getElementById('dueDate').value = '';
             document.getElementById('priority').value = 'medium';
-            document.getElementById('sendAsMessage').checked = true;
         }
 
         // Filter tasks
@@ -880,6 +867,9 @@
             tasksToRender.forEach(task => {
                 const li = document.createElement('li');
                 li.className = 'task-item';
+                if (selectedTask && selectedTask.id === task.id) {
+                    li.classList.add('active');
+                }
                 
                 const assignedUser = users.find(user => user.username === task.assignedTo);
                 const assignedToName = assignedUser ? assignedUser.username : task.assignedTo;
@@ -896,91 +886,129 @@
                     </div>
                     <div class="task-actions">
                         <span class="task-status status-${task.status}">${task.status.replace('-', ' ')}</span>
-                        <button class="btn btn-primary btn-sm" onclick="updateTaskStatus('${task.id}', 'in-progress')">Start</button>
-                        <button class="btn btn-success btn-sm" onclick="updateTaskStatus('${task.id}', 'completed')">Complete</button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteTask('${task.id}')">Delete</button>
                     </div>
                 `;
+                
+                li.addEventListener('click', () => {
+                    // Remove active class from all tasks
+                    document.querySelectorAll('.task-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    // Add active class to clicked task
+                    li.classList.add('active');
+                    // Show task details
+                    showTaskDetail(task);
+                });
                 
                 taskList.appendChild(li);
             });
         }
 
-        // Update task status
-        async function updateTaskStatus(taskId, status) {
-            try {
-                await db.collection("tasks").doc(taskId).update({
-                    status: status,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        // Show task detail
+        function showTaskDetail(task) {
+            selectedTask = task;
+            
+            const assignedUser = users.find(user => user.username === task.assignedTo);
+            const assignedToName = assignedUser ? assignedUser.username : task.assignedTo;
+            
+            const isCompleted = task.status === 'completed';
+            const isAdmin = currentUser === 'Admin' || currentUser === 'Sub Admin';
+            
+            taskDetail.innerHTML = `
+                <div class="task-detail-header">
+                    <h3>${task.title}</h3>
+                    <div class="task-meta">
+                        <span class="task-status status-${task.status}">${task.status.replace('-', ' ')}</span>
+                    </div>
+                </div>
+                <div class="task-detail-body">
+                    <div class="detail-section">
+                        <div class="detail-label">Description</div>
+                        <div class="detail-value">${task.description}</div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-label">Assigned To</div>
+                        <div class="detail-value">${assignedToName}</div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-label">Due Date</div>
+                        <div class="detail-value">${task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'Not set'}</div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-label">Priority</div>
+                        <div class="detail-value">${task.priority}</div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-label">Created</div>
+                        <div class="detail-value">${task.createdAt ? new Date(task.createdAt.toDate()).toLocaleString() : 'Unknown'}</div>
+                    </div>
+                    
+                    <!-- Task Chat -->
+                    <div class="chat-container" id="taskChatContainer">
+                        <div class="chat-header">
+                            <span>💬 Task Discussion</span>
+                            ${isCompleted ? '<span style="color: #e74c3c;">Chat disabled - Task completed</span>' : ''}
+                        </div>
+                        <div class="chat-messages" id="taskChatMessages">
+                            <!-- Messages will be populated here -->
+                        </div>
+                        ${!isCompleted ? `
+                        <div class="chat-input">
+                            <input type="text" id="taskMessageInput" placeholder="Type your message...">
+                            <button id="sendTaskMessageBtn">Send</button>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                <div class="task-detail-footer">
+                    <div>
+                        ${isAdmin ? `
+                        <button class="btn btn-warning" onclick="editTask('${task.id}')">Edit</button>
+                        <button class="btn btn-danger" onclick="deleteTask('${task.id}')">Delete</button>
+                        ` : ''}
+                    </div>
+                    <div>
+                        ${!isCompleted ? `
+                        <button class="btn btn-primary" onclick="updateTaskStatus('${task.id}', 'in-progress')">Start Task</button>
+                        <button class="btn btn-success" onclick="updateTaskStatus('${task.id}', 'completed')">Complete Task</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            // Load task chat messages
+            loadTaskChatMessages(task.id);
+            
+            // Add event listeners for chat
+            if (!isCompleted) {
+                document.getElementById('sendTaskMessageBtn').addEventListener('click', sendTaskMessage);
+                document.getElementById('taskMessageInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        sendTaskMessage();
+                    }
                 });
-                showNotification('Task status updated!', 'success');
-            } catch (error) {
-                console.error("Error updating task:", error);
-                showNotification('Error updating task: ' + error.message, 'error');
             }
         }
 
-        // Delete task
-        async function deleteTask(taskId) {
-            if (confirm('Are you sure you want to delete this task?')) {
-                try {
-                    await db.collection("tasks").doc(taskId).delete();
-                    showNotification('Task deleted successfully!', 'success');
-                } catch (error) {
-                    console.error("Error deleting task:", error);
-                    showNotification('Error deleting task: ' + error.message, 'error');
-                }
-            }
-        }
-
-        // Send message
-        async function sendMessage() {
-            const messageText = messageInput.value.trim();
-            
-            if (!messageText || !selectedChatUser) {
-                return;
-            }
-            
-            const message = {
-                type: 'text',
-                text: messageText,
-                sender: currentUser,
-                receiver: selectedChatUser,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                read: false
-            };
-            
-            try {
-                await db.collection("messages").add(message);
-                messageInput.value = '';
-                // Scroll to bottom of chat
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            } catch (error) {
-                console.error("Error sending message:", error);
-                showNotification('Error sending message: ' + error.message, 'error');
-            }
-        }
-
-        // Load chat messages
-        function loadChatMessages(otherUser) {
+        // Load task chat messages
+        function loadTaskChatMessages(taskId) {
+            const chatMessages = document.getElementById('taskChatMessages');
             chatMessages.innerHTML = '<div class="loading">Loading messages...</div>';
             
-            // Create a more efficient query for messages between two users
-            db.collection("messages")
-                .where("sender", "in", [currentUser, otherUser])
-                .where("receiver", "in", [currentUser, otherUser])
+            db.collection("taskChats")
+                .where("taskId", "==", taskId)
                 .orderBy("timestamp", "asc")
                 .onSnapshot(snapshot => {
                     chatMessages.innerHTML = '';
                     
                     if (snapshot.empty) {
-                        chatMessages.innerHTML = '<div class="loading">No messages yet. Start a conversation!</div>';
+                        chatMessages.innerHTML = '<div class="loading">No messages yet. Start the discussion!</div>';
                         return;
                     }
                     
                     snapshot.forEach(doc => {
                         const message = { id: doc.id, ...doc.data() };
-                        renderMessage(message);
+                        renderTaskChatMessage(message);
                     });
                     
                     // Scroll to bottom
@@ -991,31 +1019,31 @@
                 });
         }
 
-        // Render message
-        function renderMessage(message) {
+        // Render task chat message
+        function renderTaskChatMessage(message) {
             const messageDiv = document.createElement('div');
             const isSent = message.sender === currentUser;
             
-            if (message.type === 'task') {
-                // Render task message
-                messageDiv.className = `message ${isSent ? 'message-sent' : 'message-received'} task-message`;
+            if (message.type === 'system') {
+                // System message
+                messageDiv.className = 'message';
+                messageDiv.style.alignSelf = 'center';
+                messageDiv.style.background = '#f8f9fa';
+                messageDiv.style.color = '#6c757d';
+                messageDiv.style.fontStyle = 'italic';
+                messageDiv.style.maxWidth = '100%';
+                messageDiv.style.textAlign = 'center';
                 
                 const time = message.timestamp 
                     ? new Date(message.timestamp.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                     : 'Just now';
                     
                 messageDiv.innerHTML = `
-                    ${!isSent ? `<div class="message-sender">${message.sender}</div>` : ''}
-                    <div class="task-title">📋 New Task: ${message.title}</div>
-                    <div class="task-details">
-                        <div><strong>Description:</strong> ${message.description}</div>
-                        <div><strong>Priority:</strong> ${message.priority}</div>
-                        <div><strong>Due Date:</strong> ${message.dueDate ? new Date(message.dueDate).toLocaleDateString() : 'Not set'}</div>
-                    </div>
+                    <div>${message.text}</div>
                     <div class="message-time">${time}</div>
                 `;
             } else {
-                // Render regular text message
+                // Regular message
                 messageDiv.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
                 
                 const time = message.timestamp 
@@ -1029,31 +1057,146 @@
                 `;
             }
             
-            chatMessages.appendChild(messageDiv);
+            document.getElementById('taskChatMessages').appendChild(messageDiv);
+        }
+
+        // Send task message
+        async function sendTaskMessage() {
+            const messageInput = document.getElementById('taskMessageInput');
+            const messageText = messageInput.value.trim();
+            
+            if (!messageText || !selectedTask) {
+                return;
+            }
+            
+            const message = {
+                type: 'text',
+                text: messageText,
+                taskId: selectedTask.id,
+                sender: currentUser,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            try {
+                await db.collection("taskChats").add(message);
+                messageInput.value = '';
+                // Scroll to bottom of chat
+                document.getElementById('taskChatMessages').scrollTop = document.getElementById('taskChatMessages').scrollHeight;
+            } catch (error) {
+                console.error("Error sending message:", error);
+                showNotification('Error sending message: ' + error.message, 'error');
+            }
+        }
+
+        // Update task status
+        async function updateTaskStatus(taskId, status) {
+            try {
+                await db.collection("tasks").doc(taskId).update({
+                    status: status,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Add system message for status change
+                const statusMessage = {
+                    type: 'system',
+                    text: `Task status changed to ${status}`,
+                    taskId: taskId,
+                    sender: currentUser,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await db.collection("taskChats").add(statusMessage);
+                
+                showNotification('Task status updated!', 'success');
+            } catch (error) {
+                console.error("Error updating task:", error);
+                showNotification('Error updating task: ' + error.message, 'error');
+            }
+        }
+
+        // Edit task (Admin only)
+        async function editTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            // In a real app, you would open a modal to edit the task
+            // For now, we'll just show a prompt for the title
+            const newTitle = prompt('Enter new task title:', task.title);
+            if (newTitle && newTitle !== task.title) {
+                try {
+                    await db.collection("tasks").doc(taskId).update({
+                        title: newTitle,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    // Add system message for edit
+                    const editMessage = {
+                        type: 'system',
+                        text: `Task title updated by ${currentUser}`,
+                        taskId: taskId,
+                        sender: currentUser,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    
+                    await db.collection("taskChats").add(editMessage);
+                    
+                    showNotification('Task updated!', 'success');
+                } catch (error) {
+                    console.error("Error updating task:", error);
+                    showNotification('Error updating task: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // Delete task (Admin only)
+        async function deleteTask(taskId) {
+            if (confirm('Are you sure you want to delete this task? This will also delete all associated messages.')) {
+                try {
+                    // Delete task
+                    await db.collection("tasks").doc(taskId).delete();
+                    
+                    // Delete all chat messages for this task
+                    const chatSnapshot = await db.collection("taskChats")
+                        .where("taskId", "==", taskId)
+                        .get();
+                    
+                    const batch = db.batch();
+                    chatSnapshot.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    await batch.commit();
+                    
+                    // Clear task detail view
+                    taskDetail.innerHTML = `
+                        <div class="task-detail-header">
+                            <h3>Select a task to view details</h3>
+                            <p>Click on any task from the list to see its details and chat</p>
+                        </div>
+                    `;
+                    
+                    showNotification('Task deleted successfully!', 'success');
+                } catch (error) {
+                    console.error("Error deleting task:", error);
+                    showNotification('Error deleting task: ' + error.message, 'error');
+                }
+            }
         }
 
         // Load users for dropdowns
         function loadUsers() {
             db.collection("users").onSnapshot(snapshot => {
                 users = [];
-                userSelector.innerHTML = '<option value="">Select User to Chat</option>';
                 assignTo.innerHTML = '<option value="">Select User</option>';
                 
                 snapshot.forEach(doc => {
                     const user = { id: doc.id, ...doc.data() };
                     users.push(user);
                     
-                    // Add to user selector for chat
-                    const option1 = document.createElement('option');
-                    option1.value = user.username;
-                    option1.textContent = user.username;
-                    userSelector.appendChild(option1);
-                    
                     // Add to assign to dropdown
-                    const option2 = document.createElement('option');
-                    option2.value = user.username;
-                    option2.textContent = user.username;
-                    assignTo.appendChild(option2);
+                    const option = document.createElement('option');
+                    option.value = user.username;
+                    option.textContent = user.username;
+                    assignTo.appendChild(option);
                 });
             });
         }
