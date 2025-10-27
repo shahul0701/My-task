@@ -330,6 +330,25 @@
             opacity: 0.7;
         }
         
+        .task-message {
+            border-left: 4px solid #4361ee;
+            background: #f0f4ff !important;
+        }
+        
+        .task-message .task-title {
+            color: #4361ee;
+            font-weight: 700;
+        }
+        
+        .task-message .task-details {
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+        
+        .task-message .task-details div {
+            margin-bottom: 3px;
+        }
+        
         .chat-input {
             display: flex;
             padding: 15px;
@@ -661,6 +680,12 @@
                         <option value="high">High</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="sendAsMessage" checked> 
+                        Send as message to user
+                    </label>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn" id="cancelTaskBtn">Cancel</button>
@@ -771,6 +796,7 @@
             const assignedTo = document.getElementById('assignTo').value;
             const dueDate = document.getElementById('dueDate').value;
             const priority = document.getElementById('priority').value;
+            const sendAsMessage = document.getElementById('sendAsMessage').checked;
 
             if (!taskTitle || !taskDescription || !assignedTo) {
                 showNotification('Please fill all required fields', 'error');
@@ -790,7 +816,29 @@
             };
 
             try {
-                await db.collection("tasks").add(task);
+                // Add task to Firestore
+                const taskRef = await db.collection("tasks").add(task);
+                
+                // If send as message is checked, send task as a message
+                if (sendAsMessage) {
+                    const taskMessage = {
+                        type: 'task',
+                        taskId: taskRef.id,
+                        title: taskTitle,
+                        description: taskDescription,
+                        assignedTo: assignedTo,
+                        assignedBy: currentUser,
+                        dueDate: dueDate,
+                        priority: priority,
+                        sender: currentUser,
+                        receiver: assignedTo,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        read: false
+                    };
+                    
+                    await db.collection("messages").add(taskMessage);
+                }
+                
                 assignTaskModal.style.display = 'none';
                 clearTaskForm();
                 showNotification('Task assigned successfully!', 'success');
@@ -807,6 +855,7 @@
             document.getElementById('assignTo').value = '';
             document.getElementById('dueDate').value = '';
             document.getElementById('priority').value = 'medium';
+            document.getElementById('sendAsMessage').checked = true;
         }
 
         // Filter tasks
@@ -893,9 +942,10 @@
             }
             
             const message = {
+                type: 'text',
+                text: messageText,
                 sender: currentUser,
                 receiver: selectedChatUser,
-                text: messageText,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                 read: false
             };
@@ -913,15 +963,20 @@
 
         // Load chat messages
         function loadChatMessages(otherUser) {
-            chatMessages.innerHTML = '';
+            chatMessages.innerHTML = '<div class="loading">Loading messages...</div>';
             
-            // Listen for messages between current user and selected user
+            // Create a more efficient query for messages between two users
             db.collection("messages")
                 .where("sender", "in", [currentUser, otherUser])
                 .where("receiver", "in", [currentUser, otherUser])
                 .orderBy("timestamp", "asc")
                 .onSnapshot(snapshot => {
                     chatMessages.innerHTML = '';
+                    
+                    if (snapshot.empty) {
+                        chatMessages.innerHTML = '<div class="loading">No messages yet. Start a conversation!</div>';
+                        return;
+                    }
                     
                     snapshot.forEach(doc => {
                         const message = { id: doc.id, ...doc.data() };
@@ -930,6 +985,9 @@
                     
                     // Scroll to bottom
                     chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, error => {
+                    console.error("Error loading messages:", error);
+                    chatMessages.innerHTML = '<div class="loading">Error loading messages</div>';
                 });
         }
 
@@ -938,17 +996,38 @@
             const messageDiv = document.createElement('div');
             const isSent = message.sender === currentUser;
             
-            messageDiv.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
-            
-            const time = message.timestamp 
-                ? new Date(message.timestamp.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                : 'Just now';
+            if (message.type === 'task') {
+                // Render task message
+                messageDiv.className = `message ${isSent ? 'message-sent' : 'message-received'} task-message`;
                 
-            messageDiv.innerHTML = `
-                ${!isSent ? `<div class="message-sender">${message.sender}</div>` : ''}
-                <div>${message.text}</div>
-                <div class="message-time">${time}</div>
-            `;
+                const time = message.timestamp 
+                    ? new Date(message.timestamp.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : 'Just now';
+                    
+                messageDiv.innerHTML = `
+                    ${!isSent ? `<div class="message-sender">${message.sender}</div>` : ''}
+                    <div class="task-title">📋 New Task: ${message.title}</div>
+                    <div class="task-details">
+                        <div><strong>Description:</strong> ${message.description}</div>
+                        <div><strong>Priority:</strong> ${message.priority}</div>
+                        <div><strong>Due Date:</strong> ${message.dueDate ? new Date(message.dueDate).toLocaleDateString() : 'Not set'}</div>
+                    </div>
+                    <div class="message-time">${time}</div>
+                `;
+            } else {
+                // Render regular text message
+                messageDiv.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
+                
+                const time = message.timestamp 
+                    ? new Date(message.timestamp.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : 'Just now';
+                    
+                messageDiv.innerHTML = `
+                    ${!isSent ? `<div class="message-sender">${message.sender}</div>` : ''}
+                    <div>${message.text}</div>
+                    <div class="message-time">${time}</div>
+                `;
+            }
             
             chatMessages.appendChild(messageDiv);
         }
