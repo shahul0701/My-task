@@ -285,7 +285,7 @@
     }
 
     /* Modal container */
-    #taskModal, #addPersonModal {
+    #taskModal, #addPersonModal, #uploadProgressModal {
       background: rgba(0, 0, 0, 0.6);
       display: none;
       position: fixed;
@@ -298,7 +298,7 @@
     }
 
     /* Modal box */
-    #taskModal > div, #addPersonModal > div {
+    #taskModal > div, #addPersonModal > div, #uploadProgressModal > div {
       background: linear-gradient(145deg, #ffffff, #f0f0f0);
       padding: 30px 25px;
       border-radius: 20px;
@@ -312,7 +312,7 @@
     }
 
     /* Modal heading */
-    #taskModal h3, #addPersonModal h3 {
+    #taskModal h3, #addPersonModal h3, #uploadProgressModal h3 {
       margin-top: 0;
       margin-bottom: 20px;
       color: #333;
@@ -588,6 +588,35 @@
       background: linear-gradient(135deg, #2196f3, #0d47a1);
     }
     
+    /* Progress bar styles */
+    .progress-container {
+      width: 100%;
+      background-color: #e0e0e0;
+      border-radius: 10px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+    
+    .progress-bar {
+      height: 20px;
+      background: linear-gradient(90deg, #3a42f4, #6b73ff);
+      border-radius: 10px;
+      width: 0%;
+      transition: width 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+    }
+    
+    .upload-status {
+      text-align: center;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+    
     /* Responsive tweaks */
     @media (max-width: 768px) {
       .filters {
@@ -756,7 +785,7 @@
 
       <div style="display: flex; justify-content: space-between; margin-top: 20px;">
         <button type="submit">Save Task</button>
-        <button type="button" onclick="document.getElementById('taskModal').style.display='none'">Cancel</button>
+        <button type="button" onclick="closeTaskModal()">Cancel</button>
       </div>
     </form> 
   </div>
@@ -773,8 +802,22 @@
         <option value="assignedBy">Assigned By</option>
       </select><br/>
       <button type="submit">Add Person</button>
-      <button type="button" onclick="document.getElementById('addPersonModal').style.display='none'">Cancel</button>
+      <button type="button" onclick="closeAddPersonModal()">Cancel</button>
     </form>
+  </div>
+</div>
+
+<!-- Modal for Upload Progress -->
+<div id="uploadProgressModal" style="display:none;">
+  <div>
+    <h3>Uploading Tasks</h3>
+    <div class="upload-status" id="uploadStatus">Preparing upload...</div>
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar">0%</div>
+    </div>
+    <div style="text-align: center; margin-top: 20px;">
+      <button type="button" onclick="closeUploadProgressModal()" id="cancelUploadBtn">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -800,6 +843,7 @@ const { jsPDF } = window.jspdf;
 
 let editingTaskId = null;
 let currentPersonType = null;
+let uploadInProgress = false;
 
 // Firebase config
 const firebaseConfig = {
@@ -840,6 +884,10 @@ const newPersonName = document.getElementById('newPersonName');
 const personType = document.getElementById('personType');
 const timeEditSection = document.getElementById('timeEditSection');
 const toast = document.getElementById('toast');
+const uploadProgressModal = document.getElementById('uploadProgressModal');
+const uploadStatus = document.getElementById('uploadStatus');
+const progressBar = document.getElementById('progressBar');
+const cancelUploadBtn = document.getElementById('cancelUploadBtn');
 
 const rowsPerPage = 10;
 let currentPage = 1;
@@ -855,6 +903,24 @@ function showToast(message, type = 'info', duration = 3000) {
   setTimeout(() => {
     toast.classList.remove('show');
   }, duration);
+}
+
+// Modal close functions
+function closeTaskModal() {
+  taskModal.style.display = 'none';
+  editingTaskId = null;
+}
+
+function closeAddPersonModal() {
+  addPersonModal.style.display = 'none';
+}
+
+function closeUploadProgressModal() {
+  if (uploadInProgress) {
+    uploadInProgress = false;
+    showToast('Upload cancelled', 'info');
+  }
+  uploadProgressModal.style.display = 'none';
 }
 
 // Load tasks from Firestore
@@ -1699,7 +1765,7 @@ taskModal.addEventListener('click', (e) => {
 // Close modal with cancel button or escape key
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && taskModal.style.display === 'flex') {
-    taskModal.style.display = 'none';
+    closeTaskModal();
   }
 });
 
@@ -1826,7 +1892,7 @@ addPersonForm.addEventListener('submit', function(e) {
     assignedBySelect.value = name;
   }
   
-  addPersonModal.style.display = 'none';
+  closeAddPersonModal();
   showToast('Person added successfully', 'success');
 });
 
@@ -1954,20 +2020,28 @@ taskForm.addEventListener('submit', async (e) => {
 
   try {
     if (editingTaskId) {
+      // Update existing task - preserve existing fields not in the form
       const existingTask = allTasks.find(t => t.id === editingTaskId);
       if (!existingTask) throw new Error("Task not found for editing.");
 
-      const mergedTask = { ...existingTask, ...cleanUndefined(taskData) };
+      // Create updated task data by merging existing with new
+      const updatedTask = { 
+        ...existingTask, 
+        ...cleanUndefined(taskData),
+        // Preserve work sessions if they exist
+        workSessions: existingTask.workSessions || []
+      };
 
-      await db.collection('tasks').doc(editingTaskId).set(mergedTask);
+      await db.collection('tasks').doc(editingTaskId).set(updatedTask);
       showToast('Task updated successfully!', 'success');
       editingTaskId = null;
     } else {
+      // Create new task
       await db.collection('tasks').add(taskData);
       showToast('Task created successfully!', 'success');
     }
 
-    taskModal.style.display = 'none';
+    closeTaskModal();
     loadTasks();
   } catch (err) {
     console.error('Error saving task:', err);
@@ -2036,21 +2110,36 @@ async function handleCSVUpload(event) {
   const file = event.target.files[0];
   if (!file) return showToast('No file selected.', 'error');
 
+  // Reset upload state
+  uploadInProgress = true;
+  uploadProgressModal.style.display = 'flex';
+  progressBar.style.width = '0%';
+  progressBar.textContent = '0%';
+  uploadStatus.textContent = 'Parsing CSV file...';
+  
   Papa.parse(file, {
     header: true,
     skipEmptyLines: true,
     complete: async function (results) {
+      if (!uploadInProgress) return;
+      
       const rows = results.data;
+      uploadStatus.textContent = `Processing ${rows.length} tasks...`;
 
       const requiredHeaders = ['SINO', 'Company', 'Type of Work', 'Owner', 'DueDate', 'Assigned By', 'Status'];
       const csvHeaders = Object.keys(rows[0]);
 
       const hasAllRequired = requiredHeaders.every(h => csvHeaders.includes(h));
-      if (!hasAllRequired) return showToast('Missing required headers in CSV.', 'error');
+      if (!hasAllRequired) {
+        closeUploadProgressModal();
+        return showToast('Missing required headers in CSV.', 'error');
+      }
 
       const tasksToUpload = [];
 
       for (let i = 0; i < rows.length; i++) {
+        if (!uploadInProgress) break;
+        
         const row = rows[i];
         const dueDateStr = row['DueDate'];
         const timeStartStr = row['Time Started'];
@@ -2099,27 +2188,54 @@ async function handleCSVUpload(event) {
         };
 
         tasksToUpload.push(finalTask);
+        
+        // Update progress
+        const progress = Math.round(((i + 1) / rows.length) * 100);
+        progressBar.style.width = `${progress}%`;
+        progressBar.textContent = `${progress}%`;
+        uploadStatus.textContent = `Processing ${i + 1} of ${rows.length} tasks...`;
+      }
+
+      if (!uploadInProgress) {
+        closeUploadProgressModal();
+        return;
       }
 
       try {
+        uploadStatus.textContent = 'Uploading to database...';
+        
         const batch = db.batch();
         const tasksRef = db.collection('tasks');
 
-        tasksToUpload.forEach(task => {
+        for (let i = 0; i < tasksToUpload.length; i++) {
+          if (!uploadInProgress) break;
+          
+          const task = tasksToUpload[i];
           const newDoc = tasksRef.doc();
           batch.set(newDoc, task);
-        });
+          
+          // Update progress
+          const progress = Math.round(((i + 1) / tasksToUpload.length) * 100);
+          progressBar.style.width = `${progress}%`;
+          progressBar.textContent = `${progress}%`;
+          uploadStatus.textContent = `Uploading ${i + 1} of ${tasksToUpload.length} tasks...`;
+        }
 
-        await batch.commit();
-        showToast(`${tasksToUpload.length} tasks uploaded successfully.`, 'success');
-        loadTasks(); // Reload the task table
+        if (uploadInProgress) {
+          await batch.commit();
+          closeUploadProgressModal();
+          showToast(`${tasksToUpload.length} tasks uploaded successfully.`, 'success');
+          loadTasks(); // Reload the task table
+        }
       } catch (err) {
         console.error('Error uploading tasks:', err);
+        closeUploadProgressModal();
         showToast('Failed to upload tasks. See console for details.', 'error');
       }
     },
     error: function (err) {
       console.error("PapaParse error:", err);
+      closeUploadProgressModal();
       showToast("CSV parsing failed.", 'error');
     }
   });
