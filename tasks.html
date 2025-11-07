@@ -1995,6 +1995,20 @@ taskForm.addEventListener('submit', async (e) => {
     taskEnd = firebase.firestore.Timestamp.fromDate(new Date(timeEndInput));
   }
 
+  // Create or update work sessions based on time inputs
+  let workSessions = [];
+  if (timeStartInput && timeEndInput) {
+    workSessions = [{
+      start: taskStart,
+      end: taskEnd
+    }];
+  } else if (timeStartInput) {
+    workSessions = [{
+      start: taskStart,
+      end: null
+    }];
+  }
+
   const taskData = {
     SINO: editingTaskId ? undefined : generateSINO(),
     Status: editingTaskId ? undefined : 'Not Started',
@@ -2015,7 +2029,8 @@ taskForm.addEventListener('submit', async (e) => {
     TimeEnd: timeEndInput ? new Date(timeEndInput).toLocaleString() : '',
     TotalWorkHours: document.getElementById('totalWorkHours').value,
     TotalPauseHours: document.getElementById('totalPauseHours').value,
-    Remarks: remarksInput || ''
+    Remarks: remarksInput || '',
+    workSessions: workSessions
   };
 
   try {
@@ -2027,10 +2042,13 @@ taskForm.addEventListener('submit', async (e) => {
       // Create updated task data by merging existing with new
       const updatedTask = { 
         ...existingTask, 
-        ...cleanUndefined(taskData),
-        // Preserve work sessions if they exist
-        workSessions: existingTask.workSessions || []
+        ...cleanUndefined(taskData)
       };
+
+      // Preserve existing work sessions if no new time data is provided
+      if (!timeStartInput && !timeEndInput && existingTask.workSessions) {
+        updatedTask.workSessions = existingTask.workSessions;
+      }
 
       await db.collection('tasks').doc(editingTaskId).set(updatedTask);
       showToast('Task updated successfully!', 'success');
@@ -2136,6 +2154,7 @@ async function handleCSVUpload(event) {
       }
 
       const tasksToUpload = [];
+      const tasksToUpdate = [];
 
       for (let i = 0; i < rows.length; i++) {
         if (!uploadInProgress) break;
@@ -2187,7 +2206,26 @@ async function handleCSVUpload(event) {
           workSessions
         };
 
-        tasksToUpload.push(finalTask);
+        // Check if task already exists by SINO
+        const existingTask = allTasks.find(t => t.SINO === row['SINO']);
+        
+        if (existingTask) {
+          // Task exists - check for changes
+          const changes = getTaskChanges(existingTask, finalTask);
+          
+          if (Object.keys(changes).length > 0) {
+            // Ask for confirmation if there are significant changes
+            if (await confirmTaskUpdate(existingTask, finalTask, changes)) {
+              tasksToUpdate.push({
+                id: existingTask.id,
+                ...finalTask
+              });
+            }
+          }
+        } else {
+          // New task
+          tasksToUpload.push(finalTask);
+        }
         
         // Update progress
         const progress = Math.round(((i + 1) / rows.length) * 100);
@@ -2207,6 +2245,7 @@ async function handleCSVUpload(event) {
         const batch = db.batch();
         const tasksRef = db.collection('tasks');
 
+        // Upload new tasks
         for (let i = 0; i < tasksToUpload.length; i++) {
           if (!uploadInProgress) break;
           
@@ -2215,16 +2254,30 @@ async function handleCSVUpload(event) {
           batch.set(newDoc, task);
           
           // Update progress
-          const progress = Math.round(((i + 1) / tasksToUpload.length) * 100);
+          const progress = Math.round(((i + 1) / (tasksToUpload.length + tasksToUpdate.length)) * 100);
           progressBar.style.width = `${progress}%`;
           progressBar.textContent = `${progress}%`;
-          uploadStatus.textContent = `Uploading ${i + 1} of ${tasksToUpload.length} tasks...`;
+          uploadStatus.textContent = `Uploading ${i + 1} of ${tasksToUpload.length + tasksToUpdate.length} tasks...`;
+        }
+
+        // Update existing tasks
+        for (let i = 0; i < tasksToUpdate.length; i++) {
+          if (!uploadInProgress) break;
+          
+          const task = tasksToUpdate[i];
+          batch.set(tasksRef.doc(task.id), task);
+          
+          // Update progress
+          const progress = Math.round(((tasksToUpload.length + i + 1) / (tasksToUpload.length + tasksToUpdate.length)) * 100);
+          progressBar.style.width = `${progress}%`;
+          progressBar.textContent = `${progress}%`;
+          uploadStatus.textContent = `Uploading ${tasksToUpload.length + i + 1} of ${tasksToUpload.length + tasksToUpdate.length} tasks...`;
         }
 
         if (uploadInProgress) {
           await batch.commit();
           closeUploadProgressModal();
-          showToast(`${tasksToUpload.length} tasks uploaded successfully.`, 'success');
+          showToast(`${tasksToUpload.length} new tasks uploaded and ${tasksToUpdate.length} tasks updated successfully.`, 'success');
           loadTasks(); // Reload the task table
         }
       } catch (err) {
@@ -2238,6 +2291,100 @@ async function handleCSVUpload(event) {
       closeUploadProgressModal();
       showToast("CSV parsing failed.", 'error');
     }
+  });
+}
+
+// Get changes between existing and new task data
+function getTaskChanges(existingTask, newTask) {
+  const changes = {};
+  
+  // Compare key fields
+  const fieldsToCompare = [
+    'Existing Company Name', 'TYPE OF WORK', 'ACCOUNT TYPE', 'Accounts / Cards',
+    'Task', 'Owner', 'WORK FOR', 'PERIOD', 'Due date', 'Assigned By',
+    'Status', 'Notes', 'Remarks'
+  ];
+  
+  fieldsToCompare.forEach(field => {
+    const existingValue = existingTask[field] || '';
+    const newValue = newTask[field] || '';
+    
+    if (existingValue !== newValue) {
+      changes[field] = {
+        from: existingValue,
+        to: newValue
+      };
+    }
+  });
+  
+  return changes;
+}
+
+// Confirm task update with user
+async function confirmTaskUpdate(existingTask, newTask, changes) {
+  return new Promise((resolve) => {
+    // Create a modal to show changes
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    `;
+    
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+    `;
+    
+    let changesHtml = '<h3>Task Update Required</h3>';
+    changesHtml += `<p>Task ${existingTask.SINO} already exists. The following changes will be made:</p>`;
+    changesHtml += '<ul style="margin: 15px 0;">';
+    
+    Object.keys(changes).forEach(field => {
+      changesHtml += `<li><strong>${field}:</strong> "${changes[field].from}" → "${changes[field].to}"</li>`;
+    });
+    
+    changesHtml += '</ul>';
+    changesHtml += '<p>Do you want to proceed with these changes?</p>';
+    
+    modalContent.innerHTML = changesHtml;
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = 'display: flex; justify-content: space-between; margin-top: 20px;';
+    
+    const confirmBtn = document.createElement('button');
+    confirmBtn.textContent = 'Yes, Update';
+    confirmBtn.style.cssText = 'background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;';
+    confirmBtn.onclick = () => {
+      document.body.removeChild(modal);
+      resolve(true);
+    };
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'No, Skip';
+    cancelBtn.style.cssText = 'background: #f44336; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;';
+    cancelBtn.onclick = () => {
+      document.body.removeChild(modal);
+      resolve(false);
+    };
+    
+    buttonContainer.appendChild(confirmBtn);
+    buttonContainer.appendChild(cancelBtn);
+    modalContent.appendChild(buttonContainer);
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
   });
 }
 
