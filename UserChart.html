@@ -631,20 +631,20 @@
 
   // Chart contexts for all 14 charts
   const chartContexts = {
-    status: document.getElementById("statusChart").getContext("2d"),
-    work: document.getElementById("workHoursChart").getContext("2d"),
-    complete: document.getElementById("completeChart").getContext("2d"),
-    monthly: document.getElementById("monthlyWorkChart").getContext("2d"),
-    companyHours: document.getElementById("companyHoursChart").getContext("2d"),
-    timeline: document.getElementById("timelineChart").getContext("2d"),
-    priority: document.getElementById("priorityChart").getContext("2d"),
-    workPause: document.getElementById("workPauseChart").getContext("2d"),
-    weekly: document.getElementById("weeklyChart").getContext("2d"),
-    duration: document.getElementById("durationChart").getContext("2d"),
-    assignedBy: document.getElementById("assignedByChart").getContext("2d"),
-    efficiency: document.getElementById("efficiencyChart").getContext("2d"),
-    complexity: document.getElementById("complexityChart").getContext("2d"),
-    progress: document.getElementById("progressChart").getContext("2d")
+    status: "statusChart",
+    work: "workHoursChart",
+    complete: "completeChart",
+    monthly: "monthlyWorkChart",
+    companyHours: "companyHoursChart",
+    timeline: "timelineChart",
+    priority: "priorityChart",
+    workPause: "workPauseChart",
+    weekly: "weeklyChart",
+    duration: "durationChart",
+    assignedBy: "assignedByChart",
+    efficiency: "efficiencyChart",
+    complexity: "complexityChart",
+    progress: "progressChart"
   };
 
   // Initialize dashboard
@@ -771,6 +771,9 @@
 
   // Render all 14 charts
   function renderAllCharts() {
+    // Destroy all existing charts first
+    destroyAllCharts();
+    
     renderStatusChart();
     renderWorkHoursChart();
     renderCompletionChart();
@@ -785,6 +788,20 @@
     renderEfficiencyChart();
     renderComplexityChart();
     renderProgressChart();
+  }
+
+  // Destroy all existing charts
+  function destroyAllCharts() {
+    Object.keys(charts).forEach(chartId => {
+      if (charts[chartId]) {
+        try {
+          charts[chartId].destroy();
+        } catch (error) {
+          console.warn(`Error destroying chart ${chartId}:`, error);
+        }
+        charts[chartId] = null;
+      }
+    });
   }
 
   // Individual chart renderers for all 14 charts
@@ -928,48 +945,71 @@
 
   // Chart creation/update helper
   function createOrUpdateChart(chartId, type, labels, data, colors) {
-    if (charts[chartId]) charts[chartId].destroy();
+    // Get canvas element
+    const canvasId = chartContexts[chartId];
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext('2d');
+    
+    // Clear any existing chart
+    if (charts[chartId]) {
+      try {
+        charts[chartId].destroy();
+      } catch (error) {
+        console.warn(`Error destroying chart ${chartId}:`, error);
+      }
+    }
 
-    const ctx = chartContexts[chartId];
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     const isEmpty = !data || data.length === 0 || data.every(val => val === 0);
 
     if (isEmpty) {
-      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       ctx.fillStyle = '#f8f9fa';
-      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = '#6c757d';
       ctx.textAlign = 'center';
       ctx.font = '14px Arial';
-      ctx.fillText('No data available for this chart', ctx.canvas.width / 2, ctx.canvas.height / 2);
+      ctx.fillText('No data available for this chart', canvas.width / 2, canvas.height / 2);
       return;
     }
 
-    charts[chartId] = new Chart(ctx, {
-      type: type,
-      data: {
-        labels: labels,
-        datasets: [{
-          label: labels[0] || 'Data',
-          data: data,
-          backgroundColor: colors,
-          borderColor: colors.map(color => color.replace('0.2', '1')),
-          borderWidth: 2,
-          fill: type === 'line',
-          tension: 0.4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'top' },
-          tooltip: { enabled: true }
+    try {
+      charts[chartId] = new Chart(ctx, {
+        type: type,
+        data: {
+          labels: labels,
+          datasets: [{
+            label: labels[0] || 'Data',
+            data: data,
+            backgroundColor: colors,
+            borderColor: colors.map(color => color.replace('0.2', '1')),
+            borderWidth: 2,
+            fill: type === 'line',
+            tension: 0.4
+          }]
         },
-        scales: (type === 'bar' || type === 'line' || type === 'horizontalBar') ? {
-          y: { beginAtZero: true }
-        } : {}
-      }
-    });
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: { enabled: true }
+          },
+          scales: (type === 'bar' || type === 'line' || type === 'horizontalBar') ? {
+            y: { beginAtZero: true }
+          } : {}
+        }
+      });
+    } catch (error) {
+      console.error(`Error creating chart ${chartId}:`, error);
+      ctx.fillStyle = '#ffeaea';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#dc3545';
+      ctx.textAlign = 'center';
+      ctx.font = '12px Arial';
+      ctx.fillText('Error rendering chart', canvas.width / 2, canvas.height / 2);
+    }
   }
 
   // Filter functions
@@ -1049,10 +1089,15 @@
   function downloadChart(chartId) {
     const chart = charts[chartId];
     if (chart) {
-      const link = document.createElement('a');
-      link.download = `${chartId}-${new Date().toISOString().split('T')[0]}.png`;
-      link.href = chart.toBase64Image();
-      link.click();
+      try {
+        const link = document.createElement('a');
+        link.download = `${chartId}-${new Date().toISOString().split('T')[0]}.png`;
+        link.href = chart.toBase64Image();
+        link.click();
+      } catch (error) {
+        console.error(`Error downloading chart ${chartId}:`, error);
+        alert('Error downloading chart. Please try again.');
+      }
     }
   }
 
@@ -1095,6 +1140,7 @@
 
   // Cleanup on page unload
   window.addEventListener('beforeunload', () => {
+    destroyAllCharts();
     if (dataSubscription) dataSubscription();
   });
 
