@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TaskFlow Pro - Smart Task Management</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- EmailJS for sending emails -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -232,7 +234,7 @@
             font-weight: 600;
         }
 
-        .input-group input {
+        .input-group input, .input-group select, .input-group textarea {
             width: 100%;
             padding: 15px;
             font-size: 16px;
@@ -241,7 +243,12 @@
             transition: all 0.3s;
         }
 
-        .input-group input:focus {
+        .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
             outline: none;
             border-color: #16a085;
             box-shadow: 0 0 0 3px rgba(22, 160, 133, 0.1);
@@ -292,6 +299,26 @@
 
         .error-message.show {
             display: block;
+        }
+
+        /* Warning Message */
+        .warning-message {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #ffeaa7;
+            display: none;
+        }
+
+        .warning-message.show {
+            display: block;
+        }
+
+        .warning-message i {
+            margin-right: 10px;
+            color: #f39c12;
         }
 
         /* Features Section */
@@ -501,6 +528,12 @@
             
             <h2>Login to TaskFlow</h2>
             
+            <!-- Warning Message -->
+            <div class="warning-message" id="warningMessage">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="warningText">Your registration request has been sent to the administrator. Please wait for approval. You'll receive an email once approved.</span>
+            </div>
+
             <!-- User Type Selection -->
             <div class="user-type-selector">
                 <button class="user-type-btn active" data-type="existing">
@@ -630,6 +663,12 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <script>
+        // Initialize EmailJS
+        (function() {
+            // Initialize with your EmailJS Public Key
+            emailjs.init("YOUR_EMAILJS_PUBLIC_KEY"); // Replace with your actual public key
+        })();
+
         // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDYhLNuJKj2ucwGimfddTfpTb32Y0c-bXg",
@@ -656,6 +695,16 @@
         const newUserForm = document.getElementById('newUserForm');
         const errorMessage = document.getElementById('errorMessage');
         const errorText = document.getElementById('errorText');
+        const warningMessage = document.getElementById('warningMessage');
+        const warningText = document.getElementById('warningText');
+
+        // Check URL parameters to see if coming from users.html
+        function checkIfFromUsersPage() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('source') === 'users';
+        }
+
+        const isFromUsersPage = checkIfFromUsersPage();
 
         // Modal Controls
         openLoginModalBtn.addEventListener('click', () => {
@@ -699,12 +748,14 @@
             existingUserForm.style.display = 'block';
             newUserForm.style.display = 'none';
             clearError();
+            hideWarning();
         }
 
         function showNewUserForm() {
             existingUserForm.style.display = 'none';
             newUserForm.style.display = 'block';
             clearError();
+            hideWarning();
         }
 
         function toggleUserFields() {
@@ -724,10 +775,21 @@
         function showError(message) {
             errorText.textContent = message;
             errorMessage.classList.add('show');
+            hideWarning();
         }
 
         function clearError() {
             errorMessage.classList.remove('show');
+        }
+
+        function showWarning(message) {
+            warningText.textContent = message;
+            warningMessage.classList.add('show');
+            clearError();
+        }
+
+        function hideWarning() {
+            warningMessage.classList.remove('show');
         }
 
         function clearForms() {
@@ -756,6 +818,61 @@
                 }
             });
             clearError();
+            hideWarning();
+        }
+
+        // Function to send email notification
+        async function sendRegistrationEmail(userData) {
+            try {
+                const templateParams = {
+                    to_email: 'testtocreateapp@gmail.com',
+                    from_name: 'TaskFlow Pro System',
+                    subject: 'New User Registration Request',
+                    message: `
+NEW USER REGISTRATION REQUEST
+
+Registration Source: ${isFromUsersPage ? 'users.html (Normal Registration)' : 'Main Landing Page'}
+Timestamp: ${new Date().toLocaleString()}
+
+User Details:
+- Username: ${userData.username}
+- User Type: ${userData.userType}
+- Role: ${userData.role}
+- Status: ${userData.status}
+
+${userData.userType === 'individual' ? `
+Individual Details:
+- Full Name: ${userData.fullName || 'N/A'}
+- Email: ${userData.email || 'N/A'}
+- Phone: ${userData.phone || 'N/A'}
+- Date of Birth: ${userData.dob || 'N/A'}
+- Purpose: ${userData.purpose || 'N/A'}
+` : `
+Company Details:
+- Company Email: ${userData.email || 'N/A'}
+- Admin Name: ${userData.adminName || 'N/A'}
+- Business Name: ${userData.businessName || 'N/A'}
+- Phone: ${userData.phone || 'N/A'}
+- Address: ${userData.address || 'N/A'}
+`}
+
+Please review this registration request and approve/reject accordingly.
+                    `
+                };
+
+                // Send email using EmailJS
+                await emailjs.send(
+                    'YOUR_EMAILJS_SERVICE_ID', // Replace with your service ID
+                    'YOUR_EMAILJS_TEMPLATE_ID', // Replace with your template ID
+                    templateParams
+                );
+                
+                console.log('Email sent successfully');
+                return true;
+            } catch (error) {
+                console.error('Failed to send email:', error);
+                return false;
+            }
         }
 
         // Login Function
@@ -781,6 +898,12 @@
                     
                     const userDoc = querySnapshot.docs[0];
                     const userData = userDoc.data();
+                    
+                    // Check if account is approved
+                    if (userData.status === "pending_approval") {
+                        showError("Your account is pending approval. Please wait for administrator approval.");
+                        return;
+                    }
                     
                     // Save user data to sessionStorage
                     sessionStorage.setItem("username", userData.username);
@@ -813,7 +936,7 @@
         }
 
         // New User Registration
-        function registerNewUser() {
+        async function registerNewUser() {
             const userType = document.getElementById('userType').value;
             const username = document.getElementById('newUsername').value.trim();
             const password = document.getElementById('newPassword').value.trim();
@@ -831,8 +954,9 @@
             let userData = {
                 username: username,
                 password: password,
-                role: "user",
-                createdAt: new Date().toISOString()
+                status: "active", // Default status
+                createdAt: new Date().toISOString(),
+                registrationSource: isFromUsersPage ? "users.html" : "main_page"
             };
             
             if (userType === 'individual') {
@@ -853,6 +977,7 @@
                 userData.dob = dob;
                 userData.purpose = purpose;
                 userData.userType = 'individual';
+                userData.role = 'user'; // Individual users get user role
             } else {
                 const companyEmail = document.getElementById('companyEmail').value.trim();
                 const adminName = document.getElementById('adminName').value.trim();
@@ -878,28 +1003,57 @@
             db.collection("users")
                 .where("username", "==", username)
                 .get()
-                .then(querySnapshot => {
+                .then(async querySnapshot => {
                     if (!querySnapshot.empty) {
                         showError("Username already exists. Please choose another.");
                         return;
                     }
                     
-                    // Add user to Firestore
-                    db.collection("users").add(userData)
-                        .then(() => {
-                            alert("Account created successfully! Please login.");
-                            showExistingUserForm();
-                            userTypeBtns.forEach(btn => {
-                                btn.classList.remove('active');
-                                if (btn.dataset.type === 'existing') {
-                                    btn.classList.add('active');
-                                }
+                    // If registration is from main page (not users.html), send email and show warning
+                    if (!isFromUsersPage) {
+                        // Set status to pending approval
+                        userData.status = "pending_approval";
+                        
+                        // Send email notification
+                        const emailSent = await sendRegistrationEmail(userData);
+                        
+                        if (emailSent) {
+                            // Show warning message
+                            showWarning("Your registration request has been sent to the administrator. The creator will approve your request. Please wait for approval confirmation via email.");
+                            
+                            // Add user to Firestore with pending status
+                            db.collection("users").add(userData)
+                                .then(() => {
+                                    console.log("Registration request saved with pending status");
+                                })
+                                .catch(error => {
+                                    console.error("Registration error:", error);
+                                    showError("Failed to save registration. Please try again.");
+                                });
+                        } else {
+                            showError("Failed to send registration request. Please try again.");
+                        }
+                    } else {
+                        // If from users.html, register normally with active status
+                        userData.status = "active";
+                        
+                        // Add user to Firestore
+                        db.collection("users").add(userData)
+                            .then(() => {
+                                alert("Account created successfully! You can now login.");
+                                showExistingUserForm();
+                                userTypeBtns.forEach(btn => {
+                                    btn.classList.remove('active');
+                                    if (btn.dataset.type === 'existing') {
+                                        btn.classList.add('active');
+                                    }
+                                });
+                            })
+                            .catch(error => {
+                                console.error("Registration error:", error);
+                                showError("Failed to create account. Please try again.");
                             });
-                        })
-                        .catch(error => {
-                            console.error("Registration error:", error);
-                            showError("Failed to create account. Please try again.");
-                        });
+                    }
                 })
                 .catch(error => {
                     console.error("Username check error:", error);
@@ -912,7 +1066,6 @@
             const email = prompt("Please enter your email address to reset password:");
             if (email) {
                 alert("Password reset link has been sent to " + email);
-                // Here you would typically integrate with Firebase Auth password reset
             }
         }
 
@@ -952,6 +1105,9 @@
                     }
                 };
             }
+            
+            // Initialize EmailJS
+            emailjs.init("YOUR_EMAILJS_PUBLIC_KEY"); // Replace with your public key
         });
     </script>
 </body>
