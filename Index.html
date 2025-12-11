@@ -1281,14 +1281,32 @@
             userDropdown.classList.remove('show');
         });
 
-        // Dashboard link
+        // Dashboard link - handles both types of users
         dashboardLink.addEventListener('click', (e) => {
             e.preventDefault();
             const userType = sessionStorage.getItem("userType");
-            if (userType === "company") {
-                window.location.href = "companyhome.html";
+            const registrationSource = sessionStorage.getItem("registrationSource");
+            const role = sessionStorage.getItem("role");
+            
+            // Determine which dashboard to open
+            if (registrationSource === "users.html") {
+                // User from users.html system
+                if (role === "admin") {
+                    window.location.href = "Home.html";
+                } else if (role === "user") {
+                    window.location.href = "UserDashboard.html";
+                } else if (role === "sub admin") {
+                    window.location.href = "Sub Admin Dashboard.html";
+                } else {
+                    window.location.href = "UserDashboard.html";
+                }
             } else {
-                window.location.href = "individualhome.html";
+                // User from new system (main page registration)
+                if (userType === "company") {
+                    window.location.href = "companyhome.html";
+                } else {
+                    window.location.href = "individualhome.html";
+                }
             }
             userDropdown.classList.remove('show');
         });
@@ -1298,6 +1316,8 @@
             const sessionUser = sessionStorage.getItem("username");
             const userType = sessionStorage.getItem("userType");
             const fullName = sessionStorage.getItem("fullName");
+            const registrationSource = sessionStorage.getItem("registrationSource");
+            const role = sessionStorage.getItem("role");
             
             if (sessionUser) {
                 // User is logged in
@@ -1308,11 +1328,21 @@
                 const greeting = fullName || sessionUser;
                 userGreeting.textContent = greeting.length > 15 ? greeting.substring(0, 15) + '...' : greeting;
                 
-                // Set dashboard link based on user type
-                if (userType === 'company') {
-                    dashboardLink.innerHTML = '<i class="fas fa-building"></i>Company Dashboard';
+                // Set dashboard link label based on user type/source
+                if (registrationSource === "users.html") {
+                    if (role === "admin") {
+                        dashboardLink.innerHTML = '<i class="fas fa-crown"></i>Admin Dashboard';
+                    } else if (role === "sub admin") {
+                        dashboardLink.innerHTML = '<i class="fas fa-user-shield"></i>Sub Admin Dashboard';
+                    } else {
+                        dashboardLink.innerHTML = '<i class="fas fa-user"></i>User Dashboard';
+                    }
                 } else {
-                    dashboardLink.innerHTML = '<i class="fas fa-user"></i>Individual Dashboard';
+                    if (userType === 'company') {
+                        dashboardLink.innerHTML = '<i class="fas fa-building"></i>Company Dashboard';
+                    } else {
+                        dashboardLink.innerHTML = '<i class="fas fa-user"></i>Individual Dashboard';
+                    }
                 }
             } else {
                 // User is not logged in
@@ -1522,7 +1552,7 @@ TaskFlow Pro Administration Panel
             return emailContent;
         }
 
-        // Login Function
+        // Login Function - Updated to handle both systems
         function tryLogin() {
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
@@ -1555,11 +1585,16 @@ TaskFlow Pro Administration Panel
                     // Save user data to sessionStorage
                     sessionStorage.setItem("username", userData.username);
                     sessionStorage.setItem("userType", userData.userType || "individual");
+                    sessionStorage.setItem("registrationSource", userData.registrationSource || "main_page");
+                    
                     if (userData.fullName) {
                         sessionStorage.setItem("fullName", userData.fullName);
                     }
                     if (userData.email) {
                         sessionStorage.setItem("email", userData.email);
+                    }
+                    if (userData.role) {
+                        sessionStorage.setItem("role", userData.role);
                     }
                     
                     // Close modal
@@ -1570,16 +1605,43 @@ TaskFlow Pro Administration Panel
                     updateLoginUI();
                     
                     // Show welcome message
-                    const userType = userData.userType || "individual";
                     const userName = userData.fullName || userData.username;
-                    alert(`Welcome back, ${userName}! You are logged in as ${userType}.`);
                     
-                    // Redirect based on user type
+                    // Determine user type for message
+                    let userTypeText = "";
+                    if (userData.registrationSource === "users.html") {
+                        userTypeText = userData.role || "user";
+                    } else {
+                        userTypeText = userData.userType || "individual";
+                    }
+                    
+                    alert(`Welcome back, ${userName}! You are logged in as ${userTypeText}.`);
+                    
+                    // Redirect based on user type and registration source
                     setTimeout(() => {
-                        if (userType === "company") {
-                            window.location.href = "companyhome.html";
+                        if (userData.registrationSource === "users.html") {
+                            // User from users.html system
+                            const role = userData.role ? userData.role.trim().toLowerCase() : "";
+                            
+                            if (role === "admin") {
+                                window.location.href = "Home.html";
+                            } else if (role === "sub admin") {
+                                window.location.href = "Sub Admin Dashboard.html";
+                            } else if (role === "user") {
+                                window.location.href = "UserDashboard.html";
+                            } else {
+                                // Default fallback
+                                window.location.href = "UserDashboard.html";
+                            }
                         } else {
-                            window.location.href = "individualhome.html";
+                            // User from new system (main page registration)
+                            const userType = userData.userType || "individual";
+                            
+                            if (userType === "company") {
+                                window.location.href = "companyhome.html";
+                            } else {
+                                window.location.href = "individualhome.html";
+                            }
                         }
                     }, 500);
                 })
@@ -1773,6 +1835,14 @@ Status: Pending Approval`);
             if (urlParams.get('action') === 'login') {
                 loginModal.classList.add('active');
                 showExistingUserForm();
+            }
+            
+            // Auto-open login modal if redirected from users.html
+            if (isFromUsersPage) {
+                setTimeout(() => {
+                    loginModal.classList.add('active');
+                    showExistingUserForm();
+                }, 500);
             }
         });
 
