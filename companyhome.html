@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Dashboard - TaskFlow Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2980b9;
+        }
+
+        .company-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .company-logo {
+            width: 60px;
+            height: 60px;
+            background: #2980b9;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+
+        .company-details h2 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .company-details p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .logout-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: auto;
+            gap: 25px;
+            grid-template-areas: 
+                "welcome welcome stats stats"
+                "team team projects projects"
+                "tasks tasks analytics analytics"
+                "attendance attendance settings settings";
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .welcome-card {
+            grid-area: welcome;
+            background: linear-gradient(135deg, #2980b9 0%, #2c3e50 100%);
+            color: white;
+        }
+
+        .welcome-card h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .stats-card {
+            grid-area: stats;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+            border-radius: 15px;
+            background: #f8f9fa;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #2980b9;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .team-card {
+            grid-area: team;
+        }
+
+        .projects-card {
+            grid-area: projects;
+        }
+
+        .tasks-card {
+            grid-area: tasks;
+        }
+
+        .analytics-card {
+            grid-area: analytics;
+        }
+
+        .attendance-card {
+            grid-area: attendance;
+        }
+
+        .settings-card {
+            grid-area: settings;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .card-header h2 {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .view-all-btn {
+            background: #2980b9;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .view-all-btn:hover {
+            background: #3498db;
+            transform: translateY(-2px);
+        }
+
+        /* Team List */
+        .team-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .team-member {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .member-avatar {
+            width: 40px;
+            height: 40px;
+            background: #2980b9;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .member-info h4 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .member-info p {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .member-status {
+            margin-left: auto;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            background: #2980b9;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            background: #3498db;
+            transform: translateY(-3px);
+        }
+
+        .action-btn i {
+            font-size: 24px;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 30px;
+            color: white;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-areas: 
+                    "welcome welcome"
+                    "stats stats"
+                    "team projects"
+                    "tasks analytics"
+                    "attendance settings";
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                grid-template-areas: 
+                    "welcome"
+                    "stats"
+                    "team"
+                    "projects"
+                    "tasks"
+                    "analytics"
+                    "attendance"
+                    "settings";
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+            
+            .company-info {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .stats-card {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-building"></i>
+                <span>TaskFlow Pro - Company Dashboard</span>
+            </div>
+            
+            <div class="company-info">
+                <div class="company-logo">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="company-details">
+                    <h2 id="companyName">Loading Company...</h2>
+                    <p>Administrator: <span id="adminName">Loading...</span></p>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Welcome Card -->
+            <div class="dashboard-card welcome-card">
+                <h1 id="welcomeMessage">Welcome to Company Dashboard</h1>
+                <p>Manage your team, projects, and track productivity all in one place</p>
+                <div style="margin-top: 30px; display: flex; gap: 15px;">
+                    <button class="action-btn" onclick="quickAddProject()" style="background: rgba(255,255,255,0.2);">
+                        <i class="fas fa-plus"></i>
+                        New Project
+                    </button>
+                    <button class="action-btn" onclick="inviteTeamMember()" style="background: rgba(255,255,255,0.2);">
+                        <i class="fas fa-user-plus"></i>
+                        Add Team Member
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Card -->
+            <div class="dashboard-card stats-card">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalEmployees">0</div>
+                    <div class="stat-label">Total Employees</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="activeProjects">0</div>
+                    <div class="stat-label">Active Projects</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="tasksCompleted">0</div>
+                    <div class="stat-label">Tasks Completed</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="attendanceRate">0%</div>
+                    <div class="stat-label">Attendance Rate</div>
+                </div>
+            </div>
+
+            <!-- Team Management -->
+            <div class="dashboard-card team-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-users"></i> Team Management</h2>
+                    <button class="view-all-btn" onclick="viewAllTeam()">View All</button>
+                </div>
+                <div class="team-list">
+                    <div class="team-member">
+                        <div class="member-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="member-info">
+                            <h4>Loading...</h4>
+                            <p>Loading position</p>
+                        </div>
+                        <div class="member-status status-active">Active</div>
+                    </div>
+                    <!-- More team members would be added here dynamically -->
+                </div>
+                <div class="quick-actions">
+                    <button class="action-btn" onclick="addTeamMember()">
+                        <i class="fas fa-user-plus"></i>
+                        Add Member
+                    </button>
+                    <button class="action-btn" onclick="manageRoles()">
+                        <i class="fas fa-user-tag"></i>
+                        Manage Roles
+                    </button>
+                </div>
+            </div>
+
+            <!-- Projects -->
+            <div class="dashboard-card projects-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-project-diagram"></i> Active Projects</h2>
+                    <button class="view-all-btn" onclick="viewAllProjects()">View All</button>
+                </div>
+                <div class="team-list">
+                    <div class="team-member">
+                        <div class="member-avatar" style="background: #9b59b6;">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                        <div class="member-info">
+                            <h4>Loading Project...</h4>
+                            <p>Progress: Loading...</p>
+                        </div>
+                        <div class="member-status" style="background: #e8f5e9; color: #2e7d32;">
+                            Ongoing
+                        </div>
+                    </div>
+                </div>
+                <div class="quick-actions">
+                    <button class="action-btn" onclick="createProject()">
+                        <i class="fas fa-plus-circle"></i>
+                        New Project
+                    </button>
+                    <button class="action-btn" onclick="projectReports()">
+                        <i class="fas fa-chart-pie"></i>
+                        Reports
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tasks -->
+            <div class="dashboard-card tasks-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-tasks"></i> Task Overview</h2>
+                    <button class="view-all-btn" onclick="viewAllTasks()">View All</button>
+                </div>
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 3rem; color: #2980b9; margin-bottom: 10px;">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <h3 style="color: #2c3e50; margin-bottom: 10px;">Task Management</h3>
+                    <p style="color: #666;">Manage and assign tasks to team members</p>
+                </div>
+                <div class="quick-actions">
+                    <button class="action-btn" onclick="createTask()">
+                        <i class="fas fa-plus"></i>
+                        Create Task
+                    </button>
+                    <button class="action-btn" onclick="taskBoard()">
+                        <i class="fas fa-columns"></i>
+                        Task Board
+                    </button>
+                </div>
+            </div>
+
+            <!-- Analytics -->
+            <div class="dashboard-card analytics-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-line"></i> Company Analytics</h2>
+                    <button class="view-all-btn" onclick="viewAnalytics()">Details</button>
+                </div>
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 3rem; color: #e74c3c; margin-bottom: 10px;">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h3 style="color: #2c3e50; margin-bottom: 10px;">Performance Insights</h3>
+                    <p style="color: #666;">View company-wide productivity metrics</p>
+                </div>
+            </div>
+
+            <!-- Attendance -->
+            <div class="dashboard-card attendance-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-user-clock"></i> Attendance Tracker</h2>
+                    <button class="view-all-btn" onclick="viewAttendance()">View All</button>
+                </div>
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 3rem; color: #2ecc71; margin-bottom: 10px;">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <h3 style="color: #2c3e50; margin-bottom: 10px;">Today's Attendance</h3>
+                    <p style="color: #666;">Track employee attendance in real-time</p>
+                </div>
+                <div class="quick-actions">
+                    <button class="action-btn" onclick="markAttendance()">
+                        <i class="fas fa-check-circle"></i>
+                        Mark Attendance
+                    </button>
+                    <button class="action-btn" onclick="attendanceReport()">
+                        <i class="fas fa-file-alt"></i>
+                        Reports
+                    </button>
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div class="dashboard-card settings-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-cog"></i> Company Settings</h2>
+                    <button class="view-all-btn" onclick="openSettings()">Configure</button>
+                </div>
+                <div class="quick-actions" style="margin-top: 20px;">
+                    <button class="action-btn" onclick="companyProfile()">
+                        <i class="fas fa-building"></i>
+                        Company Profile
+                    </button>
+                    <button class="action-btn" onclick="billingSettings()">
+                        <i class="fas fa-credit-card"></i>
+                        Billing
+                    </button>
+                    <button class="action-btn" onclick="securitySettings()">
+                        <i class="fas fa-shield-alt"></i>
+                        Security
+                    </button>
+                    <button class="action-btn" onclick="notificationSettings()">
+                        <i class="fas fa-bell"></i>
+                        Notifications
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>&copy; 2024 TaskFlow Pro - Company Dashboard</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">
+                <i class="fas fa-building"></i> Business Task Management System
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is logged in
+        document.addEventListener('DOMContentLoaded', () => {
+            const username = sessionStorage.getItem("username");
+            const companyName = sessionStorage.getItem("companyName");
+            const adminName = sessionStorage.getItem("adminName");
+            const userType = sessionStorage.getItem("userType");
+
+            // Redirect if not logged in as company
+            if (!username || userType !== "company") {
+                alert("Please login as company first");
+                window.location.href = "company-login.html";
+                return;
+            }
+
+            // Update welcome message and company info
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            const companyNameElement = document.getElementById('companyName');
+            const adminNameElement = document.getElementById('adminName');
+            
+            if (companyName) {
+                welcomeMessage.textContent = `Welcome to ${companyName} Dashboard`;
+                companyNameElement.textContent = companyName;
+            } else {
+                welcomeMessage.textContent = `Welcome to Company Dashboard`;
+                companyNameElement.textContent = username;
+            }
+            
+            if (adminName) {
+                adminNameElement.textContent = adminName;
+            }
+
+            // Load company data
+            loadCompanyData();
+        });
+
+        function loadCompanyData() {
+            // Sample data - replace with actual Firestore data
+            document.getElementById('totalEmployees').textContent = '24';
+            document.getElementById('activeProjects').textContent = '8';
+            document.getElementById('tasksCompleted').textContent = '156';
+            document.getElementById('attendanceRate').textContent = '92%';
+            
+            // Populate team list
+            const teamList = document.querySelector('.team-list');
+            teamList.innerHTML = `
+                <div class="team-member">
+                    <div class="member-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="member-info">
+                        <h4>${sessionStorage.getItem('adminName') || 'Admin'}</h4>
+                        <p>Administrator</p>
+                    </div>
+                    <div class="member-status status-active">Active</div>
+                </div>
+                <div class="team-member">
+                    <div class="member-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="member-info">
+                        <h4>Project Manager</h4>
+                        <p>Department Lead</p>
+                    </div>
+                    <div class="member-status status-active">Active</div>
+                </div>
+                <div class="team-member">
+                    <div class="member-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="member-info">
+                        <h4>Team Lead</h4>
+                        <p>Development</p>
+                    </div>
+                    <div class="member-status status-offline">Offline</div>
+                </div>
+            `;
+        }
+
+        // Navigation functions
+        function viewAllTeam() {
+            alert("Opening Team Management...");
+        }
+
+        function viewAllProjects() {
+            alert("Opening Projects Management...");
+        }
+
+        function viewAllTasks() {
+            alert("Opening Task Management...");
+        }
+
+        function viewAttendance() {
+            alert("Opening Attendance Tracker...");
+        }
+
+        function viewAnalytics() {
+            alert("Opening Analytics Dashboard...");
+        }
+
+        function openSettings() {
+            alert("Opening Company Settings...");
+        }
+
+        // Action functions
+        function quickAddProject() {
+            alert("Opening New Project Form...");
+        }
+
+        function inviteTeamMember() {
+            alert("Opening Team Member Invitation...");
+        }
+
+        function addTeamMember() {
+            alert("Adding new team member...");
+        }
+
+        function manageRoles() {
+            alert("Managing team roles...");
+        }
+
+        function createProject() {
+            alert("Creating new project...");
+        }
+
+        function projectReports() {
+            alert("Opening project reports...");
+        }
+
+        function createTask() {
+            alert("Creating new task...");
+        }
+
+        function taskBoard() {
+            alert("Opening task board...");
+        }
+
+        function markAttendance() {
+            alert("Marking attendance...");
+        }
+
+        function attendanceReport() {
+            alert("Opening attendance report...");
+        }
+
+        function companyProfile() {
+            alert("Opening company profile...");
+        }
+
+        function billingSettings() {
+            alert("Opening billing settings...");
+        }
+
+        function securitySettings() {
+            alert("Opening security settings...");
+        }
+
+        function notificationSettings() {
+            alert("Opening notification settings...");
+        }
+
+        function logout() {
+            if (confirm("Are you sure you want to logout?")) {
+                sessionStorage.clear();
+                window.location.href = "index.html";
+            }
+        }
+    </script>
+</body>
+</html>
