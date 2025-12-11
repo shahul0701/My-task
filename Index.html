@@ -156,7 +156,7 @@
             50% { transform: translateY(-20px); }
         }
 
-        /* Login Selection Modal */
+        /* Login Modal */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -176,11 +176,11 @@
             display: flex;
         }
 
-        .login-selection-card {
+        .login-card {
             background: white;
             border-radius: 20px;
             width: 100%;
-            max-width: 500px;
+            max-width: 400px;
             padding: 40px;
             box-shadow: 0 30px 60px rgba(0,0,0,0.3);
             animation: slideIn 0.3s ease-out;
@@ -214,72 +214,150 @@
             color: #333;
         }
 
-        .login-selection-card h2 {
+        .login-card h2 {
             color: #16a085;
             text-align: center;
             margin-bottom: 30px;
             font-size: 2rem;
         }
 
-        .login-options {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
+        .input-group {
+            margin-bottom: 20px;
         }
 
-        .login-option {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 30px;
-            text-align: center;
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
             transition: all 0.3s;
-            cursor: pointer;
-            border: 2px solid transparent;
         }
 
-        .login-option:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+            outline: none;
             border-color: #16a085;
+            box-shadow: 0 0 0 3px rgba(22, 160, 133, 0.1);
         }
 
-        .login-option i {
-            font-size: 50px;
-            color: #667eea;
-            margin-bottom: 15px;
+        .login-action-btn {
+            width: 100%;
+            padding: 15px;
+            background: #16a085;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
         }
 
-        .login-option h3 {
-            color: #333;
-            margin-bottom: 10px;
+        .login-action-btn:hover {
+            background: #1abc9c;
+            transform: translateY(-2px);
         }
 
-        .login-option p {
-            color: #666;
+        .forgot-password {
+            text-align: right;
+            margin-top: 15px;
+        }
+
+        .forgot-password a {
+            color: #16a085;
+            text-decoration: none;
             font-size: 14px;
         }
 
-        /* Hidden Admin Access Button */
-        .admin-access-btn {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: rgba(0, 0, 0, 0.3);
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            z-index: 999;
-            opacity: 0.3;
-            transition: all 0.3s;
+        .forgot-password a:hover {
+            text-decoration: underline;
         }
 
-        .admin-access-btn:hover {
-            opacity: 1;
-            background: rgba(0, 0, 0, 0.5);
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Warning Message */
+        .warning-message {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #ffeaa7;
+            display: none;
+        }
+
+        .warning-message.show {
+            display: block;
+        }
+
+        .warning-message i {
+            margin-right: 10px;
+            color: #f39c12;
+        }
+
+        /* Email Preview Modal */
+        .email-preview {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 4px solid #3498db;
+            display: none;
+        }
+
+        .email-preview.show {
+            display: block;
+        }
+
+        .email-header {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .email-preview h4 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .email-preview small {
+            color: #7f8c8d;
+        }
+
+        .email-body {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.5;
+            max-height: 300px;
+            overflow-y: auto;
         }
 
         /* Features Section */
@@ -327,6 +405,37 @@
             color: #333;
         }
 
+        /* User Type Selection */
+        .user-type-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 5px;
+            border-radius: 10px;
+        }
+
+        .user-type-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .user-type-btn.active {
+            background: #16a085;
+            color: white;
+            box-shadow: 0 4px 15px rgba(22, 160, 133, 0.3);
+        }
+
         /* Footer */
         footer {
             text-align: center;
@@ -355,22 +464,13 @@
                 flex-wrap: wrap;
             }
             
-            .login-selection-card {
+            .login-card {
                 padding: 30px 20px;
-            }
-            
-            .login-options {
-                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Hidden Admin Access Button -->
-    <button class="admin-access-btn" id="adminAccessBtn" title="Long press for admin access">
-        <i class="fas fa-lock"></i>
-    </button>
-
     <div class="container">
         <!-- Navbar -->
         <nav class="navbar">
@@ -460,116 +560,618 @@
         </footer>
     </div>
 
-    <!-- Login Selection Modal -->
+    <!-- Login Modal -->
     <div class="modal-overlay" id="loginModal">
-        <div class="login-selection-card">
+        <div class="login-card">
             <button class="close-modal" id="closeModal">&times;</button>
             
-            <h2>Select Login Type</h2>
-            <p style="text-align: center; color: #666; margin-bottom: 20px;">
-                Choose how you want to access TaskFlow Pro
-            </p>
+            <h2>Login to TaskFlow</h2>
             
-            <div class="login-options">
-                <div class="login-option" onclick="redirectToLogin('individual')">
-                    <i class="fas fa-user"></i>
-                    <h3>Individual Login</h3>
-                    <p>For personal task management</p>
+            <!-- Warning Message -->
+            <div class="warning-message" id="warningMessage">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="warningText">Your registration request has been sent to the administrator. The creator will approve your request. Please wait for approval.</span>
+            </div>
+
+            <!-- Email Preview -->
+            <div class="email-preview" id="emailPreview">
+                <div class="email-header">
+                    <h4>📧 Email Draft (Would be sent to: testtocreateapp@gmail.com)</h4>
+                    <small>Subject: New User Registration Request - TaskFlow Pro</small>
                 </div>
-                
-                <div class="login-option" onclick="redirectToLogin('company')">
-                    <i class="fas fa-building"></i>
-                    <h3>Company Login</h3>
-                    <p>For business team collaboration</p>
-                </div>
-                
-                <div class="login-option" onclick="redirectToLogin('admin')">
-                    <i class="fas fa-cog"></i>
-                    <h3>Admin Portal</h3>
-                    <p>System administration</p>
+                <div class="email-body" id="emailBody">
+                    <!-- Email content will be inserted here -->
                 </div>
             </div>
-            
-            <p style="text-align: center; margin-top: 30px; font-size: 14px; color: #888;">
-                <i class="fas fa-info-circle"></i>
-                Need help? <a href="#" style="color: #16a085;">Contact Support</a>
-            </p>
+
+            <!-- User Type Selection -->
+            <div class="user-type-selector">
+                <button class="user-type-btn active" data-type="existing">
+                    <i class="fas fa-user"></i>
+                    Existing User
+                </button>
+                <button class="user-type-btn" data-type="new">
+                    <i class="fas fa-user-plus"></i>
+                    New User
+                </button>
+            </div>
+
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="errorText"></span>
+            </div>
+
+            <!-- Existing User Login Form -->
+            <div id="existingUserForm">
+                <div class="input-group">
+                    <label for="loginUsername">Username</label>
+                    <input type="text" id="loginUsername" placeholder="Enter your username">
+                </div>
+                
+                <div class="input-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password">
+                </div>
+                
+                <button class="login-action-btn" onclick="tryLogin()">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Login
+                </button>
+                
+                <div class="forgot-password">
+                    <a href="#" onclick="showForgotPassword()">Forgot Password?</a>
+                </div>
+            </div>
+
+            <!-- New User Registration Form (Initially Hidden) -->
+            <div id="newUserForm" style="display: none;">
+                <div class="input-group">
+                    <label for="userType">Account Type</label>
+                    <select id="userType" class="user-type-select" onchange="toggleUserFields()">
+                        <option value="individual">Individual</option>
+                        <option value="company">Company</option>
+                    </select>
+                </div>
+
+                <!-- Individual Fields -->
+                <div id="individualFields">
+                    <div class="input-group">
+                        <label for="fullName">Full Name *</label>
+                        <input type="text" id="fullName" placeholder="Enter your full name">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" id="email" placeholder="Enter your email">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" placeholder="Enter your phone number">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="dob">Date of Birth</label>
+                        <input type="date" id="dob">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="purpose">Purpose of Use</label>
+                        <textarea id="purpose" placeholder="Describe how you plan to use the app" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <!-- Company Fields -->
+                <div id="companyFields" style="display: none;">
+                    <div class="input-group">
+                        <label for="companyEmail">Company Email *</label>
+                        <input type="email" id="companyEmail" placeholder="Enter company email">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="adminName">Admin Name *</label>
+                        <input type="text" id="adminName" placeholder="Enter admin name">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="companyPhone">Phone Number</label>
+                        <input type="tel" id="companyPhone" placeholder="Enter company phone">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="businessName">Business Name *</label>
+                        <input type="text" id="businessName" placeholder="Enter business name">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="address">Business Address</label>
+                        <textarea id="address" placeholder="Enter full business address" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="newUsername">Choose Username *</label>
+                    <input type="text" id="newUsername" placeholder="Choose a username">
+                </div>
+                
+                <div class="input-group">
+                    <label for="newPassword">Choose Password *</label>
+                    <input type="password" id="newPassword" placeholder="Choose a password (min 6 chars)">
+                </div>
+                
+                <button class="login-action-btn" onclick="registerNewUser()">
+                    <i class="fas fa-user-plus"></i>
+                    Create Account
+                </button>
+            </div>
         </div>
     </div>
 
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
     <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDYhLNuJKj2ucwGimfddTfpTb32Y0c-bXg",
+            authDomain: "mytask-96a79.firebaseapp.com",
+            databaseURL: "https://mytask-96a79-default-rtdb.firebaseio.com",
+            projectId: "mytask-96a79",
+            storageBucket: "mytask-96a79.firebasestorage.app",
+            messagingSenderId: "963509757773",
+            appId: "1:963509757773:web:d9c81a108f5873702eb904",
+            measurementId: "G-L9C1LTCZRN"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         // DOM Elements
         const loginModal = document.getElementById('loginModal');
         const openLoginModalBtn = document.getElementById('openLoginModal');
         const closeModalBtn = document.getElementById('closeModal');
         const getStartedBtn = document.getElementById('getStartedBtn');
-        const adminAccessBtn = document.getElementById('adminAccessBtn');
+        const userTypeBtns = document.querySelectorAll('.user-type-btn');
+        const existingUserForm = document.getElementById('existingUserForm');
+        const newUserForm = document.getElementById('newUserForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const warningMessage = document.getElementById('warningMessage');
+        const warningText = document.getElementById('warningText');
+        const emailPreview = document.getElementById('emailPreview');
+        const emailBody = document.getElementById('emailBody');
 
-        // Admin long press variables
-        let pressTimer;
-        const PRESS_DURATION = 4000; // 4 seconds
+        // Check if coming from users.html
+        function checkIfFromUsersPage() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('source') === 'users';
+        }
+
+        const isFromUsersPage = checkIfFromUsersPage();
 
         // Modal Controls
         openLoginModalBtn.addEventListener('click', () => {
             loginModal.classList.add('active');
+            showExistingUserForm();
         });
 
         closeModalBtn.addEventListener('click', () => {
             loginModal.classList.remove('active');
+            clearForms();
         });
 
         getStartedBtn.addEventListener('click', () => {
             loginModal.classList.add('active');
+            showNewUserForm();
         });
 
         // Close modal when clicking outside
         loginModal.addEventListener('click', (e) => {
             if (e.target === loginModal) {
                 loginModal.classList.remove('active');
+                clearForms();
             }
         });
 
-        // Admin long press functionality
-        adminAccessBtn.addEventListener('mousedown', startPressTimer);
-        adminAccessBtn.addEventListener('touchstart', startPressTimer);
-        
-        adminAccessBtn.addEventListener('mouseup', clearPressTimer);
-        adminAccessBtn.addEventListener('mouseleave', clearPressTimer);
-        adminAccessBtn.addEventListener('touchend', clearPressTimer);
+        // User Type Switching
+        userTypeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                userTypeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                if (btn.dataset.type === 'existing') {
+                    showExistingUserForm();
+                } else {
+                    showNewUserForm();
+                }
+            });
+        });
 
-        function startPressTimer(e) {
-            e.preventDefault();
-            pressTimer = setTimeout(() => {
-                window.location.href = "users.html";
-            }, PRESS_DURATION);
+        function showExistingUserForm() {
+            existingUserForm.style.display = 'block';
+            newUserForm.style.display = 'none';
+            clearError();
+            hideWarning();
+            hideEmailPreview();
+        }
+
+        function showNewUserForm() {
+            existingUserForm.style.display = 'none';
+            newUserForm.style.display = 'block';
+            clearError();
+            hideWarning();
+            hideEmailPreview();
+        }
+
+        function toggleUserFields() {
+            const userType = document.getElementById('userType').value;
+            const individualFields = document.getElementById('individualFields');
+            const companyFields = document.getElementById('companyFields');
             
-            // Visual feedback
-            adminAccessBtn.style.background = 'rgba(255, 0, 0, 0.5)';
-            adminAccessBtn.style.transform = 'scale(1.2)';
-        }
-
-        function clearPressTimer() {
-            if (pressTimer) {
-                clearTimeout(pressTimer);
-            }
-            adminAccessBtn.style.background = '';
-            adminAccessBtn.style.transform = '';
-        }
-
-        // Redirect to specific login page
-        function redirectToLogin(type) {
-            switch(type) {
-                case 'individual':
-                    window.location.href = 'individual-login.html';
-                    break;
-                case 'company':
-                    window.location.href = 'company-login.html';
-                    break;
-                case 'admin':
-                    window.location.href = 'users.html';
-                    break;
+            if (userType === 'individual') {
+                individualFields.style.display = 'block';
+                companyFields.style.display = 'none';
+            } else {
+                individualFields.style.display = 'none';
+                companyFields.style.display = 'block';
             }
         }
+
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.add('show');
+            hideWarning();
+            hideEmailPreview();
+        }
+
+        function clearError() {
+            errorMessage.classList.remove('show');
+        }
+
+        function showWarning(message) {
+            warningText.textContent = message;
+            warningMessage.classList.add('show');
+            clearError();
+        }
+
+        function hideWarning() {
+            warningMessage.classList.remove('show');
+        }
+
+        function showEmailPreview(emailContent) {
+            emailBody.textContent = emailContent;
+            emailPreview.classList.add('show');
+        }
+
+        function hideEmailPreview() {
+            emailPreview.classList.remove('show');
+        }
+
+        function clearForms() {
+            // Clear all input fields
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('fullName').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('phone').value = '';
+            document.getElementById('dob').value = '';
+            document.getElementById('purpose').value = '';
+            document.getElementById('companyEmail').value = '';
+            document.getElementById('adminName').value = '';
+            document.getElementById('companyPhone').value = '';
+            document.getElementById('businessName').value = '';
+            document.getElementById('address').value = '';
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newPassword').value = '';
+            
+            // Reset to default state
+            showExistingUserForm();
+            userTypeBtns.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.type === 'existing') {
+                    btn.classList.add('active');
+                }
+            });
+            clearError();
+            hideWarning();
+            hideEmailPreview();
+        }
+
+        // Generate email draft content
+        function generateEmailDraft(userData) {
+            const timestamp = new Date().toLocaleString();
+            const emailContent = `To: testtocreateapp@gmail.com
+From: TaskFlow Pro System <noreply@taskflowpro.com>
+Subject: New User Registration Request - TaskFlow Pro
+Date: ${timestamp}
+
+Dear Administrator,
+
+A new user has registered on TaskFlow Pro and requires your approval.
+
+REGISTRATION DETAILS:
+────────────────────
+Registration Source: ${isFromUsersPage ? 'users.html (Direct Registration)' : 'Main Landing Page'}
+Timestamp: ${timestamp}
+
+USER INFORMATION:
+────────────────
+Username: ${userData.username}
+Account Type: ${userData.userType === 'individual' ? 'Individual' : 'Company'}
+User Role: ${userData.role}
+
+${userData.userType === 'individual' ? `
+INDIVIDUAL DETAILS:
+──────────────────
+Full Name: ${userData.fullName || 'Not provided'}
+Email: ${userData.email || 'Not provided'}
+Phone: ${userData.phone || 'Not provided'}
+Date of Birth: ${userData.dob || 'Not provided'}
+Purpose: ${userData.purpose || 'Not provided'}
+` : `
+COMPANY DETAILS:
+────────────────
+Company Email: ${userData.email || 'Not provided'}
+Admin Name: ${userData.adminName || 'Not provided'}
+Business Name: ${userData.businessName || 'Not provided'}
+Phone: ${userData.phone || 'Not provided'}
+Address: ${userData.address || 'Not provided'}
+`}
+
+ACCOUNT STATUS: PENDING APPROVAL
+
+ACTION REQUIRED:
+───────────────
+1. Review the user information above
+2. Check if all details are valid
+3. Approve or reject the registration
+4. Update user status in Firebase Firestore
+
+APPROVAL STEPS:
+──────────────
+1. Go to Firebase Console: https://console.firebase.google.com/
+2. Navigate to Firestore Database
+3. Find user with username: ${userData.username}
+4. Update 'status' field to 'approved'
+5. Add 'approvedAt' timestamp: ${new Date().toISOString()}
+
+REJECTION STEPS:
+────────────────
+1. Update 'status' field to 'rejected'
+2. Add 'rejectionReason' field with reason
+3. Add 'rejectedAt' timestamp
+
+This is an automated notification from TaskFlow Pro System.
+
+──────────────────────────────────────
+TaskFlow Pro Administration Panel
+© 2024 TaskFlow Pro. All rights reserved.`;
+
+            return emailContent;
+        }
+
+        // Login Function
+        function tryLogin() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            
+            if (!username || !password) {
+                showError("Please enter both username and password");
+                return;
+            }
+            
+            // Query Firestore for user
+            db.collection("users")
+                .where("username", "==", username)
+                .where("password", "==", password)
+                .get()
+                .then(querySnapshot => {
+                    if (querySnapshot.empty) {
+                        showError("Invalid username or password");
+                        return;
+                    }
+                    
+                    const userDoc = querySnapshot.docs[0];
+                    const userData = userDoc.data();
+                    
+                    // Check if account is approved
+                    if (userData.status === "pending_approval") {
+                        showError("Your account is pending approval. Please wait for administrator approval.");
+                        return;
+                    }
+                    
+                    // Save user data to sessionStorage
+                    sessionStorage.setItem("username", userData.username);
+                    if (userData.fullName) {
+                        sessionStorage.setItem("fullName", userData.fullName);
+                    }
+                    
+                    // Get role and redirect
+                    const role = userData.role ? userData.role.trim().toLowerCase() : "";
+                    
+                    // Close modal
+                    loginModal.classList.remove('active');
+                    clearForms();
+                    
+                    // Redirect based on role
+                    if (role === "admin") {
+                        window.location.href = "Home.html";
+                    } else if (role === "sub admin") {
+                        window.location.href = "Sub Admin Dashboard.html";
+                    } else if (role === "user") {
+                        window.location.href = "UserDashboard.html";
+                    } else {
+                        alert("User role not recognized: " + userData.role);
+                    }
+                })
+                .catch(error => {
+                    console.error("Login error:", error);
+                    showError("An error occurred. Please try again.");
+                });
+        }
+
+        // New User Registration
+        async function registerNewUser() {
+            const userType = document.getElementById('userType').value;
+            const username = document.getElementById('newUsername').value.trim();
+            const password = document.getElementById('newPassword').value.trim();
+            
+            if (!username || !password) {
+                showError("Please choose a username and password");
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError("Password must be at least 6 characters long");
+                return;
+            }
+            
+            let userData = {
+                username: username,
+                password: password,
+                status: "active",
+                createdAt: new Date().toISOString(),
+                registrationSource: isFromUsersPage ? "users.html" : "main_page"
+            };
+            
+            if (userType === 'individual') {
+                const fullName = document.getElementById('fullName').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const phone = document.getElementById('phone').value.trim();
+                const dob = document.getElementById('dob').value;
+                const purpose = document.getElementById('purpose').value.trim();
+                
+                if (!fullName || !email) {
+                    showError("Please fill in all required fields (*)");
+                    return;
+                }
+                
+                userData.fullName = fullName;
+                userData.email = email;
+                userData.phone = phone;
+                userData.dob = dob;
+                userData.purpose = purpose;
+                userData.userType = 'individual';
+                userData.role = 'user';
+            } else {
+                const companyEmail = document.getElementById('companyEmail').value.trim();
+                const adminName = document.getElementById('adminName').value.trim();
+                const companyPhone = document.getElementById('companyPhone').value.trim();
+                const businessName = document.getElementById('businessName').value.trim();
+                const address = document.getElementById('address').value.trim();
+                
+                if (!companyEmail || !adminName || !businessName) {
+                    showError("Please fill in all required fields (*)");
+                    return;
+                }
+                
+                userData.email = companyEmail;
+                userData.adminName = adminName;
+                userData.phone = companyPhone;
+                userData.businessName = businessName;
+                userData.address = address;
+                userData.userType = 'company';
+                userData.role = 'admin';
+            }
+            
+            // Check if username already exists
+            db.collection("users")
+                .where("username", "==", username)
+                .get()
+                .then(async querySnapshot => {
+                    if (!querySnapshot.empty) {
+                        showError("Username already exists. Please choose another.");
+                        return;
+                    }
+                    
+                    // If registration is from main page (not users.html)
+                    if (!isFromUsersPage) {
+                        // Set status to pending approval
+                        userData.status = "pending_approval";
+                        
+                        // Generate and show email draft
+                        const emailContent = generateEmailDraft(userData);
+                        showEmailPreview(emailContent);
+                        
+                        // Show warning message
+                        showWarning("⚠️ IMPORTANT: This is a registration from the main landing page. The creator will need to approve your request. An email has been drafted for the administrator (testtocreateapp@gmail.com). In a real system, this email would be automatically sent.");
+                        
+                        // Save user to Firestore with pending status
+                        db.collection("users").add(userData)
+                            .then(() => {
+                                console.log("Registration request saved with pending status");
+                                
+                                // Show detailed instructions
+                                setTimeout(() => {
+                                    alert(`REGISTRATION REQUEST SUBMITTED
+
+Your registration has been saved with PENDING status.
+
+What happens next:
+1. An email draft has been prepared for the administrator
+2. The administrator will review your request
+3. Once approved, your account status will be updated to "approved"
+4. You will be able to login after approval
+
+To test login immediately:
+1. Open users.html?source=users for direct registration
+2. Or ask admin to approve your account in Firebase
+
+Your username: ${username}
+Status: Pending Approval`);
+                                }, 500);
+                            })
+                            .catch(error => {
+                                console.error("Registration error:", error);
+                                showError("Failed to save registration. Please try again.");
+                            });
+                    } else {
+                        // If from users.html, register normally with active status
+                        userData.status = "active";
+                        
+                        // Add user to Firestore
+                        db.collection("users").add(userData)
+                            .then(() => {
+                                alert("✅ Account created successfully! You can now login.");
+                                showExistingUserForm();
+                                userTypeBtns.forEach(btn => {
+                                    btn.classList.remove('active');
+                                    if (btn.dataset.type === 'existing') {
+                                        btn.classList.add('active');
+                                    }
+                                });
+                            })
+                            .catch(error => {
+                                console.error("Registration error:", error);
+                                showError("Failed to create account. Please try again.");
+                            });
+                    }
+                })
+                .catch(error => {
+                    console.error("Username check error:", error);
+                    showError("An error occurred. Please try again.");
+                });
+        }
+
+        // Forgot Password
+        function showForgotPassword() {
+            const email = prompt("Please enter your email address to reset password:");
+            if (email) {
+                alert("Password reset link has been sent to " + email);
+            }
+        }
+
+        // Enter key support
+        document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') tryLogin();
+        });
+
+        document.getElementById('loginUsername').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') tryLogin();
+        });
 
         // Smooth scrolling for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -583,6 +1185,21 @@
                     });
                 }
             });
+        });
+
+        // Check if user is already logged in
+        document.addEventListener('DOMContentLoaded', () => {
+            const sessionUser = sessionStorage.getItem("username");
+            if (sessionUser) {
+                console.log("✅ User is already logged in:", sessionUser);
+                openLoginModalBtn.innerHTML = '<i class="fas fa-user"></i> ' + sessionUser;
+                openLoginModalBtn.onclick = () => {
+                    if (confirm("Do you want to logout?")) {
+                        sessionStorage.clear();
+                        window.location.reload();
+                    }
+                };
+            }
         });
     </script>
 </body>
