@@ -47,36 +47,16 @@
             color: #00ff9d;
         }
 
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 30px;
-        }
-
         .nav-links a {
             color: white;
             text-decoration: none;
+            margin-left: 30px;
             font-weight: 500;
             transition: color 0.3s;
         }
 
         .nav-links a:hover {
             color: #00ff9d;
-        }
-
-        .info-links {
-            display: flex;
-            gap: 20px;
-        }
-
-        .info-link {
-            padding: 8px 16px;
-            border-radius: 20px;
-            transition: all 0.3s;
-        }
-
-        .info-link:hover {
-            background: rgba(255, 255, 255, 0.1);
         }
 
         .login-btn {
@@ -95,79 +75,6 @@
         .login-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0, 255, 157, 0.3);
-        }
-
-        /* User Profile Dropdown */
-        .user-profile {
-            position: relative;
-            display: none;
-        }
-
-        .profile-btn {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: 500;
-        }
-
-        .profile-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
-        }
-
-        .user-dropdown {
-            display: none;
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: white;
-            min-width: 200px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            z-index: 100;
-            margin-top: 10px;
-            overflow: hidden;
-        }
-
-        .user-dropdown.show {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .user-dropdown a {
-            display: block;
-            padding: 15px 20px;
-            color: #333;
-            text-decoration: none;
-            transition: all 0.3s;
-            border-bottom: 1px solid #eee;
-        }
-
-        .user-dropdown a:last-child {
-            border-bottom: none;
-        }
-
-        .user-dropdown a:hover {
-            background: #f8f9fa;
-            color: #667eea;
-        }
-
-        .user-dropdown a i {
-            margin-right: 10px;
-            width: 20px;
-            text-align: center;
         }
 
         /* Hero Section */
@@ -247,106 +154,6 @@
         @keyframes float {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-20px); }
-        }
-
-        /* About and Contact Sections */
-        .about-section, .contact-section {
-            padding: 80px 0;
-            background: white;
-            margin-top: 2px;
-        }
-
-        .about-content, .contact-content {
-            max-width: 800px;
-            margin: 0 auto;
-            text-align: center;
-        }
-
-        .about-content h2, .contact-content h2 {
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 2.5rem;
-        }
-
-        .about-content p, .contact-content p {
-            font-size: 1.1rem;
-            line-height: 1.8;
-            color: #555;
-            margin-bottom: 20px;
-        }
-
-        .contact-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 30px;
-            margin-top: 40px;
-        }
-
-        .contact-item {
-            background: #f8f9fa;
-            padding: 30px;
-            border-radius: 15px;
-            transition: transform 0.3s;
-        }
-
-        .contact-item:hover {
-            transform: translateY(-5px);
-        }
-
-        .contact-item i {
-            font-size: 40px;
-            color: #667eea;
-            margin-bottom: 20px;
-        }
-
-        .contact-item h4 {
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        /* Features Section */
-        .features {
-            padding: 80px 0;
-            background: white;
-            border-radius: 30px 30px 0 0;
-            margin-top: 50px;
-        }
-
-        .section-title {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 50px;
-            color: #333;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
-        }
-
-        .feature-card {
-            background: #f8f9fa;
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
-            transition: transform 0.3s;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-        }
-
-        .feature-icon {
-            font-size: 50px;
-            color: #667eea;
-            margin-bottom: 20px;
-        }
-
-        .feature-card h3 {
-            margin-bottom: 15px;
-            color: #333;
         }
 
         /* Login Modal */
@@ -553,6 +360,51 @@
             overflow-y: auto;
         }
 
+        /* Features Section */
+        .features {
+            padding: 80px 0;
+            background: white;
+            border-radius: 30px 30px 0 0;
+            margin-top: 50px;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+            color: #333;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            font-size: 50px;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
         /* User Type Selection */
         .user-type-selector {
             display: flex;
@@ -584,110 +436,6 @@
             box-shadow: 0 4px 15px rgba(22, 160, 133, 0.3);
         }
 
-        /* Info Sheets (modals) */
-        .info-sheet-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(5px);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .info-sheet-overlay.active {
-            display: flex;
-        }
-
-        .info-sheet {
-            background: white;
-            border-radius: 20px;
-            width: 100%;
-            max-width: 700px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
-            animation: slideIn 0.3s ease-out;
-            position: relative;
-        }
-
-        .info-sheet-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 20px 20px 0 0;
-        }
-
-        .info-sheet-header h2 {
-            font-size: 2rem;
-            margin-bottom: 10px;
-        }
-
-        .info-sheet-content {
-            padding: 40px;
-        }
-
-        .info-section {
-            margin-bottom: 30px;
-        }
-
-        .info-section h3 {
-            color: #667eea;
-            margin-bottom: 15px;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .info-section p {
-            line-height: 1.6;
-            color: #555;
-            margin-bottom: 15px;
-        }
-
-        .info-section ul {
-            list-style-type: none;
-            padding-left: 0;
-        }
-
-        .info-section li {
-            padding: 10px 0;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .info-section li i {
-            color: #00ff9d;
-        }
-
-        .close-sheet {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            font-size: 24px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .close-sheet:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: rotate(90deg);
-        }
-
         /* Footer */
         footer {
             text-align: center;
@@ -708,10 +456,6 @@
             }
             
             .nav-links {
-                gap: 15px;
-            }
-            
-            .info-links {
                 display: none;
             }
             
@@ -722,13 +466,6 @@
             
             .login-card {
                 padding: 30px 20px;
-            }
-            
-            .user-dropdown {
-                position: fixed;
-                top: 70px;
-                right: 20px;
-                left: 20px;
             }
         }
     </style>
@@ -742,32 +479,9 @@
                 <span>TaskFlow Pro</span>
             </div>
             <div class="nav-links">
-                <div class="info-links">
-                    <a class="info-link" id="openAboutSheet">About</a>
-                    <a class="info-link" id="openContactSheet">Contact</a>
-                    <a href="#features" class="info-link">Features</a>
-                </div>
-                <div class="user-profile" id="userProfile">
-                    <button class="profile-btn" id="profileBtn">
-                        <i class="fas fa-user-circle"></i>
-                        <span id="userGreeting"></span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="user-dropdown" id="userDropdown">
-                        <a href="#" id="dashboardLink">
-                            <i class="fas fa-home"></i>Dashboard
-                        </a>
-                        <a href="#" id="profileLink">
-                            <i class="fas fa-user"></i>My Profile
-                        </a>
-                        <a href="#" id="settingsLink">
-                            <i class="fas fa-cog"></i>Settings
-                        </a>
-                        <a href="#" id="logoutBtn">
-                            <i class="fas fa-sign-out-alt"></i>Logout
-                        </a>
-                    </div>
-                </div>
+                <a href="#features">Features</a>
+                <a href="#about">About</a>
+                <a href="#contact">Contact</a>
                 <button class="login-btn" id="openLoginModal">
                     <i class="fas fa-sign-in-alt"></i>
                     Login
@@ -795,21 +509,6 @@
             
             <div class="hero-image">
                 <img src="https://cdn-icons-png.flaticon.com/512/3067/3067256.png" alt="Task Management Illustration">
-            </div>
-        </section>
-
-        <!-- About Section -->
-        <section class="about-section" id="about">
-            <div class="about-content">
-                <h2>About TaskFlow Pro</h2>
-                <p>TaskFlow Pro is a comprehensive task management solution designed to streamline your workflow, enhance productivity, and foster collaboration within teams. Our platform combines powerful features with an intuitive interface to help you achieve more.</p>
-                <p>Whether you're an individual freelancer, a small business, or a large enterprise, TaskFlow Pro adapts to your needs with customizable workflows, secure data management, and real-time collaboration tools.</p>
-                <div class="cta-buttons" style="justify-content: center; margin-top: 40px;">
-                    <button class="btn btn-primary" id="learnMoreBtn">
-                        <i class="fas fa-book"></i>
-                        Learn More
-                    </button>
-                </div>
             </div>
         </section>
 
@@ -852,37 +551,6 @@
             </div>
         </section>
 
-        <!-- Contact Section -->
-        <section class="contact-section" id="contact">
-            <div class="contact-content">
-                <h2>Get In Touch</h2>
-                <p>Have questions or need assistance? Our team is here to help you get the most out of TaskFlow Pro.</p>
-                
-                <div class="contact-info">
-                    <div class="contact-item">
-                        <i class="fas fa-envelope"></i>
-                        <h4>Email Support</h4>
-                        <p>support@taskflowpro.com</p>
-                        <p>Response within 24 hours</p>
-                    </div>
-                    
-                    <div class="contact-item">
-                        <i class="fas fa-phone"></i>
-                        <h4>Phone Support</h4>
-                        <p>+1 (555) 123-4567</p>
-                        <p>Mon-Fri, 9AM-6PM EST</p>
-                    </div>
-                    
-                    <div class="contact-item">
-                        <i class="fas fa-comments"></i>
-                        <h4>Live Chat</h4>
-                        <p>Available on dashboard</p>
-                        <p>24/7 for premium users</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
         <!-- Footer -->
         <footer>
             <p>&copy; 2024 TaskFlow Pro. Created by Shahul. All rights reserved.</p>
@@ -890,118 +558,6 @@
                 <i class="fas fa-lock"></i> Your data is safe with us
             </p>
         </footer>
-    </div>
-
-    <!-- About Info Sheet -->
-    <div class="info-sheet-overlay" id="aboutSheet">
-        <div class="info-sheet">
-            <div class="info-sheet-header">
-                <h2>About TaskFlow Pro</h2>
-                <p>Your Complete Task Management Solution</p>
-            </div>
-            <button class="close-sheet" id="closeAboutSheet">&times;</button>
-            
-            <div class="info-sheet-content">
-                <div class="info-section">
-                    <h3><i class="fas fa-rocket"></i>Our Mission</h3>
-                    <p>TaskFlow Pro was created with a simple mission: to make task management effortless and efficient for everyone. We believe that organized teams are productive teams, and productivity leads to success.</p>
-                </div>
-                
-                <div class="info-section">
-                    <h3><i class="fas fa-history"></i>Our Story</h3>
-                    <p>Founded in 2024 by Shahul, TaskFlow Pro started as a personal project to solve common task management challenges. After seeing the positive impact it had on personal productivity, we expanded it into a full-featured platform for teams and businesses.</p>
-                    <p>Today, we serve thousands of users worldwide, helping them organize their work, collaborate effectively, and achieve their goals.</p>
-                </div>
-                
-                <div class="info-section">
-                    <h3><i class="fas fa-star"></i>Key Features</h3>
-                    <ul>
-                        <li><i class="fas fa-check"></i>Intuitive Kanban boards for visual task management</li>
-                        <li><i class="fas fa-check"></i>Secure cloud storage with bank-level encryption</li>
-                        <li><i class="fas fa-check"></i>Real-time team collaboration tools</li>
-                        <li><i class="fas fa-check"></i>Attendance tracking and productivity monitoring</li>
-                        <li><i class="fas fa-check"></i>Customizable workflows and templates</li>
-                        <li><i class="fas fa-check"></i>Mobile-responsive design for on-the-go access</li>
-                        <li><i class="fas fa-check"></i>Detailed analytics and reporting</li>
-                        <li><i class="fas fa-check"></i>API integration with popular tools</li>
-                    </ul>
-                </div>
-                
-                <div class="info-section">
-                    <h3><i class="fas fa-users"></i>Who We Serve</h3>
-                    <p><strong>Individuals:</strong> Freelancers, students, and professionals looking to organize their personal tasks and projects.</p>
-                    <p><strong>Small Businesses:</strong> Teams that need an affordable yet powerful solution to manage projects and collaborate effectively.</p>
-                    <p><strong>Enterprises:</strong> Large organizations requiring scalable task management with advanced security and admin controls.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Contact Info Sheet -->
-    <div class="info-sheet-overlay" id="contactSheet">
-        <div class="info-sheet">
-            <div class="info-sheet-header">
-                <h2>Contact Us</h2>
-                <p>We're Here to Help You Succeed</p>
-            </div>
-            <button class="close-sheet" id="closeContactSheet">&times;</button>
-            
-            <div class="info-sheet-content">
-                <div class="info-section">
-                    <h3><i class="fas fa-headset"></i>Support Options</h3>
-                    <p>Choose the support option that works best for you:</p>
-                    
-                    <div class="contact-info">
-                        <div class="contact-item">
-                            <i class="fas fa-envelope"></i>
-                            <h4>Email Support</h4>
-                            <p><strong>General Inquiries:</strong> info@taskflowpro.com</p>
-                            <p><strong>Technical Support:</strong> support@taskflowpro.com</p>
-                            <p><strong>Sales:</strong> sales@taskflowpro.com</p>
-                            <p><em>Response time: Within 24 hours</em></p>
-                        </div>
-                        
-                        <div class="contact-item">
-                            <i class="fas fa-phone"></i>
-                            <h4>Phone Support</h4>
-                            <p><strong>US/Canada:</strong> +1 (555) 123-4567</p>
-                            <p><strong>UK:</strong> +44 20 1234 5678</p>
-                            <p><strong>Australia:</strong> +61 2 1234 5678</p>
-                            <p><em>Hours: Mon-Fri, 9AM-6PM EST</em></p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="info-section">
-                    <h3><i class="fas fa-comments"></i>Live Chat</h3>
-                    <p>For immediate assistance, use our live chat feature available on the dashboard after login. Our support agents are available:</p>
-                    <ul>
-                        <li><i class="fas fa-clock"></i><strong>Basic Users:</strong> 9AM-5PM EST, Mon-Fri</li>
-                        <li><i class="fas fa-clock"></i><strong>Premium Users:</strong> 24/7 support</li>
-                        <li><i class="fas fa-clock"></i><strong>Enterprise Users:</strong> Dedicated account manager</li>
-                    </ul>
-                </div>
-                
-                <div class="info-section">
-                    <h3><i class="fas fa-file-alt"></i>Documentation & Resources</h3>
-                    <p>Visit our comprehensive knowledge base for tutorials, FAQs, and user guides:</p>
-                    <ul>
-                        <li><i class="fas fa-book"></i><a href="#" style="color: #667eea; text-decoration: none;">User Guide</a> - Complete guide to all features</li>
-                        <li><i class="fas fa-video"></i><a href="#" style="color: #667eea; text-decoration: none;">Video Tutorials</a> - Step-by-step video guides</li>
-                        <li><i class="fas fa-question-circle"></i><a href="#" style="color: #667eea; text-decoration: none;">FAQ</a> - Frequently asked questions</li>
-                        <li><i class="fas fa-blog"></i><a href="#" style="color: #667eea; text-decoration: none;">Blog</a> - Tips and best practices</li>
-                    </ul>
-                </div>
-                
-                <div class="info-section">
-                    <h3><i class="fas fa-map-marker-alt"></i>Company Address</h3>
-                    <p><strong>TaskFlow Pro Inc.</strong></p>
-                    <p>123 Tech Street, Suite 100</p>
-                    <p>San Francisco, CA 94107</p>
-                    <p>United States</p>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Login Modal -->
@@ -1178,21 +734,6 @@
         const openLoginModalBtn = document.getElementById('openLoginModal');
         const closeModalBtn = document.getElementById('closeModal');
         const getStartedBtn = document.getElementById('getStartedBtn');
-        const aboutSheet = document.getElementById('aboutSheet');
-        const contactSheet = document.getElementById('contactSheet');
-        const openAboutSheetBtn = document.getElementById('openAboutSheet');
-        const openContactSheetBtn = document.getElementById('openContactSheet');
-        const closeAboutSheetBtn = document.getElementById('closeAboutSheet');
-        const closeContactSheetBtn = document.getElementById('closeContactSheet');
-        const learnMoreBtn = document.getElementById('learnMoreBtn');
-        const userProfile = document.getElementById('userProfile');
-        const profileBtn = document.getElementById('profileBtn');
-        const userDropdown = document.getElementById('userDropdown');
-        const userGreeting = document.getElementById('userGreeting');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const dashboardLink = document.getElementById('dashboardLink');
-        const profileLink = document.getElementById('profileLink');
-        const settingsLink = document.getElementById('settingsLink');
         const userTypeBtns = document.querySelectorAll('.user-type-btn');
         const existingUserForm = document.getElementById('existingUserForm');
         const newUserForm = document.getElementById('newUserForm');
@@ -1210,146 +751,6 @@
         }
 
         const isFromUsersPage = checkIfFromUsersPage();
-
-        // Open Info Sheets
-        openAboutSheetBtn.addEventListener('click', () => {
-            aboutSheet.classList.add('active');
-        });
-
-        openContactSheetBtn.addEventListener('click', () => {
-            contactSheet.classList.add('active');
-        });
-
-        learnMoreBtn.addEventListener('click', () => {
-            aboutSheet.classList.add('active');
-        });
-
-        // Close Info Sheets
-        closeAboutSheetBtn.addEventListener('click', () => {
-            aboutSheet.classList.remove('active');
-        });
-
-        closeContactSheetBtn.addEventListener('click', () => {
-            contactSheet.classList.remove('active');
-        });
-
-        // Close sheets when clicking outside
-        aboutSheet.addEventListener('click', (e) => {
-            if (e.target === aboutSheet) {
-                aboutSheet.classList.remove('active');
-            }
-        });
-
-        contactSheet.addEventListener('click', (e) => {
-            if (e.target === contactSheet) {
-                contactSheet.classList.remove('active');
-            }
-        });
-
-        // Toggle user dropdown
-        profileBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            userDropdown.classList.toggle('show');
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', () => {
-            userDropdown.classList.remove('show');
-        });
-
-        // Logout function
-        logoutBtn.addEventListener('click', () => {
-            if (confirm("Are you sure you want to logout?")) {
-                sessionStorage.clear();
-                updateLoginUI();
-                userDropdown.classList.remove('show');
-                alert("You have been logged out successfully.");
-                window.location.reload();
-            }
-        });
-
-        // Profile and Settings links
-        profileLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            alert("Profile page will open in future update.");
-            userDropdown.classList.remove('show');
-        });
-
-        settingsLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            alert("Settings page will open in future update.");
-            userDropdown.classList.remove('show');
-        });
-
-        // Dashboard link - handles both types of users
-        dashboardLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            const userType = sessionStorage.getItem("userType");
-            const registrationSource = sessionStorage.getItem("registrationSource");
-            const role = sessionStorage.getItem("role");
-            
-            // Determine which dashboard to open
-            if (registrationSource === "users.html") {
-                // User from users.html system
-                if (role === "admin") {
-                    window.location.href = "Home.html";
-                } else if (role === "user") {
-                    window.location.href = "UserDashboard.html";
-                } else if (role === "sub admin") {
-                    window.location.href = "Sub Admin Dashboard.html";
-                } else {
-                    window.location.href = "UserDashboard.html";
-                }
-            } else {
-                // User from new system (main page registration)
-                if (userType === "company") {
-                    window.location.href = "companyhome.html";
-                } else {
-                    window.location.href = "individualhome.html";
-                }
-            }
-            userDropdown.classList.remove('show');
-        });
-
-        // Update UI based on login status
-        function updateLoginUI() {
-            const sessionUser = sessionStorage.getItem("username");
-            const userType = sessionStorage.getItem("userType");
-            const fullName = sessionStorage.getItem("fullName");
-            const registrationSource = sessionStorage.getItem("registrationSource");
-            const role = sessionStorage.getItem("role");
-            
-            if (sessionUser) {
-                // User is logged in
-                openLoginModalBtn.style.display = 'none';
-                userProfile.style.display = 'flex';
-                
-                // Set greeting
-                const greeting = fullName || sessionUser;
-                userGreeting.textContent = greeting.length > 15 ? greeting.substring(0, 15) + '...' : greeting;
-                
-                // Set dashboard link label based on user type/source
-                if (registrationSource === "users.html") {
-                    if (role === "admin") {
-                        dashboardLink.innerHTML = '<i class="fas fa-crown"></i>Admin Dashboard';
-                    } else if (role === "sub admin") {
-                        dashboardLink.innerHTML = '<i class="fas fa-user-shield"></i>Sub Admin Dashboard';
-                    } else {
-                        dashboardLink.innerHTML = '<i class="fas fa-user"></i>User Dashboard';
-                    }
-                } else {
-                    if (userType === 'company') {
-                        dashboardLink.innerHTML = '<i class="fas fa-building"></i>Company Dashboard';
-                    } else {
-                        dashboardLink.innerHTML = '<i class="fas fa-user"></i>Individual Dashboard';
-                    }
-                }
-            } else {
-                // User is not logged in
-                openLoginModalBtn.style.display = 'block';
-                userProfile.style.display = 'none';
-            }
-        }
 
         // Modal Controls
         openLoginModalBtn.addEventListener('click', () => {
@@ -1552,7 +953,7 @@ TaskFlow Pro Administration Panel
             return emailContent;
         }
 
-        // Login Function - Updated to handle both systems
+        // Login Function
         function tryLogin() {
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
@@ -1584,66 +985,27 @@ TaskFlow Pro Administration Panel
                     
                     // Save user data to sessionStorage
                     sessionStorage.setItem("username", userData.username);
-                    sessionStorage.setItem("userType", userData.userType || "individual");
-                    sessionStorage.setItem("registrationSource", userData.registrationSource || "main_page");
-                    
                     if (userData.fullName) {
                         sessionStorage.setItem("fullName", userData.fullName);
                     }
-                    if (userData.email) {
-                        sessionStorage.setItem("email", userData.email);
-                    }
-                    if (userData.role) {
-                        sessionStorage.setItem("role", userData.role);
-                    }
+                    
+                    // Get role and redirect
+                    const role = userData.role ? userData.role.trim().toLowerCase() : "";
                     
                     // Close modal
                     loginModal.classList.remove('active');
                     clearForms();
                     
-                    // Update UI
-                    updateLoginUI();
-                    
-                    // Show welcome message
-                    const userName = userData.fullName || userData.username;
-                    
-                    // Determine user type for message
-                    let userTypeText = "";
-                    if (userData.registrationSource === "users.html") {
-                        userTypeText = userData.role || "user";
+                    // Redirect based on role
+                    if (role === "admin") {
+                        window.location.href = "Home.html";
+                    } else if (role === "sub admin") {
+                        window.location.href = "Sub Admin Dashboard.html";
+                    } else if (role === "user") {
+                        window.location.href = "UserDashboard.html";
                     } else {
-                        userTypeText = userData.userType || "individual";
+                        alert("User role not recognized: " + userData.role);
                     }
-                    
-                    alert(`Welcome back, ${userName}! You are logged in as ${userTypeText}.`);
-                    
-                    // Redirect based on user type and registration source
-                    setTimeout(() => {
-                        if (userData.registrationSource === "users.html") {
-                            // User from users.html system
-                            const role = userData.role ? userData.role.trim().toLowerCase() : "";
-                            
-                            if (role === "admin") {
-                                window.location.href = "Home.html";
-                            } else if (role === "sub admin") {
-                                window.location.href = "Sub Admin Dashboard.html";
-                            } else if (role === "user") {
-                                window.location.href = "UserDashboard.html";
-                            } else {
-                                // Default fallback
-                                window.location.href = "UserDashboard.html";
-                            }
-                        } else {
-                            // User from new system (main page registration)
-                            const userType = userData.userType || "individual";
-                            
-                            if (userType === "company") {
-                                window.location.href = "companyhome.html";
-                            } else {
-                                window.location.href = "individualhome.html";
-                            }
-                        }
-                    }, 500);
                 })
                 .catch(error => {
                     console.error("Login error:", error);
@@ -1672,8 +1034,7 @@ TaskFlow Pro Administration Panel
                 password: password,
                 status: "active",
                 createdAt: new Date().toISOString(),
-                registrationSource: isFromUsersPage ? "users.html" : "main_page",
-                userType: userType
+                registrationSource: isFromUsersPage ? "users.html" : "main_page"
             };
             
             if (userType === 'individual') {
@@ -1828,47 +1189,18 @@ Status: Pending Approval`);
 
         // Check if user is already logged in
         document.addEventListener('DOMContentLoaded', () => {
-            updateLoginUI();
-            
-            // Check URL parameters for redirects
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('action') === 'login') {
-                loginModal.classList.add('active');
-                showExistingUserForm();
-            }
-            
-            // Auto-open login modal if redirected from users.html
-            if (isFromUsersPage) {
-                setTimeout(() => {
-                    loginModal.classList.add('active');
-                    showExistingUserForm();
-                }, 500);
+            const sessionUser = sessionStorage.getItem("username");
+            if (sessionUser) {
+                console.log("✅ User is already logged in:", sessionUser);
+                openLoginModalBtn.innerHTML = '<i class="fas fa-user"></i> ' + sessionUser;
+                openLoginModalBtn.onclick = () => {
+                    if (confirm("Do you want to logout?")) {
+                        sessionStorage.clear();
+                        window.location.reload();
+                    }
+                };
             }
         });
-
-        // Add keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            // Escape closes modals
-            if (e.key === 'Escape') {
-                loginModal.classList.remove('active');
-                aboutSheet.classList.remove('active');
-                contactSheet.classList.remove('active');
-                userDropdown.classList.remove('show');
-            }
-            // Ctrl+? opens about
-            if (e.ctrlKey && e.key === '?') {
-                e.preventDefault();
-                aboutSheet.classList.add('active');
-            }
-            // Ctrl+/ opens contact
-            if (e.ctrlKey && e.key === '/') {
-                e.preventDefault();
-                contactSheet.classList.add('active');
-            }
-        });
-
-        // Initialize page
-        toggleUserFields(); // Set initial form state
     </script>
 </body>
 </html>
