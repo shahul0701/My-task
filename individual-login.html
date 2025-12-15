@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow Pro - Individual Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            color: white;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .logo i {
+            color: #00ff9d;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #00ff9d;
+        }
+
+        .login-btn {
+            background: #00ff9d;
+            color: #333;
+            padding: 10px 25px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+            font-size: 16px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 157, 0.3);
+        }
+
+        /* Hero Section */
+        .hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 80px 0;
+            color: white;
+        }
+
+        .hero-content {
+            flex: 1;
+            max-width: 600px;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            line-height: 1.2;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            background: #00ff9d;
+            color: #333;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .hero-image {
+            flex: 1;
+            text-align: center;
+        }
+
+        .hero-image img {
+            max-width: 100%;
+            filter: drop-shadow(0 20px 30px rgba(0,0,0,0.3));
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Login Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease-out;
+            position: relative;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #666;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .login-card h2 {
+            color: #16a085;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+            outline: none;
+            border-color: #16a085;
+            box-shadow: 0 0 0 3px rgba(22, 160, 133, 0.1);
+        }
+
+        .login-action-btn {
+            width: 100%;
+            padding: 15px;
+            background: #16a085;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .login-action-btn:hover {
+            background: #1abc9c;
+            transform: translateY(-2px);
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-top: 15px;
+        }
+
+        .forgot-password a {
+            color: #16a085;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Warning Message */
+        .warning-message {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #ffeaa7;
+            display: none;
+        }
+
+        .warning-message.show {
+            display: block;
+        }
+
+        .warning-message i {
+            margin-right: 10px;
+            color: #f39c12;
+        }
+
+        /* Success Message */
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #c3e6cb;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .success-message i {
+            margin-right: 10px;
+            color: #28a745;
+        }
+
+        /* User Type Selection */
+        .user-type-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 5px;
+            border-radius: 10px;
+        }
+
+        .user-type-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .user-type-btn.active {
+            background: #16a085;
+            color: white;
+            box-shadow: 0 4px 15px rgba(22, 160, 133, 0.3);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 0;
+            background: white;
+            border-radius: 30px 30px 0 0;
+            margin-top: 50px;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+            color: #333;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            font-size: 50px;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        /* Registration Steps */
+        .registration-steps {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            opacity: 0.6;
+            transition: all 0.3s;
+        }
+
+        .step.active {
+            opacity: 1;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: #3498db;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .step.active .step-number {
+            background: #2ecc71;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: white;
+            opacity: 0.8;
+        }
+
+        footer a {
+            color: #00ff9d;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .cta-buttons {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .login-card {
+                padding: 30px 20px;
+            }
+            
+            .registration-steps {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="logo">
+                <i class="fas fa-tasks"></i>
+                <span>TaskFlow Pro - Individual Portal</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Admin Portal</a>
+                <a href="company-login.html">Company Login</a>
+                <button class="login-btn" id="openLoginModal">
+                    <i class="fas fa-user"></i>
+                    Individual Login
+                </button>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Personal Task Management Made Simple</h1>
+                <p>Organize and track your personal tasks with our intuitive Kanban board. Perfect for individuals managing daily tasks, projects, and personal goals.</p>
+                
+                <!-- Registration Steps -->
+                <div class="registration-steps">
+                    <div class="step active">
+                        <div class="step-number">1</div>
+                        <div>Create Account</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div>Admin Approval</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div>Start Managing Tasks</div>
+                    </div>
+                </div>
+
+                <div class="cta-buttons">
+                    <button class="btn btn-primary" id="getStartedBtn">
+                        <i class="fas fa-user-plus"></i>
+                        Create Individual Account
+                    </button>
+                    <button class="btn btn-secondary" id="openLoginModal2">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Existing User Login
+                    </button>
+                </div>
+            </div>
+            
+            <div class="hero-image">
+                <img src="https://cdn-icons-png.flaticon.com/512/3067/3067256.png" alt="Task Management Illustration">
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features" id="features">
+            <h2 class="section-title">Why Choose TaskFlow Pro for Individuals?</h2>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-columns"></i>
+                    </div>
+                    <h3>Personal Kanban Board</h3>
+                    <p>Visual task management with drag-and-drop for personal projects</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Secure Storage</h3>
+                    <p>Bank-level encryption for your personal task data</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Progress Tracking</h3>
+                    <p>Monitor your personal productivity and task completion</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3>Mobile Friendly</h3>
+                    <p>Access your tasks from anywhere, on any device</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <p>&copy; 2024 TaskFlow Pro - Individual Edition. All rights reserved.</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">
+                <i class="fas fa-user"></i> For Companies/Teams, visit our 
+                <a href="company-login.html">Company Portal</a> |
+                <i class="fas fa-user-shield"></i> For Admins, visit 
+                <a href="index.html">Admin Portal</a>
+            </p>
+        </footer>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="login-card">
+            <button class="close-modal" id="closeModal">&times;</button>
+            
+            <h2><i class="fas fa-user"></i> Individual Portal</h2>
+            
+            <!-- Warning Message -->
+            <div class="warning-message" id="warningMessage">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="warningText">Your registration request has been sent to the administrator. Please wait for approval.</span>
+            </div>
+
+            <!-- Success Message -->
+            <div class="success-message" id="successMessage">
+                <i class="fas fa-check-circle"></i>
+                <span id="successText">Registration successful! Please login with your credentials.</span>
+            </div>
+
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="errorText"></span>
+            </div>
+
+            <!-- User Type Selection -->
+            <div class="user-type-selector">
+                <button class="user-type-btn active" data-type="existing">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Existing User
+                </button>
+                <button class="user-type-btn" data-type="new">
+                    <i class="fas fa-user-plus"></i>
+                    New User
+                </button>
+            </div>
+
+            <!-- Existing User Login Form -->
+            <div id="existingUserForm">
+                <div class="input-group">
+                    <label for="loginUsername">Username</label>
+                    <input type="text" id="loginUsername" placeholder="Enter your username">
+                </div>
+                
+                <div class="input-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password">
+                </div>
+                
+                <button class="login-action-btn" onclick="tryLogin()">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Login
+                </button>
+                
+                <div class="forgot-password">
+                    <a href="#" onclick="showForgotPassword()">Forgot Password?</a>
+                </div>
+            </div>
+
+            <!-- New User Registration Form (Initially Hidden) -->
+            <div id="newUserForm" style="display: none;">
+                <div class="input-group">
+                    <label for="fullName">Full Name *</label>
+                    <input type="text" id="fullName" placeholder="Enter your full name" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" placeholder="Enter your email" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" placeholder="Enter your phone number">
+                </div>
+                
+                <div class="input-group">
+                    <label for="dob">Date of Birth</label>
+                    <input type="date" id="dob">
+                </div>
+                
+                <div class="input-group">
+                    <label for="purpose">Purpose of Use</label>
+                    <textarea id="purpose" placeholder="Describe how you plan to use the app" rows="3"></textarea>
+                </div>
+                
+                <div class="input-group">
+                    <label for="newUsername">Choose Username *</label>
+                    <input type="text" id="newUsername" placeholder="Choose a username" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="newPassword">Choose Password *</label>
+                    <input type="password" id="newPassword" placeholder="Choose a password (min 6 chars)" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="confirmPassword">Confirm Password *</label>
+                    <input type="password" id="confirmPassword" placeholder="Confirm your password" required>
+                </div>
+                
+                <button class="login-action-btn" onclick="registerIndividualUser()">
+                    <i class="fas fa-user-plus"></i>
+                    Create Individual Account
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase Configuration (Same as your other pages)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDYhLNuJKj2ucwGimfddTfpTb32Y0c-bXg",
+            authDomain: "mytask-96a79.firebaseapp.com",
+            databaseURL: "https://mytask-96a79-default-rtdb.firebaseio.com",
+            projectId: "mytask-96a79",
+            storageBucket: "mytask-96a79.firebasestorage.app",
+            messagingSenderId: "963509757773",
+            appId: "1:963509757773:web:d9c81a108f5873702eb904",
+            measurementId: "G-L9C1LTCZRN"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // DOM Elements
+        const loginModal = document.getElementById('loginModal');
+        const openLoginModalBtn = document.getElementById('openLoginModal');
+        const openLoginModalBtn2 = document.getElementById('openLoginModal2');
+        const closeModalBtn = document.getElementById('closeModal');
+        const getStartedBtn = document.getElementById('getStartedBtn');
+        const userTypeBtns = document.querySelectorAll('.user-type-btn');
+        const existingUserForm = document.getElementById('existingUserForm');
+        const newUserForm = document.getElementById('newUserForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const warningMessage = document.getElementById('warningMessage');
+        const warningText = document.getElementById('warningText');
+        const successMessage = document.getElementById('successMessage');
+        const successText = document.getElementById('successText');
+
+        // Modal Controls
+        openLoginModalBtn.addEventListener('click', () => {
+            loginModal.classList.add('active');
+            showExistingUserForm();
+        });
+
+        openLoginModalBtn2.addEventListener('click', () => {
+            loginModal.classList.add('active');
+            showExistingUserForm();
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            loginModal.classList.remove('active');
+            clearForms();
+        });
+
+        getStartedBtn.addEventListener('click', () => {
+            loginModal.classList.add('active');
+            showNewUserForm();
+        });
+
+        // Close modal when clicking outside
+        loginModal.addEventListener('click', (e) => {
+            if (e.target === loginModal) {
+                loginModal.classList.remove('active');
+                clearForms();
+            }
+        });
+
+        // User Type Switching
+        userTypeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                userTypeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                if (btn.dataset.type === 'existing') {
+                    showExistingUserForm();
+                } else {
+                    showNewUserForm();
+                }
+            });
+        });
+
+        function showExistingUserForm() {
+            existingUserForm.style.display = 'block';
+            newUserForm.style.display = 'none';
+            clearMessages();
+        }
+
+        function showNewUserForm() {
+            existingUserForm.style.display = 'none';
+            newUserForm.style.display = 'block';
+            clearMessages();
+        }
+
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.add('show');
+            hideWarning();
+            hideSuccess();
+        }
+
+        function showWarning(message) {
+            warningText.textContent = message;
+            warningMessage.classList.add('show');
+            clearError();
+            hideSuccess();
+        }
+
+        function showSuccess(message) {
+            successText.textContent = message;
+            successMessage.classList.add('show');
+            clearError();
+            hideWarning();
+        }
+
+        function clearError() {
+            errorMessage.classList.remove('show');
+        }
+
+        function hideWarning() {
+            warningMessage.classList.remove('show');
+        }
+
+        function hideSuccess() {
+            successMessage.classList.remove('show');
+        }
+
+        function clearMessages() {
+            clearError();
+            hideWarning();
+            hideSuccess();
+        }
+
+        function clearForms() {
+            // Clear all input fields
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('fullName').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('phone').value = '';
+            document.getElementById('dob').value = '';
+            document.getElementById('purpose').value = '';
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            
+            // Reset to default state
+            showExistingUserForm();
+            userTypeBtns.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.type === 'existing') {
+                    btn.classList.add('active');
+                }
+            });
+            clearMessages();
+        }
+
+        // Login Function for Individual Users
+        function tryLogin() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            
+            if (!username || !password) {
+                showError("Please enter both username and password");
+                return;
+            }
+            
+            // Query Firestore for user
+            db.collection("users")
+                .where("username", "==", username)
+                .where("password", "==", password)
+                .get()
+                .then(querySnapshot => {
+                    if (querySnapshot.empty) {
+                        showError("Invalid username or password");
+                        return;
+                    }
+                    
+                    const userDoc = querySnapshot.docs[0];
+                    const userData = userDoc.data();
+                    
+                    // Check if this is an individual user
+                    if (userData.userType && userData.userType !== "individual") {
+                        showError("This account is not an individual account. Please use the appropriate portal.");
+                        return;
+                    }
+                    
+                    // Check if account is approved
+                    if (userData.status === "pending_approval") {
+                        showWarning("Your account is pending approval. Please wait for administrator approval.");
+                        return;
+                    }
+                    
+                    if (userData.status === "rejected") {
+                        showError("Your account has been rejected. Please contact administrator.");
+                        return;
+                    }
+                    
+                    if (userData.status === "hold") {
+                        showWarning("Your account is on hold. Please contact administrator.");
+                        return;
+                    }
+                    
+                    // Save user data to sessionStorage
+                    sessionStorage.setItem("username", userData.username);
+                    sessionStorage.setItem("userType", "individual");
+                    sessionStorage.setItem("role", "user");
+                    if (userData.fullName) {
+                        sessionStorage.setItem("fullName", userData.fullName);
+                    }
+                    if (userData.email) {
+                        sessionStorage.setItem("email", userData.email);
+                    }
+                    
+                    // Close modal
+                    loginModal.classList.remove('active');
+                    clearForms();
+                    
+                    // Redirect individual user to dashboard
+                    showSuccess("Login successful! Redirecting to dashboard...");
+                    setTimeout(() => {
+                        window.location.href = "UserDashboard.html";
+                    }, 1500);
+                    
+                })
+                .catch(error => {
+                    console.error("Login error:", error);
+                    showError("An error occurred. Please try again.");
+                });
+        }
+
+        // Register Individual User
+        async function registerIndividualUser() {
+            // Get form values
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const dob = document.getElementById('dob').value;
+            const purpose = document.getElementById('purpose').value.trim();
+            const username = document.getElementById('newUsername').value.trim();
+            const password = document.getElementById('newPassword').value.trim();
+            const confirmPassword = document.getElementById('confirmPassword').value.trim();
+            
+            // Validation
+            if (!fullName || !email || !username || !password || !confirmPassword) {
+                showError("Please fill in all required fields (*)");
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError("Password must be at least 6 characters long");
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showError("Passwords do not match");
+                return;
+            }
+            
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showError("Please enter a valid email address");
+                return;
+            }
+            
+            // Validate username (alphanumeric with underscores)
+            const usernameRegex = /^[a-zA-Z0-9_]+$/;
+            if (!usernameRegex.test(username)) {
+                showError("Username can only contain letters, numbers, and underscores");
+                return;
+            }
+            
+            // Check if username already exists
+            try {
+                const usernameCheck = await db.collection("users")
+                    .where("username", "==", username)
+                    .get();
+                
+                if (!usernameCheck.empty) {
+                    showError("Username already exists. Please choose another.");
+                    return;
+                }
+                
+                // Check if email already exists
+                const emailCheck = await db.collection("users")
+                    .where("email", "==", email)
+                    .get();
+                
+                if (!emailCheck.empty) {
+                    showError("Email already registered. Please use a different email or login.");
+                    return;
+                }
+                
+                // Create user data object
+                const userData = {
+                    username: username,
+                    password: password,
+                    fullName: fullName,
+                    email: email,
+                    phone: phone || '',
+                    dob: dob || '',
+                    purpose: purpose || '',
+                    userType: 'individual',
+                    role: 'user',
+                    status: 'pending_approval', // Default status
+                    registrationSource: 'individual-login.html',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                // Add user to Firestore
+                const userRef = await db.collection("users").add(userData);
+                
+                // Show success message
+                showSuccess(`Registration successful! Your username: ${username}. Your account is pending admin approval.`);
+                
+                // Clear form after successful registration
+                setTimeout(() => {
+                    document.getElementById('fullName').value = '';
+                    document.getElementById('email').value = '';
+                    document.getElementById('phone').value = '';
+                    document.getElementById('dob').value = '';
+                    document.getElementById('purpose').value = '';
+                    document.getElementById('newUsername').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                    
+                    // Switch to login form
+                    showExistingUserForm();
+                    userTypeBtns.forEach(btn => {
+                        btn.classList.remove('active');
+                        if (btn.dataset.type === 'existing') {
+                            btn.classList.add('active');
+                        }
+                    });
+                    
+                }, 2000);
+                
+                // Update registration steps
+                updateRegistrationSteps(2);
+                
+            } catch (error) {
+                console.error("Registration error:", error);
+                showError("Failed to register. Please try again.");
+            }
+        }
+
+        // Update registration steps visualization
+        function updateRegistrationSteps(step) {
+            const steps = document.querySelectorAll('.step');
+            steps.forEach((s, index) => {
+                if (index < step) {
+                    s.classList.add('active');
+                } else {
+                    s.classList.remove('active');
+                }
+            });
+        }
+
+        // Forgot Password
+        function showForgotPassword() {
+            const email = prompt("Please enter your email address to reset password:");
+            if (email) {
+                // In a real app, you would send password reset email
+                alert(`Password reset link has been sent to ${email}. Please check your email.`);
+            }
+        }
+
+        // Enter key support
+        document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') tryLogin();
+        });
+
+        document.getElementById('loginUsername').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') tryLogin();
+        });
+
+        // Check if individual user is already logged in
+        document.addEventListener('DOMContentLoaded', () => {
+            const sessionUser = sessionStorage.getItem("username");
+            const userType = sessionStorage.getItem("userType");
+            
+            if (sessionUser && userType === "individual") {
+                console.log("✅ Individual user is already logged in:", sessionUser);
+                openLoginModalBtn.innerHTML = '<i class="fas fa-user"></i> ' + sessionUser;
+                openLoginModalBtn2.innerHTML = '<i class="fas fa-user"></i> ' + sessionUser;
+                openLoginModalBtn.onclick = () => {
+                    if (confirm("Do you want to logout?")) {
+                        sessionStorage.clear();
+                        window.location.reload();
+                    }
+                };
+                openLoginModalBtn2.onclick = () => {
+                    if (confirm("Do you want to logout?")) {
+                        sessionStorage.clear();
+                        window.location.reload();
+                    }
+                };
+                
+                // Change Get Started button to Go to Dashboard
+                getStartedBtn.innerHTML = '<i class="fas fa-tachometer-alt"></i> Go to Dashboard';
+                getStartedBtn.onclick = () => {
+                    window.location.href = "UserDashboard.html";
+                };
+            }
+            
+            // Check if there's a success message in URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('registered') === 'true') {
+                loginModal.classList.add('active');
+                showSuccess("Registration successful! Please login with your credentials.");
+                showExistingUserForm();
+            }
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
