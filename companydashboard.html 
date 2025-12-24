@@ -1,0 +1,2208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow Pro - Company Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary-color: #1a2980;
+            --secondary-color: #26d0ce;
+            --sidebar-width: 260px;
+            --header-height: 70px;
+            --transition-speed: 0.3s;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        /* Dashboard Layout */
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary-color) 0%, #0d1b5e 100%);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: all var(--transition-speed);
+            z-index: 1000;
+            box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-header {
+            padding: 25px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .sidebar-header .logo {
+            font-size: 28px;
+            color: #00ff9d;
+        }
+
+        .company-info h2 {
+            font-size: 18px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .company-info p {
+            font-size: 12px;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .company-info i {
+            color: #00ff9d;
+        }
+
+        /* Navigation */
+        .sidebar-nav {
+            padding: 20px 0;
+        }
+
+        .nav-section {
+            margin-bottom: 25px;
+        }
+
+        .nav-section h3 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 20px;
+            margin-bottom: 15px;
+            opacity: 0.7;
+            font-weight: 500;
+        }
+
+        .nav-links {
+            list-style: none;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all var(--transition-speed);
+            border-left: 4px solid transparent;
+            cursor: pointer;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left-color: var(--secondary-color);
+        }
+
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-left-color: #00ff9d;
+        }
+
+        .nav-link i {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .nav-link span {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .badge {
+            background: #e74c3c;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-left: auto;
+        }
+
+        /* Sidebar Footer */
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: auto;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--secondary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .user-details h4 {
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .user-details p {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .logout-btn {
+            width: 100%;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+        }
+
+        .logout-btn:hover {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            transition: margin-left var(--transition-speed);
+        }
+
+        /* Header */
+        .main-header {
+            height: var(--header-height);
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left h1 {
+            font-size: 24px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .header-left .breadcrumb {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .header-left .breadcrumb i {
+            margin: 0 8px;
+            font-size: 12px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            padding: 10px 15px 10px 40px;
+            border: 1px solid #e0e0e0;
+            border-radius: 25px;
+            width: 250px;
+            font-size: 14px;
+            transition: all var(--transition-speed);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(26, 41, 128, 0.1);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+
+        .notifications {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .notifications i {
+            font-size: 20px;
+            color: #666;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #e74c3c;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 50%;
+        }
+
+        /* Content Area */
+        .content-area {
+            padding: 30px;
+            min-height: calc(100vh - var(--header-height));
+        }
+
+        /* Welcome Banner */
+        .welcome-banner {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(26, 41, 128, 0.2);
+        }
+
+        .welcome-text h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .welcome-text p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .stats-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stats-badge h3 {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stats-badge p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Dashboard Cards */
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+            transition: transform var(--transition-speed);
+            cursor: pointer;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+
+        .card-icon.users {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+
+        .card-icon.teams {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        }
+
+        .card-icon.projects {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+        }
+
+        .card-icon.tasks {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+
+        .card-stats h3 {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .card-stats p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .card-trend {
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .card-trend.up {
+            background: #d5f4e6;
+            color: #27ae60;
+        }
+
+        .card-trend.down {
+            background: #fdeaea;
+            color: #e74c3c;
+        }
+
+        /* Main Content Sections */
+        .main-sections {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .section-header h3 {
+            font-size: 20px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .view-all {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .view-all:hover {
+            text-decoration: underline;
+        }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 12px 15px;
+            border-bottom: 2px solid #f0f0f0;
+            color: #666;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .data-table td {
+            padding: 15px;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .user-avatar-small {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: #d5f4e6;
+            color: #27ae60;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+        }
+
+        .action-btn.edit {
+            background: #3498db;
+            color: white;
+        }
+
+        .action-btn.delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .action-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        /* Activity List */
+        .activity-list {
+            list-style: none;
+        }
+
+        .activity-item {
+            display: flex;
+            gap: 15px;
+            padding: 15px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            font-size: 18px;
+        }
+
+        .activity-content h4 {
+            font-size: 15px;
+            margin-bottom: 5px;
+        }
+
+        .activity-content p {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .activity-time {
+            font-size: 12px;
+            color: #999;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(3px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 25px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 20px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            transition: color var(--transition-speed);
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all var(--transition-speed);
+        }
+
+        .input-group input:focus,
+        .input-group select:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(26, 41, 128, 0.1);
+        }
+
+        .modal-footer {
+            padding: 20px 25px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #e0e0e0;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Form Actions */
+        .form-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .main-sections {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-right {
+                display: none;
+            }
+            
+            .welcome-banner {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+            
+            .search-box input {
+                width: 200px;
+            }
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 60px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h4 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        /* Quick Stats */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .stat-item h4 {
+            font-size: 24px;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .stat-item p {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <!-- Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <!-- Sidebar Header -->
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="company-info">
+                    <h2 id="companyNameDisplay">Company Name</h2>
+                    <p><i class="fas fa-user-shield"></i> <span id="roleDisplay">Company Admin</span></p>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="sidebar-nav">
+                <!-- Dashboard Section -->
+                <div class="nav-section">
+                    <h3>Main</h3>
+                    <ul class="nav-links">
+                        <li>
+                            <a href="#" class="nav-link active" onclick="showSection('dashboard')">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link" onclick="showSection('analytics')">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Analytics</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Team Management Section -->
+                <div class="nav-section">
+                    <h3>Team Management</h3>
+                    <ul class="nav-links">
+                        <li>
+                            <a href="#" class="nav-link" onclick="showSection('users')">
+                                <i class="fas fa-users"></i>
+                                <span>Users</span>
+                                <span class="badge" id="usersCount">0</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link" onclick="showSection('teams')">
+                                <i class="fas fa-user-friends"></i>
+                                <span>Teams</span>
+                                <span class="badge" id="teamsCount">0</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link" onclick="showSection('departments')">
+                                <i class="fas fa-sitemap"></i>
+                                <span>Departments</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Project Management Section -->
+                <div class="nav-section">
+                    <h3>Project Management</h3>
+                    <ul class="nav-links">
+                        <li>
+                            <a href="#" class="nav-link" onclick="showSection('projects')">
+                                <i class="fas fa-project-diagram"></i>
+                                <span>Projects</span>
+                                <span class="badge" id="projectsCount">0</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link" onclick="showSection('tasks')">
+                                <i class="fas fa-tasks"></i>
+                                <span>Tasks</span>
+                                <span class="badge" id="tasksCount">0</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link" onclick="showSection('kanban')">
+                                <i class="fas fa-columns"></i>
+                                <span>Kanban Board</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Settings Section -->
+                <div class="nav-section">
+                    <h3>Settings</h3>
+                    <ul class="nav-links">
+                        <li>
+                            <a href="#" class="nav-link" onclick="showSection('company-settings')">
+                                <i class="fas fa-cog"></i>
+                                <span>Company Settings</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link" onclick="showSection('billing')">
+                                <i class="fas fa-credit-card"></i>
+                                <span>Billing</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link" onclick="showSection('notifications')">
+                                <i class="fas fa-bell"></i>
+                                <span>Notifications</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar" id="userAvatar">AD</div>
+                    <div class="user-details">
+                        <h4 id="userName">Admin User</h4>
+                        <p id="userEmail">admin@company.com</p>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 id="pageTitle">Company Dashboard</h1>
+                    <div class="breadcrumb">
+                        <span>Home</span>
+                        <i class="fas fa-chevron-right"></i>
+                        <span id="breadcrumbCurrent">Dashboard</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search..." id="searchInput">
+                    </div>
+                    <div class="notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Welcome Banner -->
+                <div class="welcome-banner" id="welcomeBanner">
+                    <div class="welcome-text">
+                        <h2>Welcome back, <span id="greetingName">Admin</span>!</h2>
+                        <p>Here's what's happening with your company today.</p>
+                    </div>
+                    <div class="stats-badge">
+                        <h3 id="activeUsers">0</h3>
+                        <p>Active Users</p>
+                    </div>
+                </div>
+
+                <!-- Dashboard Content -->
+                <div id="dashboardContent">
+                    <!-- Dashboard Cards -->
+                    <div class="dashboard-cards">
+                        <div class="dashboard-card" onclick="showSection('users')">
+                            <div class="card-header">
+                                <div class="card-icon users">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="card-stats">
+                                    <h3 id="totalUsers">0</h3>
+                                    <p>Total Users</p>
+                                    <span class="card-trend up">
+                                        <i class="fas fa-arrow-up"></i> 12%
+                                    </span>
+                                </div>
+                            </div>
+                            <p>Manage company users and their permissions</p>
+                        </div>
+
+                        <div class="dashboard-card" onclick="showSection('teams')">
+                            <div class="card-header">
+                                <div class="card-icon teams">
+                                    <i class="fas fa-user-friends"></i>
+                                </div>
+                                <div class="card-stats">
+                                    <h3 id="totalTeams">0</h3>
+                                    <p>Teams</p>
+                                    <span class="card-trend up">
+                                        <i class="fas fa-arrow-up"></i> 5%
+                                    </span>
+                                </div>
+                            </div>
+                            <p>Create and manage teams for projects</p>
+                        </div>
+
+                        <div class="dashboard-card" onclick="showSection('projects')">
+                            <div class="card-header">
+                                <div class="card-icon projects">
+                                    <i class="fas fa-project-diagram"></i>
+                                </div>
+                                <div class="card-stats">
+                                    <h3 id="totalProjects">0</h3>
+                                    <p>Active Projects</p>
+                                    <span class="card-trend down">
+                                        <i class="fas fa-arrow-down"></i> 2%
+                                    </span>
+                                </div>
+                            </div>
+                            <p>Track and manage ongoing projects</p>
+                        </div>
+
+                        <div class="dashboard-card" onclick="showSection('tasks')">
+                            <div class="card-header">
+                                <div class="card-icon tasks">
+                                    <i class="fas fa-tasks"></i>
+                                </div>
+                                <div class="card-stats">
+                                    <h3 id="totalTasks">0</h3>
+                                    <p>Pending Tasks</p>
+                                    <span class="card-trend up">
+                                        <i class="fas fa-arrow-up"></i> 8%
+                                    </span>
+                                </div>
+                            </div>
+                            <p>Monitor tasks across all projects</p>
+                        </div>
+                    </div>
+
+                    <!-- Main Sections -->
+                    <div class="main-sections">
+                        <!-- Recent Users Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h3>Recent Users</h3>
+                                <a href="#" class="view-all" onclick="showSection('users')">
+                                    View All
+                                    <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentUsersTable">
+                                    <!-- Users will be populated here -->
+                                </tbody>
+                            </table>
+                            <div class="empty-state" id="noUsersMessage" style="display: none;">
+                                <i class="fas fa-users-slash"></i>
+                                <h4>No Users Yet</h4>
+                                <p>Start by adding your first team member</p>
+                                <button class="btn btn-primary" onclick="openAddUserModal()">
+                                    <i class="fas fa-user-plus"></i>
+                                    Add User
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h3>Recent Activity</h3>
+                            </div>
+                            <ul class="activity-list" id="activityList">
+                                <!-- Activities will be populated here -->
+                            </ul>
+                            <div class="empty-state" id="noActivityMessage" style="display: none;">
+                                <i class="fas fa-history"></i>
+                                <h4>No Recent Activity</h4>
+                                <p>Activity will appear here as users interact</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="section" style="margin-top: 30px;">
+                        <div class="section-header">
+                            <h3>Quick Stats</h3>
+                        </div>
+                        <div class="quick-stats">
+                            <div class="stat-item">
+                                <h4 id="activeProjects">0</h4>
+                                <p>Active Projects</p>
+                            </div>
+                            <div class="stat-item">
+                                <h4 id="completedTasks">0</h4>
+                                <p>Completed Tasks</p>
+                            </div>
+                            <div class="stat-item">
+                                <h4 id="overdueTasks">0</h4>
+                                <p>Overdue Tasks</p>
+                            </div>
+                            <div class="stat-item">
+                                <h4 id="teamProductivity">0%</h4>
+                                <p>Team Productivity</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Other Sections (Initially Hidden) -->
+                <div id="otherSections" style="display: none;">
+                    <!-- Sections content will be loaded dynamically -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Add User Modal -->
+    <div class="modal-overlay" id="addUserModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-plus"></i> Add New User</h3>
+                <button class="close-modal" onclick="closeModal('addUserModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label for="userFullName">Full Name *</label>
+                    <input type="text" id="userFullName" placeholder="Enter full name" required>
+                </div>
+                <div class="input-group">
+                    <label for="userEmail">Email Address *</label>
+                    <input type="email" id="userEmail" placeholder="Enter email address" required>
+                </div>
+                <div class="input-group">
+                    <label for="userRole">Role *</label>
+                    <select id="userRole" required>
+                        <option value="">Select Role</option>
+                        <option value="manager">Manager</option>
+                        <option value="team_lead">Team Lead</option>
+                        <option value="developer">Developer</option>
+                        <option value="designer">Designer</option>
+                        <option value="analyst">Analyst</option>
+                        <option value="viewer">Viewer</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="userDepartment">Department</label>
+                    <select id="userDepartment">
+                        <option value="">Select Department</option>
+                        <option value="development">Development</option>
+                        <option value="design">Design</option>
+                        <option value="marketing">Marketing</option>
+                        <option value="sales">Sales</option>
+                        <option value="support">Support</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="userTeam">Assign to Team</label>
+                    <select id="userTeam">
+                        <option value="">Select Team (Optional)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('addUserModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveNewUser()">Add User</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Team Modal -->
+    <div class="modal-overlay" id="addTeamModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-friends"></i> Create New Team</h3>
+                <button class="close-modal" onclick="closeModal('addTeamModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label for="teamName">Team Name *</label>
+                    <input type="text" id="teamName" placeholder="Enter team name" required>
+                </div>
+                <div class="input-group">
+                    <label for="teamDescription">Description</label>
+                    <textarea id="teamDescription" placeholder="Describe the team's purpose" rows="3"></textarea>
+                </div>
+                <div class="input-group">
+                    <label for="teamLead">Team Lead</label>
+                    <select id="teamLead">
+                        <option value="">Select Team Lead</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="teamDepartment">Department</label>
+                    <select id="teamDepartment">
+                        <option value="">Select Department</option>
+                        <option value="development">Development</option>
+                        <option value="design">Design</option>
+                        <option value="marketing">Marketing</option>
+                        <option value="sales">Sales</option>
+                        <option value="support">Support</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('addTeamModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveNewTeam()">Create Team</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDYhLNuJKj2ucwGimfddTfpTb32Y0c-bXg",
+            authDomain: "mytask-96a79.firebaseapp.com",
+            databaseURL: "https://mytask-96a79-default-rtdb.firebaseio.com",
+            projectId: "mytask-96a79",
+            storageBucket: "mytask-96a79.firebasestorage.app",
+            messagingSenderId: "963509757773",
+            appId: "1:963509757773:web:d9c81a108f5873702eb904",
+            measurementId: "G-L9C1LTCZRN"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Global Variables
+        let currentUser = null;
+        let companyData = null;
+        let users = [];
+        let teams = [];
+        let projects = [];
+        let tasks = [];
+
+        // Initialize Dashboard
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check if company user is logged in
+            const sessionUser = sessionStorage.getItem("username");
+            const userType = sessionStorage.getItem("userType");
+            
+            if (!sessionUser || userType !== "company") {
+                // Redirect to company login if not logged in
+                alert("Please login as company user");
+                window.location.href = "company-login.html";
+                return;
+            }
+
+            // Load user data
+            await loadUserData(sessionUser);
+            
+            // Update UI with user data
+            updateUserInfo();
+            
+            // Load dashboard data
+            await loadDashboardData();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Set initial active state
+            showSection('dashboard');
+        });
+
+        // Load user data from Firestore
+        async function loadUserData(username) {
+            try {
+                const querySnapshot = await db.collection("users")
+                    .where("username", "==", username)
+                    .get();
+                
+                if (!querySnapshot.empty) {
+                    const userDoc = querySnapshot.docs[0];
+                    currentUser = {
+                        id: userDoc.id,
+                        ...userDoc.data()
+                    };
+                    
+                    // Load company users if user is company admin
+                    if (currentUser.userType === "company" && currentUser.companyId) {
+                        await loadCompanyUsers();
+                        await loadCompanyTeams();
+                        await loadCompanyProjects();
+                        await loadCompanyTasks();
+                    }
+                }
+            } catch (error) {
+                console.error("Error loading user data:", error);
+                alert("Error loading user data. Please try again.");
+            }
+        }
+
+        // Load company users
+        async function loadCompanyUsers() {
+            try {
+                let query = db.collection("users")
+                    .where("userType", "==", "company");
+                
+                if (currentUser.companyId) {
+                    query = query.where("companyId", "==", currentUser.companyId);
+                }
+                
+                const querySnapshot = await query.get();
+                users = [];
+                querySnapshot.forEach(doc => {
+                    users.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                updateUserCounts();
+                populateRecentUsers();
+            } catch (error) {
+                console.error("Error loading company users:", error);
+            }
+        }
+
+        // Load company teams
+        async function loadCompanyTeams() {
+            try {
+                const querySnapshot = await db.collection("teams")
+                    .where("companyId", "==", currentUser.companyId)
+                    .get();
+                
+                teams = [];
+                querySnapshot.forEach(doc => {
+                    teams.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                updateTeamCounts();
+                populateTeamSelects();
+            } catch (error) {
+                console.error("Error loading teams:", error);
+            }
+        }
+
+        // Load company projects
+        async function loadCompanyProjects() {
+            try {
+                const querySnapshot = await db.collection("projects")
+                    .where("companyId", "==", currentUser.companyId)
+                    .get();
+                
+                projects = [];
+                querySnapshot.forEach(doc => {
+                    projects.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                updateProjectCounts();
+            } catch (error) {
+                console.error("Error loading projects:", error);
+            }
+        }
+
+        // Load company tasks
+        async function loadCompanyTasks() {
+            try {
+                const querySnapshot = await db.collection("tasks")
+                    .where("companyId", "==", currentUser.companyId)
+                    .get();
+                
+                tasks = [];
+                querySnapshot.forEach(doc => {
+                    tasks.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                updateTaskCounts();
+            } catch (error) {
+                console.error("Error loading tasks:", error);
+            }
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            // Load initial counts
+            updateAllCounts();
+            
+            // Populate activity log
+            populateActivityLog();
+            
+            // Update quick stats
+            updateQuickStats();
+        }
+
+        // Update user information in UI
+        function updateUserInfo() {
+            if (currentUser) {
+                // Update sidebar
+                document.getElementById('companyNameDisplay').textContent = currentUser.companyName || 'Company Name';
+                document.getElementById('roleDisplay').textContent = currentUser.role || 'Company Admin';
+                
+                // Update user info
+                const userName = currentUser.contactPerson || currentUser.username;
+                document.getElementById('userName').textContent = userName;
+                document.getElementById('userEmail').textContent = currentUser.companyEmail || 'admin@company.com';
+                
+                // Update avatar with initials
+                const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase();
+                document.getElementById('userAvatar').textContent = initials.substring(0, 2);
+                
+                // Update greeting
+                document.getElementById('greetingName').textContent = userName.split(' ')[0];
+            }
+        }
+
+        // Update all counts
+        function updateAllCounts() {
+            updateUserCounts();
+            updateTeamCounts();
+            updateProjectCounts();
+            updateTaskCounts();
+        }
+
+        // Update user counts
+        function updateUserCounts() {
+            const totalUsers = users.length;
+            const activeUsers = users.filter(u => u.status === 'active' || u.status === 'approved').length;
+            
+            document.getElementById('totalUsers').textContent = totalUsers;
+            document.getElementById('usersCount').textContent = totalUsers;
+            document.getElementById('activeUsers').textContent = activeUsers;
+        }
+
+        // Update team counts
+        function updateTeamCounts() {
+            const totalTeams = teams.length;
+            document.getElementById('totalTeams').textContent = totalTeams;
+            document.getElementById('teamsCount').textContent = totalTeams;
+        }
+
+        // Update project counts
+        function updateProjectCounts() {
+            const totalProjects = projects.length;
+            const activeProjects = projects.filter(p => p.status === 'active').length;
+            
+            document.getElementById('totalProjects').textContent = totalProjects;
+            document.getElementById('projectsCount').textContent = totalProjects;
+            document.getElementById('activeProjects').textContent = activeProjects;
+        }
+
+        // Update task counts
+        function updateTaskCounts() {
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(t => t.status === 'completed').length;
+            const overdueTasks = tasks.filter(t => {
+                if (t.dueDate && t.status !== 'completed') {
+                    const dueDate = new Date(t.dueDate);
+                    return dueDate < new Date();
+                }
+                return false;
+            }).length;
+            
+            document.getElementById('totalTasks').textContent = totalTasks;
+            document.getElementById('tasksCount').textContent = totalTasks;
+            document.getElementById('completedTasks').textContent = completedTasks;
+            document.getElementById('overdueTasks').textContent = overdueTasks;
+        }
+
+        // Update quick stats
+        function updateQuickStats() {
+            // Calculate team productivity (example calculation)
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(t => t.status === 'completed').length;
+            const productivity = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            
+            document.getElementById('teamProductivity').textContent = `${productivity}%`;
+        }
+
+        // Populate recent users table
+        function populateRecentUsers() {
+            const tableBody = document.getElementById('recentUsersTable');
+            const noUsersMessage = document.getElementById('noUsersMessage');
+            
+            if (users.length === 0) {
+                tableBody.innerHTML = '';
+                noUsersMessage.style.display = 'block';
+                return;
+            }
+            
+            noUsersMessage.style.display = 'none';
+            
+            // Sort users by creation date (newest first) and take first 5
+            const recentUsers = [...users]
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                .slice(0, 5);
+            
+            let html = '';
+            recentUsers.forEach(user => {
+                const initials = (user.fullName || user.username || 'UU')
+                    .split(' ')
+                    .map(n => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .substring(0, 2);
+                
+                const statusClass = user.status === 'active' || user.status === 'approved' ? 'status-active' :
+                                 user.status === 'pending' ? 'status-pending' : 'status-inactive';
+                
+                const statusText = user.status === 'active' || user.status === 'approved' ? 'Active' :
+                                 user.status === 'pending' ? 'Pending' : 'Inactive';
+                
+                html += `
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="user-avatar-small">${initials}</div>
+                                <div>
+                                    <div style="font-weight: 500;">${user.fullName || user.username}</div>
+                                    <div style="font-size: 12px; color: #666;">${user.email || user.companyEmail || ''}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${user.role || 'User'}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>
+                            <div class="form-actions">
+                                <button class="action-btn edit" onclick="editUser('${user.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="action-btn delete" onclick="deleteUser('${user.id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+
+        // Populate activity log
+        function populateActivityLog() {
+            const activityList = document.getElementById('activityList');
+            const noActivityMessage = document.getElementById('noActivityMessage');
+            
+            // Sample activities - in real app, fetch from Firestore
+            const sampleActivities = [
+                {
+                    icon: 'fa-user-plus',
+                    title: 'New User Added',
+                    description: 'John Doe joined the company',
+                    time: '2 hours ago'
+                },
+                {
+                    icon: 'fa-project-diagram',
+                    title: 'Project Created',
+                    description: 'New project "Website Redesign" started',
+                    time: '4 hours ago'
+                },
+                {
+                    icon: 'fa-tasks',
+                    title: 'Task Completed',
+                    description: 'Task "Homepage Design" marked as complete',
+                    time: '1 day ago'
+                },
+                {
+                    icon: 'fa-user-friends',
+                    title: 'Team Created',
+                    description: 'New team "Development Team" created',
+                    time: '2 days ago'
+                }
+            ];
+            
+            if (sampleActivities.length === 0) {
+                noActivityMessage.style.display = 'block';
+                activityList.innerHTML = '';
+                return;
+            }
+            
+            noActivityMessage.style.display = 'none';
+            
+            let html = '';
+            sampleActivities.forEach(activity => {
+                html += `
+                    <li class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas ${activity.icon}"></i>
+                        </div>
+                        <div class="activity-content">
+                            <h4>${activity.title}</h4>
+                            <p>${activity.description}</p>
+                            <div class="activity-time">${activity.time}</div>
+                        </div>
+                    </li>
+                `;
+            });
+            
+            activityList.innerHTML = html;
+        }
+
+        // Populate team selects in modals
+        function populateTeamSelects() {
+            const userTeamSelect = document.getElementById('userTeam');
+            const teamLeadSelect = document.getElementById('teamLead');
+            
+            // Clear existing options (keep first option)
+            while (userTeamSelect.options.length > 1) userTeamSelect.remove(1);
+            while (teamLeadSelect.options.length > 1) teamLeadSelect.remove(1);
+            
+            // Add team options
+            teams.forEach(team => {
+                const option1 = document.createElement('option');
+                option1.value = team.id;
+                option1.textContent = team.name;
+                userTeamSelect.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = team.id;
+                option2.textContent = team.name;
+                teamLeadSelect.appendChild(option2);
+            });
+            
+            // Add user options for team lead
+            users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.fullName || user.username} (${user.role || 'User'})`;
+                teamLeadSelect.appendChild(option);
+            });
+        }
+
+        // Show section
+        function showSection(section) {
+            // Hide all sections
+            document.getElementById('dashboardContent').style.display = 'none';
+            document.getElementById('otherSections').style.display = 'none';
+            
+            // Update active nav link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Find and activate the clicked nav link
+            const navLink = document.querySelector(`[onclick="showSection('${section}')"]`);
+            if (navLink) {
+                navLink.classList.add('active');
+            }
+            
+            // Update page title and breadcrumb
+            const sectionTitles = {
+                'dashboard': 'Dashboard',
+                'analytics': 'Analytics',
+                'users': 'Users Management',
+                'teams': 'Teams Management',
+                'departments': 'Departments',
+                'projects': 'Projects',
+                'tasks': 'Tasks',
+                'kanban': 'Kanban Board',
+                'company-settings': 'Company Settings',
+                'billing': 'Billing',
+                'notifications': 'Notifications'
+            };
+            
+            const title = sectionTitles[section] || 'Dashboard';
+            document.getElementById('pageTitle').textContent = title;
+            document.getElementById('breadcrumbCurrent').textContent = title;
+            
+            // Show the selected section
+            if (section === 'dashboard') {
+                document.getElementById('dashboardContent').style.display = 'block';
+            } else {
+                document.getElementById('otherSections').style.display = 'block';
+                loadSectionContent(section);
+            }
+        }
+
+        // Load section content dynamically
+        function loadSectionContent(section) {
+            const container = document.getElementById('otherSections');
+            
+            switch(section) {
+                case 'users':
+                    container.innerHTML = `
+                        <div class="section">
+                            <div class="section-header">
+                                <h3><i class="fas fa-users"></i> Users Management</h3>
+                                <button class="btn btn-primary" onclick="openAddUserModal()">
+                                    <i class="fas fa-user-plus"></i>
+                                    Add User
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Email</th>
+                                            <th>Role</th>
+                                            <th>Department</th>
+                                            <th>Team</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="allUsersTable">
+                                        <!-- Users will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                    populateAllUsers();
+                    break;
+                    
+                case 'teams':
+                    container.innerHTML = `
+                        <div class="section">
+                            <div class="section-header">
+                                <h3><i class="fas fa-user-friends"></i> Teams Management</h3>
+                                <button class="btn btn-primary" onclick="openAddTeamModal()">
+                                    <i class="fas fa-user-friends"></i>
+                                    Create Team
+                                </button>
+                            </div>
+                            <div class="dashboard-cards" id="teamsGrid">
+                                <!-- Teams will be populated here -->
+                            </div>
+                        </div>
+                    `;
+                    populateTeamsGrid();
+                    break;
+                    
+                default:
+                    container.innerHTML = `
+                        <div class="section">
+                            <h3>${section.charAt(0).toUpperCase() + section.slice(1)} Section</h3>
+                            <p>This section is under development.</p>
+                        </div>
+                    `;
+            }
+        }
+
+        // Populate all users table
+        function populateAllUsers() {
+            const tableBody = document.getElementById('allUsersTable');
+            
+            if (users.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <i class="fas fa-users-slash"></i>
+                            <h4>No Users Found</h4>
+                            <p>Start by adding your first team member</p>
+                            <button class="btn btn-primary" onclick="openAddUserModal()">
+                                <i class="fas fa-user-plus"></i>
+                                Add User
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            users.forEach(user => {
+                const initials = (user.fullName || user.username || 'UU')
+                    .split(' ')
+                    .map(n => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .substring(0, 2);
+                
+                const statusClass = user.status === 'active' || user.status === 'approved' ? 'status-active' :
+                                 user.status === 'pending' ? 'status-pending' : 'status-inactive';
+                
+                const statusText = user.status === 'active' || user.status === 'approved' ? 'Active' :
+                                 user.status === 'pending' ? 'Pending' : 'Inactive';
+                
+                html += `
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="user-avatar-small">${initials}</div>
+                                <div>
+                                    <div style="font-weight: 500;">${user.fullName || user.username}</div>
+                                    <div style="font-size: 12px; color: #666;">${user.role || 'User'}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${user.email || user.companyEmail || 'N/A'}</td>
+                        <td>${user.role || 'User'}</td>
+                        <td>${user.department || 'N/A'}</td>
+                        <td>${user.team || 'N/A'}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>
+                            <div class="form-actions">
+                                <button class="action-btn edit" onclick="editUser('${user.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="action-btn delete" onclick="deleteUser('${user.id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+
+        // Populate teams grid
+        function populateTeamsGrid() {
+            const teamsGrid = document.getElementById('teamsGrid');
+            
+            if (teams.length === 0) {
+                teamsGrid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <i class="fas fa-user-friends"></i>
+                        <h4>No Teams Yet</h4>
+                        <p>Create your first team to organize users</p>
+                        <button class="btn btn-primary" onclick="openAddTeamModal()">
+                            <i class="fas fa-user-friends"></i>
+                            Create Team
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            teams.forEach(team => {
+                const memberCount = users.filter(u => u.team === team.id).length;
+                
+                html += `
+                    <div class="dashboard-card" onclick="viewTeam('${team.id}')">
+                        <div class="card-header">
+                            <div class="card-icon teams">
+                                <i class="fas fa-user-friends"></i>
+                            </div>
+                            <div class="card-stats">
+                                <h3>${memberCount}</h3>
+                                <p>Members</p>
+                            </div>
+                        </div>
+                        <h4 style="margin-bottom: 10px; font-weight: 600;">${team.name}</h4>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">${team.description || 'No description'}</p>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="action-btn edit" onclick="editTeam('${team.id}', event)">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="action-btn delete" onclick="deleteTeam('${team.id}', event)">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            teamsGrid.innerHTML = html;
+        }
+
+        // Modal Functions
+        function openAddUserModal() {
+            document.getElementById('addUserModal').classList.add('active');
+            // Clear form
+            document.getElementById('userFullName').value = '';
+            document.getElementById('userEmail').value = '';
+            document.getElementById('userRole').value = '';
+            document.getElementById('userDepartment').value = '';
+            document.getElementById('userTeam').value = '';
+        }
+
+        function openAddTeamModal() {
+            document.getElementById('addTeamModal').classList.add('active');
+            // Clear form
+            document.getElementById('teamName').value = '';
+            document.getElementById('teamDescription').value = '';
+            document.getElementById('teamLead').value = '';
+            document.getElementById('teamDepartment').value = '';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Save new user
+        async function saveNewUser() {
+            const fullName = document.getElementById('userFullName').value.trim();
+            const email = document.getElementById('userEmail').value.trim();
+            const role = document.getElementById('userRole').value;
+            const department = document.getElementById('userDepartment').value;
+            const team = document.getElementById('userTeam').value;
+            
+            // Validation
+            if (!fullName || !email || !role) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            if (!validateEmail(email)) {
+                alert('Please enter a valid email address');
+                return;
+            }
+            
+            try {
+                // Generate username from email
+                const username = email.split('@')[0].toLowerCase();
+                
+                // Generate temporary password
+                const tempPassword = generatePassword(8);
+                
+                // Create user object
+                const userData = {
+                    username: username,
+                    password: tempPassword,
+                    fullName: fullName,
+                    email: email,
+                    role: role,
+                    department: department || '',
+                    team: team || '',
+                    userType: 'company',
+                    companyId: currentUser.companyId,
+                    companyName: currentUser.companyName,
+                    status: 'pending',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                // Save to Firestore
+                await db.collection("users").add(userData);
+                
+                // Close modal
+                closeModal('addUserModal');
+                
+                // Show success message
+                alert(`User added successfully! Temporary password: ${tempPassword}`);
+                
+                // Refresh users list
+                await loadCompanyUsers();
+                
+            } catch (error) {
+                console.error("Error saving user:", error);
+                alert('Error saving user. Please try again.');
+            }
+        }
+
+        // Save new team
+        async function saveNewTeam() {
+            const name = document.getElementById('teamName').value.trim();
+            const description = document.getElementById('teamDescription').value.trim();
+            const teamLead = document.getElementById('teamLead').value;
+            const department = document.getElementById('teamDepartment').value;
+            
+            if (!name) {
+                alert('Please enter a team name');
+                return;
+            }
+            
+            try {
+                const teamData = {
+                    name: name,
+                    description: description,
+                    teamLead: teamLead || '',
+                    department: department || '',
+                    companyId: currentUser.companyId,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                await db.collection("teams").add(teamData);
+                
+                closeModal('addTeamModal');
+                alert('Team created successfully!');
+                
+                await loadCompanyTeams();
+                
+            } catch (error) {
+                console.error("Error saving team:", error);
+                alert('Error creating team. Please try again.');
+            }
+        }
+
+        // Edit user
+        function editUser(userId) {
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                openAddUserModal();
+                // Pre-fill form with user data
+                document.getElementById('userFullName').value = user.fullName || '';
+                document.getElementById('userEmail').value = user.email || user.companyEmail || '';
+                document.getElementById('userRole').value = user.role || '';
+                document.getElementById('userDepartment').value = user.department || '';
+                document.getElementById('userTeam').value = user.team || '';
+                
+                // Change modal title and button
+                document.querySelector('#addUserModal .modal-header h3').innerHTML = '<i class="fas fa-edit"></i> Edit User';
+                document.querySelector('#addUserModal .btn-primary').textContent = 'Update User';
+                document.querySelector('#addUserModal .btn-primary').onclick = () => updateUser(userId);
+            }
+        }
+
+        // Update user
+        async function updateUser(userId) {
+            // Implementation similar to saveNewUser but with update
+            alert('Update functionality to be implemented');
+        }
+
+        // Delete user
+        async function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                try {
+                    await db.collection("users").doc(userId).delete();
+                    await loadCompanyUsers();
+                    alert('User deleted successfully');
+                } catch (error) {
+                    console.error("Error deleting user:", error);
+                    alert('Error deleting user');
+                }
+            }
+        }
+
+        // Edit team
+        function editTeam(teamId, event) {
+            event.stopPropagation();
+            const team = teams.find(t => t.id === teamId);
+            if (team) {
+                openAddTeamModal();
+                document.getElementById('teamName').value = team.name;
+                document.getElementById('teamDescription').value = team.description || '';
+                document.getElementById('teamLead').value = team.teamLead || '';
+                document.getElementById('teamDepartment').value = team.department || '';
+                
+                document.querySelector('#addTeamModal .modal-header h3').innerHTML = '<i class="fas fa-edit"></i> Edit Team';
+                document.querySelector('#addTeamModal .btn-primary').textContent = 'Update Team';
+                document.querySelector('#addTeamModal .btn-primary').onclick = () => updateTeam(teamId);
+            }
+        }
+
+        // Update team
+        async function updateTeam(teamId) {
+            alert('Update team functionality to be implemented');
+        }
+
+        // Delete team
+        async function deleteTeam(teamId, event) {
+            event.stopPropagation();
+            if (confirm('Are you sure you want to delete this team?')) {
+                try {
+                    await db.collection("teams").doc(teamId).delete();
+                    await loadCompanyTeams();
+                    alert('Team deleted successfully');
+                } catch (error) {
+                    console.error("Error deleting team:", error);
+                    alert('Error deleting team');
+                }
+            }
+        }
+
+        // View team details
+        function viewTeam(teamId) {
+            alert('View team details functionality to be implemented');
+        }
+
+        // Helper Functions
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function generatePassword(length) {
+            const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let password = '';
+            for (let i = 0; i < length; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return password;
+        }
+
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active');
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                sessionStorage.clear();
+                window.location.href = 'company-login.html';
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Search functionality
+            document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const query = e.target.value.trim();
+                    if (query) {
+                        alert(`Search for: ${query}`);
+                        // Implement search functionality
+                    }
+                }
+            });
+            
+            // Close modals when clicking outside
+            document.querySelectorAll('.modal-overlay').forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('active');
+                    }
+                });
+            });
+            
+            // Escape key to close modals
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    document.querySelectorAll('.modal-overlay').forEach(modal => {
+                        modal.classList.remove('active');
+                    });
+                }
+            });
+        }
+
+        // Initialize search
+        function initSearch() {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', debounce((e) => {
+                const query = e.target.value.toLowerCase().trim();
+                if (query) {
+                    // Implement search logic
+                    console.log('Searching for:', query);
+                }
+            }, 300));
+        }
+
+        // Debounce function for search
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    </script>
+</body>
+</html>
