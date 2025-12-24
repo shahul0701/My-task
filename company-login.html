@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow Pro - Company Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2980 0%, #26d0ce 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            color: white;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .logo i {
+            color: #00ff9d;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #00ff9d;
+        }
+
+        .login-btn {
+            background: #00ff9d;
+            color: #333;
+            padding: 10px 25px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+            font-size: 16px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 157, 0.3);
+        }
+
+        /* Hero Section */
+        .hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 80px 0;
+            color: white;
+        }
+
+        .hero-content {
+            flex: 1;
+            max-width: 600px;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            line-height: 1.2;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            background: #00ff9d;
+            color: #333;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .hero-image {
+            flex: 1;
+            text-align: center;
+        }
+
+        .hero-image img {
+            max-width: 100%;
+            filter: drop-shadow(0 20px 30px rgba(0,0,0,0.3));
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Login Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 450px;
+            padding: 40px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease-out;
+            position: relative;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #666;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .login-card h2 {
+            color: #1a2980;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+            outline: none;
+            border-color: #1a2980;
+            box-shadow: 0 0 0 3px rgba(26, 41, 128, 0.1);
+        }
+
+        .login-action-btn {
+            width: 100%;
+            padding: 15px;
+            background: #1a2980;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .login-action-btn:hover {
+            background: #2639c3;
+            transform: translateY(-2px);
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-top: 15px;
+        }
+
+        .forgot-password a {
+            color: #1a2980;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Warning Message */
+        .warning-message {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #ffeaa7;
+            display: none;
+        }
+
+        .warning-message.show {
+            display: block;
+        }
+
+        .warning-message i {
+            margin-right: 10px;
+            color: #f39c12;
+        }
+
+        /* Success Message */
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #c3e6cb;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .success-message i {
+            margin-right: 10px;
+            color: #28a745;
+        }
+
+        /* Company Type Selection */
+        .company-type-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 5px;
+            border-radius: 10px;
+        }
+
+        .company-type-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .company-type-btn.active {
+            background: #1a2980;
+            color: white;
+            box-shadow: 0 4px 15px rgba(26, 41, 128, 0.3);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 0;
+            background: white;
+            border-radius: 30px 30px 0 0;
+            margin-top: 50px;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+            color: #333;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            font-size: 50px;
+            color: #1a2980;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        /* Registration Steps */
+        .registration-steps {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            opacity: 0.6;
+            transition: all 0.3s;
+        }
+
+        .step.active {
+            opacity: 1;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: #3498db;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .step.active .step-number {
+            background: #2ecc71;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: white;
+            opacity: 0.8;
+        }
+
+        footer a {
+            color: #00ff9d;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .cta-buttons {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .login-card {
+                padding: 30px 20px;
+            }
+            
+            .registration-steps {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="logo">
+                <i class="fas fa-building"></i>
+                <span>TaskFlow Pro - Company Portal</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Admin Portal</a>
+                <a href="individual-login.html">Individual Login</a>
+                <button class="login-btn" id="openLoginModal">
+                    <i class="fas fa-building"></i>
+                    Company Login
+                </button>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Team Collaboration Made Effortless</h1>
+                <p>Streamline your team's workflow with our enterprise-grade task management system. Perfect for companies, teams, and organizations of all sizes.</p>
+                
+                <!-- Registration Steps -->
+                <div class="registration-steps">
+                    <div class="step active">
+                        <div class="step-number">1</div>
+                        <div>Company Registration</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div>Admin Approval</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div>Team Setup</div>
+                    </div>
+                </div>
+
+                <div class="cta-buttons">
+                    <button class="btn btn-primary" id="getStartedBtn">
+                        <i class="fas fa-building"></i>
+                        Register Company Account
+                    </button>
+                    <button class="btn btn-secondary" id="openLoginModal2">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Existing Company Login
+                    </button>
+                </div>
+            </div>
+            
+            <div class="hero-image">
+                <img src="https://cdn-icons-png.flaticon.com/512/3067/3067256.png" alt="Team Collaboration Illustration">
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features" id="features">
+            <h2 class="section-title">Enterprise Features for Companies</h2>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3>Team Management</h3>
+                    <p>Add and manage team members with different roles and permissions</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <h3>Project Workspaces</h3>
+                    <p>Create dedicated workspaces for different projects and departments</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <h3>Team Analytics</h3>
+                    <p>Track team productivity and project progress with detailed reports</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h3>Enterprise Security</h3>
+                    <p>Advanced security features and data encryption for business data</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <p>&copy; 2024 TaskFlow Pro - Company Edition. All rights reserved.</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">
+                <i class="fas fa-user"></i> For Individual Users, visit our 
+                <a href="individual-login.html">Individual Portal</a> |
+                <i class="fas fa-user-shield"></i> For Admins, visit 
+                <a href="index.html">Admin Portal</a>
+            </p>
+        </footer>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="login-card">
+            <button class="close-modal" id="closeModal">&times;</button>
+            
+            <h2><i class="fas fa-building"></i> Company Portal</h2>
+            
+            <!-- Warning Message -->
+            <div class="warning-message" id="warningMessage">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="warningText">Your company registration has been sent for approval. Please wait for admin approval.</span>
+            </div>
+
+            <!-- Success Message -->
+            <div class="success-message" id="successMessage">
+                <i class="fas fa-check-circle"></i>
+                <span id="successText">Company registration successful! Please login with your credentials.</span>
+            </div>
+
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="errorText"></span>
+            </div>
+
+            <!-- Company Type Selection -->
+            <div class="company-type-selector">
+                <button class="company-type-btn active" data-type="existing">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Existing Company
+                </button>
+                <button class="company-type-btn" data-type="new">
+                    <i class="fas fa-building"></i>
+                    New Company
+                </button>
+            </div>
+
+            <!-- Existing Company Login Form -->
+            <div id="existingCompanyForm">
+                <div class="input-group">
+                    <label for="loginCompanyId">Company ID / Username</label>
+                    <input type="text" id="loginCompanyId" placeholder="Enter company ID or username">
+                </div>
+                
+                <div class="input-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter company password">
+                </div>
+                
+                <button class="login-action-btn" onclick="tryCompanyLogin()">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Company Login
+                </button>
+                
+                <div class="forgot-password">
+                    <a href="#" onclick="showForgotPassword()">Forgot Password?</a>
+                </div>
+            </div>
+
+            <!-- New Company Registration Form (Initially Hidden) -->
+            <div id="newCompanyForm" style="display: none;">
+                <div class="input-group">
+                    <label for="companyName">Company Name *</label>
+                    <input type="text" id="companyName" placeholder="Enter company name" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="companyEmail">Company Email *</label>
+                    <input type="email" id="companyEmail" placeholder="Enter company email" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="companyType">Company Type</label>
+                    <select id="companyType">
+                        <option value="">Select Company Type</option>
+                        <option value="startup">Startup</option>
+                        <option value="small_business">Small Business</option>
+                        <option value="medium_enterprise">Medium Enterprise</option>
+                        <option value="large_corporation">Large Corporation</option>
+                        <option value="ngo">NGO</option>
+                        <option value="government">Government</option>
+                        <option value="educational">Educational Institution</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label for="industry">Industry</label>
+                    <input type="text" id="industry" placeholder="e.g., Technology, Healthcare, Finance">
+                </div>
+                
+                <div class="input-group">
+                    <label for="address">Company Address</label>
+                    <textarea id="address" placeholder="Enter company address" rows="2"></textarea>
+                </div>
+                
+                <div class="input-group">
+                    <label for="contactPerson">Contact Person *</label>
+                    <input type="text" id="contactPerson" placeholder="Name of contact person" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="contactPhone">Contact Phone</label>
+                    <input type="tel" id="contactPhone" placeholder="Contact phone number">
+                </div>
+                
+                <div class="input-group">
+                    <label for="estimatedUsers">Estimated Users</label>
+                    <select id="estimatedUsers">
+                        <option value="1-10">1-10 users</option>
+                        <option value="11-50">11-50 users</option>
+                        <option value="51-100">51-100 users</option>
+                        <option value="101-500">101-500 users</option>
+                        <option value="500+">500+ users</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label for="companyUsername">Company Username *</label>
+                    <input type="text" id="companyUsername" placeholder="Choose a company username" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="companyPassword">Company Password *</label>
+                    <input type="password" id="companyPassword" placeholder="Choose a company password (min 8 chars)" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="confirmCompanyPassword">Confirm Password *</label>
+                    <input type="password" id="confirmCompanyPassword" placeholder="Confirm company password" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="purpose">Purpose of Use</label>
+                    <textarea id="purpose" placeholder="Describe how your company plans to use the platform" rows="3"></textarea>
+                </div>
+                
+                <button class="login-action-btn" onclick="registerCompany()">
+                    <i class="fas fa-building"></i>
+                    Register Company Account
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase Configuration (Same as other pages)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDYhLNuJKj2ucwGimfddTfpTb32Y0c-bXg",
+            authDomain: "mytask-96a79.firebaseapp.com",
+            databaseURL: "https://mytask-96a79-default-rtdb.firebaseio.com",
+            projectId: "mytask-96a79",
+            storageBucket: "mytask-96a79.firebasestorage.app",
+            messagingSenderId: "963509757773",
+            appId: "1:963509757773:web:d9c81a108f5873702eb904",
+            measurementId: "G-L9C1LTCZRN"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // DOM Elements
+        const loginModal = document.getElementById('loginModal');
+        const openLoginModalBtn = document.getElementById('openLoginModal');
+        const openLoginModalBtn2 = document.getElementById('openLoginModal2');
+        const closeModalBtn = document.getElementById('closeModal');
+        const getStartedBtn = document.getElementById('getStartedBtn');
+        const companyTypeBtns = document.querySelectorAll('.company-type-btn');
+        const existingCompanyForm = document.getElementById('existingCompanyForm');
+        const newCompanyForm = document.getElementById('newCompanyForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const warningMessage = document.getElementById('warningMessage');
+        const warningText = document.getElementById('warningText');
+        const successMessage = document.getElementById('successMessage');
+        const successText = document.getElementById('successText');
+
+        // Modal Controls
+        openLoginModalBtn.addEventListener('click', () => {
+            loginModal.classList.add('active');
+            showExistingCompanyForm();
+        });
+
+        openLoginModalBtn2.addEventListener('click', () => {
+            loginModal.classList.add('active');
+            showExistingCompanyForm();
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            loginModal.classList.remove('active');
+            clearForms();
+        });
+
+        getStartedBtn.addEventListener('click', () => {
+            loginModal.classList.add('active');
+            showNewCompanyForm();
+        });
+
+        // Close modal when clicking outside
+        loginModal.addEventListener('click', (e) => {
+            if (e.target === loginModal) {
+                loginModal.classList.remove('active');
+                clearForms();
+            }
+        });
+
+        // Company Type Switching
+        companyTypeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                companyTypeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                if (btn.dataset.type === 'existing') {
+                    showExistingCompanyForm();
+                } else {
+                    showNewCompanyForm();
+                }
+            });
+        });
+
+        function showExistingCompanyForm() {
+            existingCompanyForm.style.display = 'block';
+            newCompanyForm.style.display = 'none';
+            clearMessages();
+        }
+
+        function showNewCompanyForm() {
+            existingCompanyForm.style.display = 'none';
+            newCompanyForm.style.display = 'block';
+            clearMessages();
+        }
+
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.add('show');
+            hideWarning();
+            hideSuccess();
+        }
+
+        function showWarning(message) {
+            warningText.textContent = message;
+            warningMessage.classList.add('show');
+            clearError();
+            hideSuccess();
+        }
+
+        function showSuccess(message) {
+            successText.textContent = message;
+            successMessage.classList.add('show');
+            clearError();
+            hideWarning();
+        }
+
+        function clearError() {
+            errorMessage.classList.remove('show');
+        }
+
+        function hideWarning() {
+            warningMessage.classList.remove('show');
+        }
+
+        function hideSuccess() {
+            successMessage.classList.remove('show');
+        }
+
+        function clearMessages() {
+            clearError();
+            hideWarning();
+            hideSuccess();
+        }
+
+        function clearForms() {
+            // Clear all input fields
+            document.getElementById('loginCompanyId').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('companyName').value = '';
+            document.getElementById('companyEmail').value = '';
+            document.getElementById('companyType').value = '';
+            document.getElementById('industry').value = '';
+            document.getElementById('address').value = '';
+            document.getElementById('contactPerson').value = '';
+            document.getElementById('contactPhone').value = '';
+            document.getElementById('estimatedUsers').value = '1-10';
+            document.getElementById('companyUsername').value = '';
+            document.getElementById('companyPassword').value = '';
+            document.getElementById('confirmCompanyPassword').value = '';
+            document.getElementById('purpose').value = '';
+            
+            // Reset to default state
+            showExistingCompanyForm();
+            companyTypeBtns.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.type === 'existing') {
+                    btn.classList.add('active');
+                }
+            });
+            clearMessages();
+        }
+
+        // Login Function for Company Users
+        function tryCompanyLogin() {
+            const companyId = document.getElementById('loginCompanyId').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            
+            if (!companyId || !password) {
+                showError("Please enter both company ID and password");
+                return;
+            }
+            
+            // Query Firestore for company user
+            db.collection("users")
+                .where("username", "==", companyId)
+                .where("password", "==", password)
+                .get()
+                .then(querySnapshot => {
+                    if (querySnapshot.empty) {
+                        showError("Invalid company ID or password");
+                        return;
+                    }
+                    
+                    const userDoc = querySnapshot.docs[0];
+                    const userData = userDoc.data();
+                    
+                    // Check if this is a company user
+                    if (userData.userType && userData.userType !== "company") {
+                        showError("This account is not a company account. Please use the appropriate portal.");
+                        return;
+                    }
+                    
+                    // Check if account is approved
+                    if (userData.status === "pending_approval") {
+                        showWarning("Your company account is pending approval. Please wait for administrator approval.");
+                        return;
+                    }
+                    
+                    if (userData.status === "rejected") {
+                        showError("Your company account has been rejected. Please contact administrator.");
+                        return;
+                    }
+                    
+                    if (userData.status === "hold") {
+                        showWarning("Your company account is on hold. Please contact administrator.");
+                        return;
+                    }
+                    
+                    // Save company data to sessionStorage
+                    sessionStorage.setItem("username", userData.username);
+                    sessionStorage.setItem("userType", "company");
+                    sessionStorage.setItem("role", userData.role || "company_admin");
+                    sessionStorage.setItem("companyId", userData.companyId || userData.username);
+                    
+                    if (userData.companyName) {
+                        sessionStorage.setItem("companyName", userData.companyName);
+                    }
+                    if (userData.companyEmail) {
+                        sessionStorage.setItem("companyEmail", userData.companyEmail);
+                    }
+                    if (userData.contactPerson) {
+                        sessionStorage.setItem("contactPerson", userData.contactPerson);
+                    }
+                    
+                    // Close modal
+                    loginModal.classList.remove('active');
+                    clearForms();
+                    
+                    // Redirect company user to dashboard
+                    showSuccess("Login successful! Redirecting to company dashboard...");
+                    setTimeout(() => {
+                        window.location.href = "CompanyDashboard.html";
+                    }, 1500);
+                    
+                })
+                .catch(error => {
+                    console.error("Login error:", error);
+                    showError("An error occurred. Please try again.");
+                });
+        }
+
+        // Register Company
+        async function registerCompany() {
+            // Get form values
+            const companyName = document.getElementById('companyName').value.trim();
+            const companyEmail = document.getElementById('companyEmail').value.trim();
+            const companyType = document.getElementById('companyType').value;
+            const industry = document.getElementById('industry').value.trim();
+            const address = document.getElementById('address').value.trim();
+            const contactPerson = document.getElementById('contactPerson').value.trim();
+            const contactPhone = document.getElementById('contactPhone').value.trim();
+            const estimatedUsers = document.getElementById('estimatedUsers').value;
+            const username = document.getElementById('companyUsername').value.trim();
+            const password = document.getElementById('companyPassword').value.trim();
+            const confirmPassword = document.getElementById('confirmCompanyPassword').value.trim();
+            const purpose = document.getElementById('purpose').value.trim();
+            
+            // Validation
+            if (!companyName || !companyEmail || !contactPerson || !username || !password || !confirmPassword) {
+                showError("Please fill in all required fields (*)");
+                return;
+            }
+            
+            if (password.length < 8) {
+                showError("Password must be at least 8 characters long");
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showError("Passwords do not match");
+                return;
+            }
+            
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(companyEmail)) {
+                showError("Please enter a valid company email address");
+                return;
+            }
+            
+            // Validate username (alphanumeric with underscores)
+            const usernameRegex = /^[a-zA-Z0-9_]+$/;
+            if (!usernameRegex.test(username)) {
+                showError("Username can only contain letters, numbers, and underscores");
+                return;
+            }
+            
+            // Check if username already exists
+            try {
+                const usernameCheck = await db.collection("users")
+                    .where("username", "==", username)
+                    .get();
+                
+                if (!usernameCheck.empty) {
+                    showError("Company username already exists. Please choose another.");
+                    return;
+                }
+                
+                // Check if email already exists
+                const emailCheck = await db.collection("users")
+                    .where("companyEmail", "==", companyEmail)
+                    .get();
+                
+                if (!emailCheck.empty) {
+                    showError("Company email already registered. Please use a different email or login.");
+                    return;
+                }
+                
+                // Generate company ID
+                const companyId = 'COMP' + Date.now().toString().slice(-8);
+                
+                // Create company data object
+                const companyData = {
+                    username: username,
+                    password: password,
+                    companyName: companyName,
+                    companyEmail: companyEmail,
+                    companyType: companyType || '',
+                    industry: industry || '',
+                    address: address || '',
+                    contactPerson: contactPerson,
+                    contactPhone: contactPhone || '',
+                    estimatedUsers: estimatedUsers || '1-10',
+                    userType: 'company',
+                    role: 'company_admin',
+                    companyId: companyId,
+                    status: 'pending_approval', // Default status
+                    purpose: purpose || '',
+                    registrationSource: 'company-login.html',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                // Add company to Firestore
+                const companyRef = await db.collection("users").add(companyData);
+                
+                // Show success message
+                showSuccess(`Company registration successful! Your Company ID: ${companyId}. Your account is pending admin approval.`);
+                
+                // Clear form after successful registration
+                setTimeout(() => {
+                    document.getElementById('companyName').value = '';
+                    document.getElementById('companyEmail').value = '';
+                    document.getElementById('companyType').value = '';
+                    document.getElementById('industry').value = '';
+                    document.getElementById('address').value = '';
+                    document.getElementById('contactPerson').value = '';
+                    document.getElementById('contactPhone').value = '';
+                    document.getElementById('estimatedUsers').value = '1-10';
+                    document.getElementById('companyUsername').value = '';
+                    document.getElementById('companyPassword').value = '';
+                    document.getElementById('confirmCompanyPassword').value = '';
+                    document.getElementById('purpose').value = '';
+                    
+                    // Switch to login form
+                    showExistingCompanyForm();
+                    companyTypeBtns.forEach(btn => {
+                        btn.classList.remove('active');
+                        if (btn.dataset.type === 'existing') {
+                            btn.classList.add('active');
+                        }
+                    });
+                    
+                }, 2000);
+                
+                // Update registration steps
+                updateRegistrationSteps(2);
+                
+            } catch (error) {
+                console.error("Registration error:", error);
+                showError("Failed to register company. Please try again.");
+            }
+        }
+
+        // Update registration steps visualization
+        function updateRegistrationSteps(step) {
+            const steps = document.querySelectorAll('.step');
+            steps.forEach((s, index) => {
+                if (index < step) {
+                    s.classList.add('active');
+                } else {
+                    s.classList.remove('active');
+                }
+            });
+        }
+
+        // Forgot Password
+        function showForgotPassword() {
+            const email = prompt("Please enter your company email address to reset password:");
+            if (email) {
+                // In a real app, you would send password reset email
+                alert(`Password reset link has been sent to ${email}. Please check your email.`);
+            }
+        }
+
+        // Enter key support
+        document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') tryCompanyLogin();
+        });
+
+        document.getElementById('loginCompanyId').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') tryCompanyLogin();
+        });
+
+        // Check if company user is already logged in
+        document.addEventListener('DOMContentLoaded', () => {
+            const sessionUser = sessionStorage.getItem("username");
+            const userType = sessionStorage.getItem("userType");
+            
+            if (sessionUser && userType === "company") {
+                console.log("✅ Company user is already logged in:", sessionUser);
+                openLoginModalBtn.innerHTML = '<i class="fas fa-building"></i> ' + sessionUser;
+                openLoginModalBtn2.innerHTML = '<i class="fas fa-building"></i> ' + sessionUser;
+                openLoginModalBtn.onclick = () => {
+                    if (confirm("Do you want to logout?")) {
+                        sessionStorage.clear();
+                        window.location.reload();
+                    }
+                };
+                openLoginModalBtn2.onclick = () => {
+                    if (confirm("Do you want to logout?")) {
+                        sessionStorage.clear();
+                        window.location.reload();
+                    }
+                };
+                
+                // Change Get Started button to Go to Dashboard
+                getStartedBtn.innerHTML = '<i class="fas fa-tachometer-alt"></i> Go to Dashboard';
+                getStartedBtn.onclick = () => {
+                    window.location.href = "CompanyDashboard.html";
+                };
+            }
+            
+            // Check if there's a success message in URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('registered') === 'true') {
+                loginModal.classList.add('active');
+                showSuccess("Company registration successful! Please login with your credentials.");
+                showExistingCompanyForm();
+            }
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
