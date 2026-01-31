@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tasks Overview</title>
+  <title>Company & Tasks Management</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Chart.js for charts in PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
@@ -45,6 +45,209 @@
       font-weight: 700;
       color: #222;
       text-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+
+    /* Toggle Buttons */
+    .view-toggle {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+
+    .toggle-btn {
+      padding: 12px 24px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, #3a42f4, #6b73ff);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(58, 66, 244, 0.4);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toggle-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(58, 66, 244, 0.5);
+    }
+
+    .toggle-btn.active {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+    }
+
+    /* Company Explorer Styles */
+    .company-explorer {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .company-explorer.active {
+      display: flex;
+    }
+
+    .company-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .company-filters {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .company-filters input {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      min-width: 250px;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .company-filters input:focus {
+      outline: none;
+      border-color: #3a42f4;
+      box-shadow: 0 0 8px rgba(58, 66, 244, 0.5);
+    }
+
+    .company-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .company-card {
+      background: linear-gradient(135deg, #ffffff, #f8f9fa);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      border: 2px solid #e0e0e0;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .company-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+      border-color: #3a42f4;
+    }
+
+    .company-card.selected {
+      border-color: #28a745;
+      background: linear-gradient(135deg, #f0fff4, #e8f5e9);
+    }
+
+    .company-icon {
+      font-size: 32px;
+      color: #3a42f4;
+      margin-bottom: 15px;
+    }
+
+    .company-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 8px;
+    }
+
+    .company-stats {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .company-task-count {
+      background: #3a42f4;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: bold;
+    }
+
+    .company-actions {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 5px;
+    }
+
+    .company-btn {
+      background: rgba(255,255,255,0.9);
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .company-btn:hover {
+      background: white;
+      transform: scale(1.1);
+    }
+
+    .company-btn.edit {
+      color: #4caf50;
+    }
+
+    .company-btn.delete {
+      color: #f44336;
+    }
+
+    .company-btn.tasks {
+      color: #2196f3;
+    }
+
+    /* Tasks Overview Styles */
+    .tasks-overview {
+      display: none;
+      flex-direction: column;
+    }
+
+    .tasks-overview.active {
+      display: flex;
+    }
+
+    /* Back to Companies Button */
+    .back-to-companies {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #6c757d, #495057);
+      color: white;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(108, 117, 125, 0.3);
+      border: none;
+      cursor: pointer;
+    }
+
+    .back-to-companies:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 8px rgba(108, 117, 125, 0.4);
+      background: linear-gradient(135deg, #5a6268, #343a40);
     }
 
     /* Filters container */
@@ -247,7 +450,7 @@
       box-shadow: 0 6px 8px rgba(0, 123, 255, 0.4);
     }
 
-    #createTaskBtn, #uploadCSVBtn, #downloadTemplateBtn {
+    #createTaskBtn, #createCompanyBtn, #uploadCSVBtn, #downloadTemplateBtn {
       position: fixed;
       bottom: 30px;
       right: 30px;
@@ -267,25 +470,31 @@
       transition: all 0.3s ease;
     }
     
-    #createTaskBtn:hover, #uploadCSVBtn:hover, #downloadTemplateBtn:hover {
+    #createTaskBtn:hover, #createCompanyBtn:hover, #uploadCSVBtn:hover, #downloadTemplateBtn:hover {
       transform: translateY(-5px) scale(1.05);
       box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
     }
     
-    #uploadCSVBtn {
+    #createCompanyBtn {
       bottom: 100px;
+      background: linear-gradient(135deg, #3a42f4, #6b73ff);
+      font-size: 25px;
+    }
+    
+    #uploadCSVBtn {
+      bottom: 170px;
       background: linear-gradient(135deg, #007bff, #6610f2);
       font-size: 20px;
     }
     
     #downloadTemplateBtn {
-      bottom: 170px;
+      bottom: 240px;
       background: linear-gradient(135deg, #6f42c1, #e83e8c);
       font-size: 20px;
     }
 
     /* Modal container */
-    #taskModal, #addPersonModal, #uploadProgressModal {
+    #taskModal, #companyModal, #addPersonModal, #uploadProgressModal {
       background: rgba(0, 0, 0, 0.6);
       display: none;
       position: fixed;
@@ -298,7 +507,7 @@
     }
 
     /* Modal box */
-    #taskModal > div, #addPersonModal > div, #uploadProgressModal > div {
+    #taskModal > div, #companyModal > div, #addPersonModal > div, #uploadProgressModal > div {
       background: linear-gradient(145deg, #ffffff, #f0f0f0);
       padding: 30px 25px;
       border-radius: 20px;
@@ -312,7 +521,7 @@
     }
 
     /* Modal heading */
-    #taskModal h3, #addPersonModal h3, #uploadProgressModal h3 {
+    #taskModal h3, #companyModal h3, #addPersonModal h3, #uploadProgressModal h3 {
       margin-top: 0;
       margin-bottom: 20px;
       color: #333;
@@ -328,6 +537,9 @@
     #taskModal input,
     #taskModal select,
     #taskModal textarea,
+    #companyModal input,
+    #companyModal select,
+    #companyModal textarea,
     #addPersonModal input,
     #addPersonModal select {
       width: 100%;
@@ -345,6 +557,9 @@
     #taskModal input:focus,
     #taskModal select:focus,
     #taskModal textarea:focus,
+    #companyModal input:focus,
+    #companyModal select:focus,
+    #companyModal textarea:focus,
     #addPersonModal input:focus,
     #addPersonModal select:focus {
       border-color: #3a42f4;
@@ -355,6 +570,7 @@
 
     /* Buttons */
     #taskModal button[type="submit"],
+    #companyModal button[type="submit"],
     #addPersonModal button[type="submit"] {
       background: linear-gradient(135deg, #28a745, #20c997);
       color: #fff;
@@ -370,6 +586,7 @@
     }
 
     #taskModal button[type="submit"]:hover,
+    #companyModal button[type="submit"]:hover,
     #addPersonModal button[type="submit"]:hover {
       background: linear-gradient(135deg, #218838, #1e9e6e);
       transform: translateY(-2px);
@@ -377,6 +594,7 @@
     }
 
     #taskModal button[type="button"],
+    #companyModal button[type="button"],
     #addPersonModal button[type="button"] {
       background: linear-gradient(135deg, #6c757d, #5a6268);
       color: #fff;
@@ -390,6 +608,7 @@
     }
 
     #taskModal button[type="button"]:hover,
+    #companyModal button[type="button"]:hover,
     #addPersonModal button[type="button"]:hover {
       background: linear-gradient(135deg, #5a6268, #495057);
       transform: translateY(-2px);
@@ -662,6 +881,24 @@
       .time-info-grid {
         grid-template-columns: 1fr;
       }
+      
+      .company-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .view-toggle {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .company-filters {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .company-filters input {
+        min-width: 100%;
+      }
     }
   </style>
 </head>
@@ -673,53 +910,114 @@
     <a href="Current task.html" class="top-button">Current Works</a>
   </div>
 
-  <h1>Tasks Overview</h1>
+  <h1>Company & Tasks Management</h1>
 
-  <div class="filters">
-    <input type="text" id="searchCompany" placeholder="Search Company Name" />
-    <input type="text" id="searchOwner" placeholder="Search Owner" />
-    <select id="statusFilter">
-      <option value="">All Status</option>
-      <option value="Not Started">Not Started</option>
-      <option value="In Progress">In Progress</option>
-      <option value="Pending">Pending</option>
-      <option value="Complete">Completed</option>
-    </select>
-    
-    <div class="date-filter-section">
-      <select id="dateFilter">
-        <option value="">All Dates</option>
-        <option value="today">Today</option>
-        <option value="yesterday">Yesterday</option>
-        <option value="thisWeek">This Week</option>
-        <option value="lastWeek">Last Week</option>
-        <option value="thisMonth">This Month</option>
-        <option value="lastMonth">Last Month</option>
-        <option value="custom">Custom Range</option>
-      </select>
-      
-      <input type="date" id="customDateStart" style="display: none;" placeholder="Start Date">
-      <input type="date" id="customDateEnd" style="display: none;" placeholder="End Date">
-    </div>
+  <div class="view-toggle">
+    <button class="toggle-btn active" id="companiesViewBtn">
+      <i class="fas fa-building"></i> Companies Explorer
+    </button>
+    <button class="toggle-btn" id="tasksViewBtn">
+      <i class="fas fa-tasks"></i> Tasks Overview
+    </button>
   </div>
 
-  <table id="tasksTable" class="overview-table">
-    <thead>
-      <tr>
-        <th>SINO</th>
-        <th>Existing Company Name</th>
-        <th>TYPE OF WORK</th>
-        <th>Status</th>
-        <th>Owner</th>
-        <th>Due Date</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Rows appended by JS -->
-    </tbody>
-  </table>
+  <!-- Company Explorer View -->
+  <div class="company-explorer active" id="companiesView">
+    <div class="company-header">
+      <div class="company-filters">
+        <input type="text" id="companySearch" placeholder="Search companies..." />
+        <select id="companySort">
+          <option value="name">Sort by Name</option>
+          <option value="tasks">Sort by Tasks Count</option>
+          <option value="date">Sort by Date</option>
+        </select>
+      </div>
+      <button class="toggle-btn" id="createCompanyBtnTop">
+        <i class="fas fa-plus"></i> New Company
+      </button>
+    </div>
 
-  <div id="paginationControls" class="pagination" style="margin-top: 20px;"></div>
+    <div class="company-grid" id="companiesGrid">
+      <!-- Companies will be loaded here -->
+    </div>
+
+    <div id="companyPagination" class="pagination"></div>
+  </div>
+
+  <!-- Tasks Overview View -->
+  <div class="tasks-overview" id="tasksView">
+    <button class="back-to-companies" id="backToCompanies">
+      <i class="fas fa-arrow-left"></i> Back to Companies
+    </button>
+
+    <h2 id="selectedCompanyTitle">Tasks Overview</h2>
+
+    <div class="filters">
+      <input type="text" id="searchCompany" placeholder="Search Company Name" />
+      <input type="text" id="searchOwner" placeholder="Search Owner" />
+      <select id="statusFilter">
+        <option value="">All Status</option>
+        <option value="Not Started">Not Started</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Pending">Pending</option>
+        <option value="Complete">Completed</option>
+      </select>
+      
+      <div class="date-filter-section">
+        <select id="dateFilter">
+          <option value="">All Dates</option>
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
+          <option value="thisWeek">This Week</option>
+          <option value="lastWeek">Last Week</option>
+          <option value="thisMonth">This Month</option>
+          <option value="lastMonth">Last Month</option>
+          <option value="custom">Custom Range</option>
+        </select>
+        
+        <input type="date" id="customDateStart" style="display: none;" placeholder="Start Date">
+        <input type="date" id="customDateEnd" style="display: none;" placeholder="End Date">
+      </div>
+    </div>
+
+    <table id="tasksTable" class="overview-table">
+      <thead>
+        <tr>
+          <th>SINO</th>
+          <th>Existing Company Name</th>
+          <th>TYPE OF WORK</th>
+          <th>Status</th>
+          <th>Owner</th>
+          <th>Due Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows appended by JS -->
+      </tbody>
+    </table>
+
+    <div id="paginationControls" class="pagination" style="margin-top: 20px;"></div>
+  </div>
+</div>
+
+<!-- Modal for Creating/Editing Company -->
+<div id="companyModal" style="display:none;">
+  <div>
+    <h3 id="companyModalTitle">Create New Company</h3>
+    <form id="companyForm">
+      <input type="text" name="companyName" id="companyName" placeholder="Company Name" required />
+      <input type="text" name="companyAddress" id="companyAddress" placeholder="Address (Optional)" />
+      <input type="text" name="companyContact" id="companyContact" placeholder="Contact Person (Optional)" />
+      <input type="email" name="companyEmail" id="companyEmail" placeholder="Email (Optional)" />
+      <input type="tel" name="companyPhone" id="companyPhone" placeholder="Phone (Optional)" />
+      <textarea name="companyNotes" id="companyNotes" placeholder="Notes (Optional)" rows="3"></textarea>
+      
+      <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+        <button type="submit">Save Company</button>
+        <button type="button" onclick="closeCompanyModal()">Cancel</button>
+      </div>
+    </form> 
+  </div>
 </div>
 
 <!-- Modal for Creating/Editing Task -->
@@ -729,8 +1027,9 @@
     <form id="taskForm">
       <div class="form-section">
         <h4><i class="fas fa-building"></i> Company Information</h4>
-        <input list="companyList" name="company" id="companyInput" placeholder="Company Name" required />
-        <datalist id="companyList"></datalist>
+        <select name="company" id="companySelect" required>
+          <option value="">Select Company</option>
+        </select>
 
         <input list="workTypeList" name="typeOfWork" id="typeOfWorkInput" placeholder="TYPE OF WORK" required />
         <datalist id="workTypeList"></datalist>
@@ -839,6 +1138,7 @@
 
 <!-- Floating Buttons -->
 <button id="createTaskBtn">+</button>
+<button id="createCompanyBtn"><i class="fas fa-building"></i></button>
 <input type="file" id="csvUpload" style="display:none" accept=".csv" />
 <button id="uploadCSVBtn"><i class="fas fa-upload"></i></button>
 <button id="downloadTemplateBtn"><i class="fas fa-download"></i></button>
@@ -855,8 +1155,11 @@
 const { jsPDF } = window.jspdf;
 
 let editingTaskId = null;
+let editingCompanyId = null;
 let currentPersonType = null;
 let uploadInProgress = false;
+let selectedCompanyId = null;
+let currentView = 'companies';
 
 // Firebase config
 const firebaseConfig = {
@@ -873,6 +1176,17 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // DOM Elements
+const companiesView = document.getElementById('companiesView');
+const tasksView = document.getElementById('tasksView');
+const companiesViewBtn = document.getElementById('companiesViewBtn');
+const tasksViewBtn = document.getElementById('tasksViewBtn');
+const companiesGrid = document.getElementById('companiesGrid');
+const companySearch = document.getElementById('companySearch');
+const companySort = document.getElementById('companySort');
+const createCompanyBtnTop = document.getElementById('createCompanyBtnTop');
+const backToCompanies = document.getElementById('backToCompanies');
+const selectedCompanyTitle = document.getElementById('selectedCompanyTitle');
+
 const taskTableBody = document.querySelector('#tasksTable tbody');
 const paginationDiv = document.getElementById('paginationControls');
 const searchCompany = document.getElementById('searchCompany');
@@ -882,8 +1196,12 @@ const dateFilter = document.getElementById('dateFilter');
 const customDateStart = document.getElementById('customDateStart');
 const customDateEnd = document.getElementById('customDateEnd');
 const createTaskBtn = document.getElementById('createTaskBtn');
+const createCompanyBtn = document.getElementById('createCompanyBtn');
 const taskModal = document.getElementById('taskModal');
 const taskForm = document.getElementById('taskForm');
+const companyModal = document.getElementById('companyModal');
+const companyForm = document.getElementById('companyForm');
+const companySelect = document.getElementById('companySelect');
 const ownerSelect = document.getElementById('ownerSelect');
 const assignedBySelect = document.getElementById('assignedBySelect');
 const companyInput = taskForm.elements['company'];
@@ -903,9 +1221,13 @@ const progressBar = document.getElementById('progressBar');
 const cancelUploadBtn = document.getElementById('cancelUploadBtn');
 
 const rowsPerPage = 10;
+const companiesPerPage = 12;
 let currentPage = 1;
+let currentCompanyPage = 1;
 let allTasks = [];
 let filteredTasks = [];
+let allCompanies = [];
+let filteredCompanies = [];
 
 // Toast notification function
 function showToast(message, type = 'info', duration = 3000) {
@@ -918,10 +1240,56 @@ function showToast(message, type = 'info', duration = 3000) {
   }, duration);
 }
 
+// View Switching Functions
+function showCompaniesView() {
+  companiesView.classList.add('active');
+  tasksView.classList.remove('active');
+  companiesViewBtn.classList.add('active');
+  tasksViewBtn.classList.remove('active');
+  currentView = 'companies';
+  selectedCompanyId = null;
+  createTaskBtn.style.display = 'none';
+  createCompanyBtn.style.display = 'flex';
+  uploadCSVBtn.style.display = 'flex';
+  downloadTemplateBtn.style.display = 'flex';
+  loadCompanies();
+}
+
+function showTasksView(companyId = null, companyName = null) {
+  companiesView.classList.remove('active');
+  tasksView.classList.add('active');
+  companiesViewBtn.classList.remove('active');
+  tasksViewBtn.classList.add('active');
+  currentView = 'tasks';
+  selectedCompanyId = companyId;
+  
+  if (companyName) {
+    selectedCompanyTitle.textContent = `Tasks for ${companyName}`;
+  } else {
+    selectedCompanyTitle.textContent = 'All Tasks';
+  }
+  
+  createTaskBtn.style.display = 'flex';
+  createCompanyBtn.style.display = 'none';
+  uploadCSVBtn.style.display = 'none';
+  downloadTemplateBtn.style.display = 'none';
+  loadTasks();
+}
+
+// Event listeners for view switching
+companiesViewBtn.addEventListener('click', showCompaniesView);
+tasksViewBtn.addEventListener('click', () => showTasksView());
+backToCompanies.addEventListener('click', showCompaniesView);
+
 // Modal close functions
 function closeTaskModal() {
   taskModal.style.display = 'none';
   editingTaskId = null;
+}
+
+function closeCompanyModal() {
+  companyModal.style.display = 'none';
+  editingCompanyId = null;
 }
 
 function closeAddPersonModal() {
@@ -936,6 +1304,41 @@ function closeUploadProgressModal() {
   uploadProgressModal.style.display = 'none';
 }
 
+// Load Companies from Firestore
+async function loadCompanies() {
+  try {
+    showToast('Loading companies...', 'info');
+    const snapshot = await db.collection('companies').get();
+    allCompanies = [];
+    snapshot.forEach(doc => {
+      allCompanies.push({ id: doc.id, ...doc.data() });
+    });
+
+    // Get task counts for each company
+    const tasksSnapshot = await db.collection('tasks').get();
+    const companyTaskCounts = {};
+    
+    tasksSnapshot.forEach(doc => {
+      const task = doc.data();
+      const companyName = task['Existing Company Name'];
+      if (companyName) {
+        companyTaskCounts[companyName] = (companyTaskCounts[companyName] || 0) + 1;
+      }
+    });
+
+    // Update companies with task counts
+    allCompanies.forEach(company => {
+      company.taskCount = companyTaskCounts[company.name] || 0;
+    });
+
+    applyCompanyFilters(); // Initial render
+    showToast('Companies loaded successfully', 'success');
+  } catch (error) {
+    console.error(error);
+    showToast('Error loading companies', 'error');
+  }
+}
+
 // Load tasks from Firestore
 async function loadTasks() {
   try {
@@ -945,6 +1348,15 @@ async function loadTasks() {
     snapshot.forEach(doc => {
       allTasks.push({ id: doc.id, ...doc.data() });
     });
+
+    // Filter tasks by selected company if applicable
+    if (selectedCompanyId) {
+      // Find company name from selected company ID
+      const company = allCompanies.find(c => c.id === selectedCompanyId);
+      if (company) {
+        allTasks = allTasks.filter(task => task['Existing Company Name'] === company.name);
+      }
+    }
 
     // Sort ascending by numeric part of SINO
     allTasks.sort((a, b) => {
@@ -962,6 +1374,7 @@ async function loadTasks() {
     });
     
     populateCompanyList();
+    populateCompanySelect();
     applyFilters(); // Initial render with sorting applied
     showToast('Tasks loaded successfully', 'success');
   } catch (error) {
@@ -1061,7 +1474,314 @@ function populateCompanyList() {
   });
 }
 
-// Render a specific page
+function populateCompanySelect() {
+  companySelect.innerHTML = '<option value="">Select Company</option>';
+  
+  allCompanies.forEach(company => {
+    const option = document.createElement('option');
+    option.value = company.name;
+    option.textContent = company.name;
+    companySelect.appendChild(option);
+  });
+  
+  // Add "Add New" option
+  const addNewOption = document.createElement('option');
+  addNewOption.value = "add-new";
+  addNewOption.textContent = "+ Add New Company";
+  addNewOption.classList.add('add-new');
+  companySelect.appendChild(addNewOption);
+}
+
+// Render Companies Grid
+function renderCompaniesGrid(page, companies) {
+  companiesGrid.innerHTML = '';
+  const start = (page - 1) * companiesPerPage;
+  const pageCompanies = companies.slice(start, start + companiesPerPage);
+
+  pageCompanies.forEach(company => {
+    const card = document.createElement('div');
+    card.className = 'company-card';
+    if (company.id === selectedCompanyId) {
+      card.classList.add('selected');
+    }
+    
+    // Get icon based on first letter
+    const firstLetter = company.name.charAt(0).toUpperCase();
+    const icons = ['🏢', '🏭', '🏦', '💼', '🏪', '🏬', '🏣', '🏨'];
+    const iconIndex = firstLetter.charCodeAt(0) % icons.length;
+    const icon = icons[iconIndex];
+    
+    card.innerHTML = `
+      <div class="company-actions">
+        <button class="company-btn edit" data-id="${company.id}">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button class="company-btn delete" data-id="${company.id}">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+      <div class="company-icon">${icon}</div>
+      <div class="company-name">${company.name}</div>
+      ${company.contact ? `<div style="font-size: 14px; color: #666; margin-bottom: 5px;"><i class="fas fa-user"></i> ${company.contact}</div>` : ''}
+      ${company.email ? `<div style="font-size: 12px; color: #888; margin-bottom: 5px;"><i class="fas fa-envelope"></i> ${company.email}</div>` : ''}
+      <div class="company-stats">
+        <div><i class="fas fa-tasks"></i> ${company.taskCount || 0} Tasks</div>
+        <button class="company-btn tasks view-tasks-btn" data-id="${company.id}" data-name="${company.name}">
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+    `;
+
+    // Add click event to view company tasks
+    const viewTasksBtn = card.querySelector('.view-tasks-btn');
+    viewTasksBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const companyId = e.target.closest('.view-tasks-btn').dataset.id;
+      const companyName = e.target.closest('.view-tasks-btn').dataset.name;
+      showTasksView(companyId, companyName);
+    });
+
+    // Add click event to edit company
+    const editBtn = card.querySelector('.company-btn.edit');
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      editCompany(company.id);
+    });
+
+    // Add click event to delete company
+    const deleteBtn = card.querySelector('.company-btn.delete');
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteCompany(company.id);
+    });
+
+    // Add click event to select company
+    card.addEventListener('click', (e) => {
+      if (!e.target.closest('.company-actions')) {
+        const companyId = company.id;
+        const companyName = company.name;
+        showTasksView(companyId, companyName);
+      }
+    });
+
+    companiesGrid.appendChild(card);
+  });
+
+  renderCompanyPagination(companies);
+}
+
+// Render pagination for companies
+function renderCompanyPagination(companies) {
+  const paginationDiv = document.getElementById('companyPagination');
+  paginationDiv.innerHTML = '';
+  const totalPages = Math.ceil(companies.length / companiesPerPage);
+  if (totalPages <= 1) return;
+
+  const maxVisiblePages = 5;
+  const pages = [];
+
+  // Always show first page
+  pages.push(1);
+
+  let start = Math.max(2, currentCompanyPage - 1);
+  let end = Math.min(totalPages - 1, currentCompanyPage + 1);
+
+  if (currentCompanyPage <= 3) {
+    end = Math.min(4, totalPages - 1);
+  } else if (currentCompanyPage >= totalPages - 2) {
+    start = Math.max(totalPages - 3, 2);
+  }
+
+  if (start > 2) pages.push('...');
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+  if (end < totalPages - 1) pages.push('...');
+  
+  // Always show last page
+  if (totalPages > 1) pages.push(totalPages);
+
+  const prevBtn = createPageButton('Prev', currentCompanyPage === 1, () => {
+    if (currentCompanyPage > 1) {
+      currentCompanyPage--;
+      renderCompaniesGrid(currentCompanyPage, filteredCompanies);
+    }
+  });
+  paginationDiv.appendChild(prevBtn);
+
+  pages.forEach(p => {
+    const isEllipsis = p === '...';
+    const btn = document.createElement('button');
+    btn.textContent = p;
+    btn.disabled = isEllipsis || p === currentCompanyPage;
+    if (!isEllipsis && p !== currentCompanyPage) {
+      btn.addEventListener('click', () => {
+        currentCompanyPage = p;
+        renderCompaniesGrid(currentCompanyPage, filteredCompanies);
+      });
+    }
+    paginationDiv.appendChild(btn);
+  });
+
+  const nextBtn = createPageButton('Next', currentCompanyPage === totalPages, () => {
+    if (currentCompanyPage < totalPages) {
+      currentCompanyPage++;
+      renderCompaniesGrid(currentCompanyPage, filteredCompanies);
+    }
+  });
+  paginationDiv.appendChild(nextBtn);
+}
+
+function createPageButton(label, disabled, onClick) {
+  const btn = document.createElement('button');
+  btn.textContent = label;
+  btn.disabled = disabled;
+  if (!disabled) btn.addEventListener('click', onClick);
+  return btn;
+}
+
+// Filter companies based on search and sort
+function applyCompanyFilters() {
+  const searchTerm = companySearch.value.toLowerCase();
+  const sortBy = companySort.value;
+  
+  filteredCompanies = allCompanies.filter(company => {
+    const matchName = company.name.toLowerCase().includes(searchTerm);
+    const matchContact = company.contact?.toLowerCase().includes(searchTerm) || false;
+    const matchEmail = company.email?.toLowerCase().includes(searchTerm) || false;
+    
+    return matchName || matchContact || matchEmail;
+  });
+
+  // Sort companies
+  switch(sortBy) {
+    case 'name':
+      filteredCompanies.sort((a, b) => a.name.localeCompare(b.name));
+      break;
+    case 'tasks':
+      filteredCompanies.sort((a, b) => (b.taskCount || 0) - (a.taskCount || 0));
+      break;
+    case 'date':
+      filteredCompanies.sort((a, b) => {
+        const dateA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
+        const dateB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
+        return dateB - dateA;
+      });
+      break;
+  }
+
+  currentCompanyPage = 1;
+  renderCompaniesGrid(currentCompanyPage, filteredCompanies);
+}
+
+// Event listeners for company filters
+companySearch.addEventListener('input', applyCompanyFilters);
+companySort.addEventListener('change', applyCompanyFilters);
+
+// Create/Edit Company Functions
+function openCompanyModal() {
+  editingCompanyId = null;
+  document.getElementById('companyModalTitle').textContent = 'Create New Company';
+  companyForm.reset();
+  companyModal.style.display = 'flex';
+}
+
+function editCompany(companyId) {
+  editingCompanyId = companyId;
+  const company = allCompanies.find(c => c.id === companyId);
+  
+  if (!company) {
+    showToast('Company not found', 'error');
+    return;
+  }
+  
+  document.getElementById('companyModalTitle').textContent = 'Edit Company';
+  document.getElementById('companyName').value = company.name || '';
+  document.getElementById('companyAddress').value = company.address || '';
+  document.getElementById('companyContact').value = company.contact || '';
+  document.getElementById('companyEmail').value = company.email || '';
+  document.getElementById('companyPhone').value = company.phone || '';
+  document.getElementById('companyNotes').value = company.notes || '';
+  
+  companyModal.style.display = 'flex';
+}
+
+async function deleteCompany(companyId) {
+  if (!confirm('Are you sure you want to delete this company? This will NOT delete its associated tasks.')) {
+    return;
+  }
+  
+  try {
+    await db.collection('companies').doc(companyId).delete();
+    showToast('Company deleted successfully', 'success');
+    loadCompanies();
+  } catch (error) {
+    console.error(error);
+    showToast('Error deleting company', 'error');
+  }
+}
+
+// Handle company form submission
+companyForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const companyData = {
+    name: document.getElementById('companyName').value.trim(),
+    address: document.getElementById('companyAddress').value.trim() || '',
+    contact: document.getElementById('companyContact').value.trim() || '',
+    email: document.getElementById('companyEmail').value.trim() || '',
+    phone: document.getElementById('companyPhone').value.trim() || '',
+    notes: document.getElementById('companyNotes').value.trim() || '',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  
+  if (!companyData.name) {
+    showToast('Company name is required', 'error');
+    return;
+  }
+  
+  try {
+    if (editingCompanyId) {
+      // Update existing company
+      delete companyData.createdAt; // Don't update creation date
+      await db.collection('companies').doc(editingCompanyId).set(companyData, { merge: true });
+      showToast('Company updated successfully', 'success');
+    } else {
+      // Create new company
+      await db.collection('companies').add(companyData);
+      showToast('Company created successfully', 'success');
+    }
+    
+    closeCompanyModal();
+    loadCompanies();
+  } catch (error) {
+    console.error(error);
+    showToast('Error saving company', 'error');
+  }
+});
+
+// Event listeners for company buttons
+createCompanyBtnTop.addEventListener('click', openCompanyModal);
+createCompanyBtn.addEventListener('click', openCompanyModal);
+
+// Close company modal when clicking outside
+companyModal.addEventListener('click', (e) => {
+  if (e.target === companyModal) {
+    closeCompanyModal();
+  }
+});
+
+// Handle "Add New" option in company select
+companySelect.addEventListener('change', function() {
+  if (this.value === "add-new") {
+    openCompanyModal();
+    this.selectedIndex = 0; // Reset selection
+    // After company is created, we need to refresh the dropdown
+  }
+});
+
+// Render a specific page of tasks
 function renderTablePage(page, tasks) {
   taskTableBody.innerHTML = '';
   const start = (page - 1) * rowsPerPage;
@@ -1643,14 +2363,6 @@ function renderPagination(tasks) {
   paginationDiv.appendChild(nextBtn);
 }
 
-function createPageButton(label, disabled, onClick) {
-  const btn = document.createElement('button');
-  btn.textContent = label;
-  btn.disabled = disabled;
-  if (!disabled) btn.addEventListener('click', onClick);
-  return btn;
-}
-
 // Filter tasks based on inputs
 function applyFilters() {
   const company = searchCompany.value.toLowerCase();
@@ -1713,7 +2425,7 @@ function applyFilters() {
         
         // Custom date range
         const customStart = customDateStart.value ? new Date(customDateStart.value) : null;
-        const customEnd = customDateEnd.value ? new Date(customDateEnd.value) : null;
+        const customEnd = customEnd.value ? new Date(customEnd.value) : null;
         if (customEnd) customEnd.setHours(23, 59, 59, 999);
         
         switch(dateFilterValue) {
@@ -1775,15 +2487,20 @@ dateFilter.addEventListener('change', function() {
   applyFilters();
 });
 
-// Load tasks on page load
-window.onload = loadTasks;
-
 // Open modal on + button click
 createTaskBtn.addEventListener('click', () => {
   editingTaskId = null;
   modalTitle.textContent = 'Create New Task';
   populateDropdowns();
   taskForm.reset();
+  
+  // Pre-select company if viewing a specific company's tasks
+  if (selectedCompanyId) {
+    const company = allCompanies.find(c => c.id === selectedCompanyId);
+    if (company) {
+      companySelect.value = company.name;
+    }
+  }
   
   // Hide time editing section for new tasks
   timeEditSection.style.display = 'none';
@@ -1808,6 +2525,9 @@ taskModal.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && taskModal.style.display === 'flex') {
     closeTaskModal();
+  }
+  if (e.key === 'Escape' && companyModal.style.display === 'flex') {
+    closeCompanyModal();
   }
 });
 
@@ -2495,6 +3215,13 @@ function downloadCSVTemplate() {
   document.body.removeChild(link);
   showToast('CSV template downloaded', 'success');
 }
+
+// Initialize the application
+window.onload = () => {
+  // Load initial data
+  loadCompanies();
+  showCompaniesView(); // Start with companies view
+};
 </script>
 </body>
 </html>
