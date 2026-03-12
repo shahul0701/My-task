@@ -113,6 +113,83 @@
       font-weight: 500;
     }
 
+    /* Batch Operations Bar */
+    .batch-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+      padding: 15px;
+      background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+      border-radius: 12px;
+      align-items: center;
+      border: 1px solid #ffb74d;
+    }
+    
+    .batch-checkbox {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: #3a42f4;
+    }
+    
+    .batch-actions {
+      display: flex;
+      gap: 10px;
+      margin-left: auto;
+    }
+    
+    .batch-action-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .batch-move-btn {
+      background: linear-gradient(135deg, #ff9800, #f57c00);
+      color: white;
+    }
+    
+    .batch-move-btn:hover {
+      background: linear-gradient(135deg, #f57c00, #e65100);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3);
+    }
+    
+    .batch-delete-btn {
+      background: linear-gradient(135deg, #f44336, #d32f2f);
+      color: white;
+    }
+    
+    .batch-delete-btn:hover {
+      background: linear-gradient(135deg, #d32f2f, #b71c1c);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(244, 67, 54, 0.3);
+    }
+    
+    .batch-select-all {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #666;
+    }
+    
+    .selected-count {
+      background: #3a42f4;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
     /* Filters container */
     .filters {
       display: flex;
@@ -164,6 +241,10 @@
       border-right: 1px solid rgba(255,255,255,0.2);
     }
 
+    thead th:first-child {
+      width: 40px;
+    }
+
     thead th:last-child {
       border-right: none;
     }
@@ -190,6 +271,10 @@
       color: #333;
       max-width: 180px;
       word-break: break-word;
+    }
+
+    tbody td:first-child {
+      text-align: center;
     }
 
     tbody td:last-child {
@@ -361,7 +446,7 @@
     }
 
     /* Modal container */
-    #taskModal, #addPersonModal, #uploadProgressModal, #folderModal {
+    #taskModal, #addPersonModal, #uploadProgressModal, #folderModal, #batchMoveModal {
       background: rgba(0, 0, 0, 0.6);
       display: none;
       position: fixed;
@@ -374,7 +459,7 @@
     }
 
     /* Modal box */
-    #taskModal > div, #addPersonModal > div, #uploadProgressModal > div, #folderModal > div {
+    #taskModal > div, #addPersonModal > div, #uploadProgressModal > div, #folderModal > div, #batchMoveModal > div {
       background: linear-gradient(145deg, #ffffff, #f0f0f0);
       padding: 30px 25px;
       border-radius: 20px;
@@ -388,7 +473,7 @@
     }
 
     /* Modal heading */
-    #taskModal h3, #addPersonModal h3, #uploadProgressModal h3, #folderModal h3 {
+    #taskModal h3, #addPersonModal h3, #uploadProgressModal h3, #folderModal h3, #batchMoveModal h3 {
       margin-top: 0;
       margin-bottom: 20px;
       color: #333;
@@ -407,7 +492,9 @@
     #addPersonModal input,
     #addPersonModal select,
     #folderModal input,
-    #folderModal select {
+    #folderModal select,
+    #batchMoveModal input,
+    #batchMoveModal select {
       width: 100%;
       padding: 12px 15px;
       margin-bottom: 15px;
@@ -426,7 +513,9 @@
     #addPersonModal input:focus,
     #addPersonModal select:focus,
     #folderModal input:focus,
-    #folderModal select:focus {
+    #folderModal select:focus,
+    #batchMoveModal input:focus,
+    #batchMoveModal select:focus {
       border-color: #3a42f4;
       outline: none;
       background: white;
@@ -436,7 +525,8 @@
     /* Buttons */
     #taskModal button[type="submit"],
     #addPersonModal button[type="submit"],
-    #folderModal button[type="submit"] {
+    #folderModal button[type="submit"],
+    #batchMoveModal button[type="submit"] {
       background: linear-gradient(135deg, #28a745, #20c997);
       color: #fff;
       font-weight: bold;
@@ -452,7 +542,8 @@
 
     #taskModal button[type="submit"]:hover,
     #addPersonModal button[type="submit"]:hover,
-    #folderModal button[type="submit"]:hover {
+    #folderModal button[type="submit"]:hover,
+    #batchMoveModal button[type="submit"]:hover {
       background: linear-gradient(135deg, #218838, #1e9e6e);
       transform: translateY(-2px);
       box-shadow: 0 6px 8px rgba(40, 167, 69, 0.4);
@@ -460,7 +551,8 @@
 
     #taskModal button[type="button"],
     #addPersonModal button[type="button"],
-    #folderModal button[type="button"] {
+    #folderModal button[type="button"],
+    #batchMoveModal button[type="button"] {
       background: linear-gradient(135deg, #6c757d, #5a6268);
       color: #fff;
       padding: 12px 16px;
@@ -474,7 +566,8 @@
 
     #taskModal button[type="button"]:hover,
     #addPersonModal button[type="button"]:hover,
-    #folderModal button[type="button"]:hover {
+    #folderModal button[type="button"]:hover,
+    #batchMoveModal button[type="button"]:hover {
       background: linear-gradient(135deg, #5a6268, #495057);
       transform: translateY(-2px);
       box-shadow: 0 6px 8px rgba(108, 117, 125, 0.4);
@@ -768,6 +861,32 @@
       border-top: 2px solid #e0e0e0;
     }
     
+    /* Selected tasks list in batch move modal */
+    .selected-tasks-list {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 15px 0;
+      background: #f8f9fa;
+    }
+    
+    .selected-task-item {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      font-size: 13px;
+    }
+    
+    .selected-task-item:last-child {
+      border-bottom: none;
+    }
+    
+    .selected-task-item i {
+      color: #3a42f4;
+      margin-right: 8px;
+    }
+    
     /* Responsive tweaks */
     @media (max-width: 768px) {
       .filters {
@@ -810,6 +929,17 @@
         margin-left: 0;
         text-align: center;
       }
+      
+      .batch-bar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .batch-actions {
+        margin-left: 0;
+        width: 100%;
+        justify-content: space-between;
+      }
     }
   </style>
 </head>
@@ -841,6 +971,25 @@
     <span class="folder-stats" id="folderStats">
       <i class="fas fa-tasks"></i> <span id="taskCount">0</span> tasks
     </span>
+  </div>
+  
+  <!-- Batch Operations Bar -->
+  <div class="batch-bar" id="batchBar" style="display: none;">
+    <div class="batch-select-all">
+      <input type="checkbox" id="selectAllCheckbox" class="batch-checkbox">
+      <label for="selectAllCheckbox">Select All</label>
+    </div>
+    
+    <div class="selected-count" id="selectedCount">0 selected</div>
+    
+    <div class="batch-actions">
+      <button class="batch-action-btn batch-move-btn" id="batchMoveBtn">
+        <i class="fas fa-folder-open"></i> Move Selected
+      </button>
+      <button class="batch-action-btn batch-delete-btn" id="batchDeleteBtn">
+        <i class="fas fa-trash"></i> Delete Selected
+      </button>
+    </div>
   </div>
 
   <div class="filters">
@@ -874,6 +1023,7 @@
   <table id="tasksTable" class="overview-table">
     <thead>
       <tr>
+        <th><input type="checkbox" id="headerCheckbox" class="batch-checkbox" style="display: none;"></th>
         <th>SINO</th>
         <th>Existing Company Name</th>
         <th>TYPE OF WORK</th>
@@ -983,6 +1133,27 @@
   </div>
 </div>
 
+<!-- Modal for Batch Moving Tasks -->
+<div id="batchMoveModal" style="display:none;">
+  <div>
+    <h3><i class="fas fa-folder-open"></i> Move Selected Tasks</h3>
+    <p id="batchMoveCount"></p>
+    
+    <div class="selected-tasks-list" id="selectedTasksList">
+      <!-- Selected tasks will be listed here -->
+    </div>
+    
+    <select id="batchFolderSelect" required>
+      <option value="">-- Select Destination Folder --</option>
+    </select>
+    
+    <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+      <button type="button" onclick="executeBatchMove()" style="background: linear-gradient(135deg, #ff9800, #f57c00);">Move Tasks</button>
+      <button type="button" onclick="closeBatchMoveModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal for Adding New Person -->
 <div id="addPersonModal" style="display:none;">
   <div>
@@ -1068,6 +1239,7 @@ let currentPersonType = null;
 let uploadInProgress = false;
 let folders = ['All Tasks']; // Array to store folder names
 let currentFolder = 'All Tasks';
+let selectedTasks = new Set(); // Set to store selected task IDs
 
 // Firebase config
 const firebaseConfig = {
@@ -1122,6 +1294,16 @@ const taskCountSpan = document.getElementById('taskCount');
 const folderListContainer = document.getElementById('folderListContainer');
 const newFolderNameInput = document.getElementById('newFolderNameInput');
 const createFolderModalBtn = document.getElementById('createFolderModalBtn');
+const headerCheckbox = document.getElementById('headerCheckbox');
+const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+const batchBar = document.getElementById('batchBar');
+const selectedCount = document.getElementById('selectedCount');
+const batchMoveBtn = document.getElementById('batchMoveBtn');
+const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+const batchMoveModal = document.getElementById('batchMoveModal');
+const batchFolderSelect = document.getElementById('batchFolderSelect');
+const selectedTasksList = document.getElementById('selectedTasksList');
+const batchMoveCount = document.getElementById('batchMoveCount');
 
 const rowsPerPage = 10;
 let currentPage = 1;
@@ -1161,6 +1343,10 @@ function closeFolderModal() {
   folderModal.style.display = 'none';
 }
 
+function closeBatchMoveModal() {
+  batchMoveModal.style.display = 'none';
+}
+
 // Load folders from Firestore
 async function loadFolders() {
   try {
@@ -1177,6 +1363,7 @@ async function loadFolders() {
     renderFolderDropdown();
     renderFolderList();
     populateFolderSelectInModal();
+    populateBatchFolderSelect();
   } catch (error) {
     console.error('Error loading folders:', error);
     folders = ['All Tasks'];
@@ -1238,6 +1425,18 @@ function populateFolderSelectInModal() {
   });
 }
 
+// Populate folder select in batch move modal
+function populateBatchFolderSelect() {
+  batchFolderSelect.innerHTML = '<option value="">-- Select Destination Folder --</option>';
+  
+  folders.filter(f => f !== 'All Tasks').forEach(folder => {
+    const option = document.createElement('option');
+    option.value = folder;
+    option.textContent = folder;
+    batchFolderSelect.appendChild(option);
+  });
+}
+
 // Create new folder
 async function createFolder(folderName) {
   if (!folderName || folderName.trim() === '') {
@@ -1268,6 +1467,7 @@ async function createFolder(folderName) {
     renderFolderDropdown();
     renderFolderList();
     populateFolderSelectInModal();
+    populateBatchFolderSelect();
     showToast('Folder created successfully', 'success');
     return true;
   } catch (error) {
@@ -1332,6 +1532,7 @@ async function renameFolder(oldName, newName) {
     renderFolderDropdown();
     renderFolderList();
     populateFolderSelectInModal();
+    populateBatchFolderSelect();
     loadTasks(); // Reload tasks to reflect folder changes
     showToast('Folder renamed successfully', 'success');
     return true;
@@ -1380,6 +1581,7 @@ async function deleteFolder(folderName) {
     renderFolderDropdown();
     renderFolderList();
     populateFolderSelectInModal();
+    populateBatchFolderSelect();
     loadTasks(); // Reload tasks
     showToast('Folder deleted successfully', 'success');
     return true;
@@ -1528,6 +1730,74 @@ function populateCompanyList() {
   });
 }
 
+// Update batch selection UI
+function updateBatchUI() {
+  const count = selectedTasks.size;
+  selectedCount.textContent = `${count} selected`;
+  
+  if (count > 0) {
+    batchBar.style.display = 'flex';
+    headerCheckbox.style.display = 'inline-block';
+  } else {
+    batchBar.style.display = 'none';
+    headerCheckbox.style.display = 'none';
+    headerCheckbox.checked = false;
+    selectAllCheckbox.checked = false;
+  }
+  
+  // Update select all checkbox in batch bar
+  if (filteredTasks.length > 0) {
+    const allFilteredSelected = filteredTasks.every(task => selectedTasks.has(task.id));
+    selectAllCheckbox.checked = allFilteredSelected;
+    selectAllCheckbox.indeterminate = !allFilteredSelected && count > 0;
+  }
+}
+
+// Toggle task selection
+function toggleTaskSelection(taskId, checkbox) {
+  if (checkbox.checked) {
+    selectedTasks.add(taskId);
+  } else {
+    selectedTasks.delete(taskId);
+  }
+  updateBatchUI();
+}
+
+// Select/deselect all tasks on current page
+function toggleSelectAll(checked) {
+  const pageTasks = filteredTasks.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  pageTasks.forEach(task => {
+    if (checked) {
+      selectedTasks.add(task.id);
+    } else {
+      selectedTasks.delete(task.id);
+    }
+  });
+  
+  // Update checkboxes in table
+  document.querySelectorAll('.task-select').forEach(cb => {
+    cb.checked = checked;
+  });
+  
+  updateBatchUI();
+}
+
+// Select/deselect all filtered tasks
+function toggleSelectAllFiltered(checked) {
+  if (checked) {
+    filteredTasks.forEach(task => selectedTasks.add(task.id));
+  } else {
+    selectedTasks.clear();
+  }
+  
+  // Update checkboxes in table
+  document.querySelectorAll('.task-select').forEach(cb => {
+    cb.checked = checked;
+  });
+  
+  updateBatchUI();
+}
+
 // Render a specific page
 function renderTablePage(page, tasks) {
   taskTableBody.innerHTML = '';
@@ -1546,6 +1816,7 @@ function renderTablePage(page, tasks) {
     else if (task.Status === 'Pending') statusClass = 'status-pending';
     
     tr.innerHTML = `
+      <td><input type="checkbox" class="batch-checkbox task-select" data-id="${task.id}" ${selectedTasks.has(task.id) ? 'checked' : ''}></td>
       <td>${task.SINO || ''}</td>
       <td>${task['Existing Company Name'] || ''}</td>
       <td>${task['TYPE OF WORK'] || ''}</td>
@@ -1601,7 +1872,7 @@ function renderTablePage(page, tasks) {
     }
     
     detailsTr.innerHTML = `
-      <td colspan="6">
+      <td colspan="7">
         <div class="details-box">
           <strong>Folder:</strong> <span style="color: #3a42f4;">${task.folderName || '<em>Uncategorized</em>'}</span><br/>
           <strong>ACCOUNT TYPE:</strong> ${task['ACCOUNT TYPE'] || ''}<br/>
@@ -1628,8 +1899,11 @@ function renderTablePage(page, tasks) {
       </td>
     `;
 
-    tr.addEventListener('click', () => {
-      detailsTr.style.display = detailsTr.style.display === 'none' ? 'table-row' : 'none';
+    tr.addEventListener('click', (e) => {
+      // Don't toggle details if clicking on checkbox
+      if (e.target.type !== 'checkbox') {
+        detailsTr.style.display = detailsTr.style.display === 'none' ? 'table-row' : 'none';
+      }
     });
 
     taskTableBody.appendChild(tr);
@@ -1637,6 +1911,17 @@ function renderTablePage(page, tasks) {
   });
 
   attachRowEventListeners();
+  attachCheckboxListeners();
+}
+
+// Attach checkbox listeners
+function attachCheckboxListeners() {
+  document.querySelectorAll('.task-select').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      e.stopPropagation();
+      toggleTaskSelection(e.target.dataset.id, e.target);
+    });
+  });
 }
 
 // Format time in detailed format
@@ -1686,6 +1971,7 @@ function attachRowEventListeners() {
       if (confirm('Are you sure you want to delete this task?')) {
         try {
           await db.collection('tasks').doc(id).delete();
+          selectedTasks.delete(id);
           showToast('Task deleted successfully', 'success');
           loadTasks();
         } catch (err) {
@@ -2232,6 +2518,106 @@ function applyFilters() {
   currentPage = 1;
   renderTablePage(currentPage, filteredTasks);
   renderPagination(filteredTasks);
+  
+  // Update batch UI
+  updateBatchUI();
+}
+
+// Batch move tasks
+async function openBatchMoveModal() {
+  if (selectedTasks.size === 0) {
+    showToast('No tasks selected', 'error');
+    return;
+  }
+  
+  // Update selected tasks list
+  const selectedTasksArray = Array.from(selectedTasks).map(id => allTasks.find(t => t.id === id)).filter(t => t);
+  batchMoveCount.textContent = `Moving ${selectedTasksArray.length} selected tasks`;
+  
+  selectedTasksList.innerHTML = '';
+  selectedTasksArray.forEach(task => {
+    const div = document.createElement('div');
+    div.className = 'selected-task-item';
+    div.innerHTML = `<i class="fas fa-tasks"></i> ${task.SINO || 'No SINO'} - ${task['Existing Company Name'] || 'No Company'}`;
+    selectedTasksList.appendChild(div);
+  });
+  
+  // Populate folder select
+  populateBatchFolderSelect();
+  
+  batchMoveModal.style.display = 'flex';
+}
+
+// Execute batch move
+async function executeBatchMove() {
+  const destinationFolder = batchFolderSelect.value;
+  if (!destinationFolder) {
+    showToast('Please select a destination folder', 'error');
+    return;
+  }
+  
+  const selectedTasksArray = Array.from(selectedTasks);
+  if (selectedTasksArray.length === 0) {
+    closeBatchMoveModal();
+    return;
+  }
+  
+  try {
+    const batch = db.batch();
+    const tasksRef = db.collection('tasks');
+    
+    selectedTasksArray.forEach(id => {
+      batch.update(tasksRef.doc(id), { folderName: destinationFolder });
+    });
+    
+    await batch.commit();
+    
+    showToast(`Successfully moved ${selectedTasksArray.length} tasks to "${destinationFolder}"`, 'success');
+    
+    // Clear selection
+    selectedTasks.clear();
+    closeBatchMoveModal();
+    
+    // Reload tasks
+    loadTasks();
+  } catch (error) {
+    console.error('Error moving tasks:', error);
+    showToast('Error moving tasks', 'error');
+  }
+}
+
+// Batch delete tasks
+async function batchDeleteTasks() {
+  if (selectedTasks.size === 0) {
+    showToast('No tasks selected', 'error');
+    return;
+  }
+  
+  if (!confirm(`Are you sure you want to delete ${selectedTasks.size} selected tasks?`)) {
+    return;
+  }
+  
+  try {
+    const batch = db.batch();
+    const tasksRef = db.collection('tasks');
+    
+    selectedTasks.forEach(id => {
+      batch.delete(tasksRef.doc(id));
+    });
+    
+    await batch.commit();
+    
+    showToast(`Successfully deleted ${selectedTasks.size} tasks`, 'success');
+    
+    // Clear selection
+    selectedTasks.clear();
+    
+    // Reload tasks
+    loadTasks();
+  } catch (error) {
+    console.error('Error deleting tasks:', error);
+    showToast('Error deleting tasks', 'error');
+  }
 }
 
 // Attach filter input listeners
@@ -2256,6 +2642,22 @@ folderSelector.addEventListener('change', function() {
   currentFolder = this.value;
   applyFilters();
 });
+
+// Header checkbox (select all on current page)
+headerCheckbox.addEventListener('change', function(e) {
+  toggleSelectAll(this.checked);
+});
+
+// Select all checkbox in batch bar (select all filtered tasks)
+selectAllCheckbox.addEventListener('change', function(e) {
+  toggleSelectAllFiltered(this.checked);
+});
+
+// Batch move button
+batchMoveBtn.addEventListener('click', openBatchMoveModal);
+
+// Batch delete button
+batchDeleteBtn.addEventListener('click', batchDeleteTasks);
 
 // Load tasks and folders on page load
 window.onload = async () => {
@@ -2327,6 +2729,12 @@ folderModal.addEventListener('click', (e) => {
   }
 });
 
+batchMoveModal.addEventListener('click', (e) => {
+  if (e.target === batchMoveModal) {
+    // Do nothing - prevent closing
+  }
+});
+
 // Close modal with cancel button or escape key
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && taskModal.style.display === 'flex') {
@@ -2334,6 +2742,9 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.key === 'Escape' && folderModal.style.display === 'flex') {
     closeFolderModal();
+  }
+  if (e.key === 'Escape' && batchMoveModal.style.display === 'flex') {
+    closeBatchMoveModal();
   }
 });
 
@@ -3035,8 +3446,10 @@ window.closeTaskModal = closeTaskModal;
 window.closeAddPersonModal = closeAddPersonModal;
 window.closeUploadProgressModal = closeUploadProgressModal;
 window.closeFolderModal = closeFolderModal;
+window.closeBatchMoveModal = closeBatchMoveModal;
 window.promptRenameFolder = promptRenameFolder;
 window.promptDeleteFolder = promptDeleteFolder;
+window.executeBatchMove = executeBatchMove;
 </script>
 </body>
 </html>
