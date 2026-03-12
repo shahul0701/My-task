@@ -1,0 +1,3042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tasks Overview - Company Folders</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js for charts in PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <!-- jsPDF for PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    /* Reset & base */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #6b73ff 0%, #000dff 100%);
+      margin: 40px 0;
+      color: #444;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 20px;
+      box-shadow:
+        0 4px 30px rgba(0, 0, 0, 0.25),
+        0 10px 20px rgba(50, 50, 93, 0.1);
+      width: 95%;
+      max-width: 1400px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 25px;
+      font-weight: 700;
+      color: #222;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+
+    /* Folder Management Bar */
+    .folder-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 25px;
+      align-items: center;
+      background: linear-gradient(135deg, #e8eaf6, #c5cae9);
+      padding: 15px 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .folder-label {
+      font-weight: 600;
+      color: #3a42f4;
+      margin-right: 10px;
+      font-size: 16px;
+    }
+    
+    .folder-dropdown {
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: 1px solid #3a42f4;
+      background: white;
+      min-width: 250px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .folder-btn {
+      background: white;
+      border: 1px solid #3a42f4;
+      color: #3a42f4;
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .folder-btn:hover {
+      background: #3a42f4;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(58, 66, 244, 0.3);
+    }
+    
+    .folder-btn i {
+      font-size: 14px;
+    }
+    
+    .folder-stats {
+      margin-left: auto;
+      font-size: 14px;
+      color: #666;
+      background: white;
+      padding: 6px 15px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+
+    /* Filters container */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 25px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .filters input, .filters select {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      min-width: 150px;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+      transition: border-color 0.3s ease;
+    }
+
+    .filters input:focus, .filters select:focus {
+      outline: none;
+      border-color: #3a42f4;
+      box-shadow: 0 0 8px rgba(58, 66, 244, 0.5);
+    }
+
+    /* Table styling */
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      background: #fefefe;
+    }
+
+    thead tr {
+      background: linear-gradient(90deg, #3a42f4, #6b73ff);
+      color: white;
+      font-weight: 700;
+      text-transform: uppercase;
+      box-shadow: inset 0 -4px 10px rgba(0,0,0,0.2);
+    }
+
+    thead th {
+      padding: 12px 16px;
+      user-select: none;
+      border-right: 1px solid rgba(255,255,255,0.2);
+    }
+
+    thead th:last-child {
+      border-right: none;
+    }
+
+    tbody tr {
+      transition: background-color 0.25s ease, box-shadow 0.3s ease;
+      cursor: default;
+    }
+
+    tbody tr:nth-child(odd) {
+      background-color: #fafaff;
+    }
+
+    tbody tr:hover {
+      background-color: #e3e5ff;
+      box-shadow: 0 6px 15px rgba(58, 66, 244, 0.25);
+    }
+
+    tbody td {
+      padding: 14px 16px;
+      border-right: 1px solid #ddd;
+      vertical-align: middle;
+      font-size: 14px;
+      color: #333;
+      max-width: 180px;
+      word-break: break-word;
+    }
+
+    tbody td:last-child {
+      border-right: none;
+    }
+
+    /* Edit/Delete button styles */
+    .action-btn {
+      padding: 6px 14px;
+      margin: 0 4px;
+      border-radius: 8px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      transition: all 0.3s ease;
+    }
+
+    .edit-btn {
+      background-color: #4caf50;
+      color: white;
+    }
+
+    .edit-btn:hover {
+      background-color: #3b8e40;
+      transform: translateY(-2px);
+    }
+
+    .delete-btn {
+      background-color: #f44336;
+      color: white;
+    }
+
+    .delete-btn:hover {
+      background-color: #b83227;
+      transform: translateY(-2px);
+    }
+
+    .download-btn {
+      background: linear-gradient(135deg, #6f42c1, #e83e8c);
+      color: white;
+    }
+
+    .download-btn:hover {
+      background: linear-gradient(135deg, #5a36a8, #d91a7a);
+      transform: translateY(-2px);
+    }
+    
+    .move-btn {
+      background: linear-gradient(135deg, #ff9800, #f57c00);
+      color: white;
+    }
+    
+    .move-btn:hover {
+      background: linear-gradient(135deg, #f57c00, #e65100);
+      transform: translateY(-2px);
+    }
+
+    /* Pagination styles */
+    .pagination {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .pagination button {
+      margin: 0 6px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: none;
+      background-color: #3a42f4;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(58, 66, 244, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    .pagination button:disabled {
+      background-color: #999;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .pagination button:hover:not(:disabled) {
+      background-color: #2a31d9;
+      transform: translateY(-2px);
+    }
+
+    /* Added for detail row visibility */
+    .details-row td {
+      background-color: #f9f9f9;
+      padding: 16px;
+      border-top: 1px solid #ccc;
+    }
+
+    .details-box {
+      background: #eef1ff;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    /* Optional animation for detail reveal */
+    .details-row {
+      transition: all 0.3s ease;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .top-button {
+      display: inline-block;
+      padding: 10px 20px;
+      text-decoration: none;
+      background: linear-gradient(135deg, #007bff, #0056b3);
+      color: white;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 123, 255, 0.3);
+    }
+
+    .top-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 8px rgba(0, 123, 255, 0.4);
+    }
+
+    #createTaskBtn, #uploadCSVBtn, #downloadTemplateBtn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      font-size: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      z-index: 999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+    
+    #createTaskBtn:hover, #uploadCSVBtn:hover, #downloadTemplateBtn:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
+    }
+    
+    #uploadCSVBtn {
+      bottom: 100px;
+      background: linear-gradient(135deg, #007bff, #6610f2);
+      font-size: 20px;
+    }
+    
+    #downloadTemplateBtn {
+      bottom: 170px;
+      background: linear-gradient(135deg, #6f42c1, #e83e8c);
+      font-size: 20px;
+    }
+
+    /* Modal container */
+    #taskModal, #addPersonModal, #uploadProgressModal, #folderModal {
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Modal box */
+    #taskModal > div, #addPersonModal > div, #uploadProgressModal > div, #folderModal > div {
+      background: linear-gradient(145deg, #ffffff, #f0f0f0);
+      padding: 30px 25px;
+      border-radius: 20px;
+      width: 95%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      font-family: 'Segoe UI', sans-serif;
+      position: relative;
+    }
+
+    /* Modal heading */
+    #taskModal h3, #addPersonModal h3, #uploadProgressModal h3, #folderModal h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #333;
+      font-size: 24px;
+      text-align: center;
+      background: linear-gradient(135deg, #3a42f4, #6b73ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 700;
+    }
+
+    /* Inputs, selects, textarea */
+    #taskModal input,
+    #taskModal select,
+    #taskModal textarea,
+    #addPersonModal input,
+    #addPersonModal select,
+    #folderModal input,
+    #folderModal select {
+      width: 100%;
+      padding: 12px 15px;
+      margin-bottom: 15px;
+      font-size: 15px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      box-sizing: border-box;
+      transition: all 0.3s ease;
+      background: #f8f9fa;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    #taskModal input:focus,
+    #taskModal select:focus,
+    #taskModal textarea:focus,
+    #addPersonModal input:focus,
+    #addPersonModal select:focus,
+    #folderModal input:focus,
+    #folderModal select:focus {
+      border-color: #3a42f4;
+      outline: none;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(58, 66, 244, 0.2);
+    }
+
+    /* Buttons */
+    #taskModal button[type="submit"],
+    #addPersonModal button[type="submit"],
+    #folderModal button[type="submit"] {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: #fff;
+      font-weight: bold;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      width: 48%;
+      margin-right: 4%;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(40, 167, 69, 0.3);
+    }
+
+    #taskModal button[type="submit"]:hover,
+    #addPersonModal button[type="submit"]:hover,
+    #folderModal button[type="submit"]:hover {
+      background: linear-gradient(135deg, #218838, #1e9e6e);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 8px rgba(40, 167, 69, 0.4);
+    }
+
+    #taskModal button[type="button"],
+    #addPersonModal button[type="button"],
+    #folderModal button[type="button"] {
+      background: linear-gradient(135deg, #6c757d, #5a6268);
+      color: #fff;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      width: 48%;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(108, 117, 125, 0.3);
+    }
+
+    #taskModal button[type="button"]:hover,
+    #addPersonModal button[type="button"]:hover,
+    #folderModal button[type="button"]:hover {
+      background: linear-gradient(135deg, #5a6268, #495057);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 8px rgba(108, 117, 125, 0.4);
+    }
+    
+    /* Time editing section in modal */
+    .time-edit-section {
+      background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      border: 1px solid #bbdefb;
+      display: none;
+    }
+    
+    .time-edit-section h4 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      color: #1565c0;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .time-edit-section h4 i {
+      margin-right: 10px;
+    }
+    
+    .time-input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .time-input-group input {
+      flex: 1;
+      margin-bottom: 0;
+    }
+    
+    /* Status badges */
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .status-pending {
+      background: linear-gradient(135deg, #ff9800, #f57c00);
+      color: white;
+    }
+    
+    .status-complete {
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
+      color: white;
+    }
+    
+    .status-progress {
+      background: linear-gradient(135deg, #2196f3, #0d47a1);
+      color: white;
+    }
+    
+    .status-not-started {
+      background: linear-gradient(135deg, #6c757d, #495057);
+      color: white;
+    }
+    
+    /* Date filter section */
+    .date-filter-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 15px;
+      background: linear-gradient(135deg, #e8eaf6, #c5cae9);
+      border-radius: 12px;
+    }
+    
+    .date-filter-section select, 
+    .date-filter-section input {
+      flex: 1;
+      min-width: 120px;
+    }
+    
+    /* Dropdown with "Add New" option */
+    select option.add-new {
+      background-color: #e9ecef;
+      color: #495057;
+      font-weight: bold;
+      border-top: 1px solid #dee2e6;
+    }
+    
+    /* Form sections */
+    .form-section {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      border-left: 4px solid #3a42f4;
+    }
+    
+    .form-section h4 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      color: #3a42f4;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .form-section h4 i {
+      margin-right: 10px;
+    }
+    
+    /* Time info display */
+    .time-info {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 8px;
+      margin: 10px 0;
+      border-left: 3px solid #007bff;
+    }
+    
+    .time-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+    
+    .time-info-item {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .time-info-label {
+      font-size: 12px;
+      color: #666;
+      font-weight: 600;
+    }
+    
+    .time-info-value {
+      font-size: 14px;
+      color: #333;
+      font-weight: 500;
+    }
+    
+    /* Remarks section */
+    .remarks-section {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 10px 15px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    
+    .remarks-section strong {
+      color: #856404;
+    }
+    
+    /* Loading indicator */
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 10px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 25px;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transform: translateX(150%);
+      transition: transform 0.3s ease;
+    }
+    
+    .toast.show {
+      transform: translateX(0);
+    }
+    
+    .toast.success {
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
+    }
+    
+    .toast.error {
+      background: linear-gradient(135deg, #f44336, #c62828);
+    }
+    
+    .toast.info {
+      background: linear-gradient(135deg, #2196f3, #0d47a1);
+    }
+    
+    /* Progress bar styles */
+    .progress-container {
+      width: 100%;
+      background-color: #e0e0e0;
+      border-radius: 10px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+    
+    .progress-bar {
+      height: 20px;
+      background: linear-gradient(90deg, #3a42f4, #6b73ff);
+      border-radius: 10px;
+      width: 0%;
+      transition: width 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+    }
+    
+    .upload-status {
+      text-align: center;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+    
+    /* Folder list in modal */
+    .folder-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      margin: 5px 0;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 3px solid #3a42f4;
+    }
+    
+    .folder-list-item span {
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .folder-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .folder-actions button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 5px 10px;
+      border-radius: 5px;
+      transition: all 0.2s;
+    }
+    
+    .folder-actions .edit-folder {
+      color: #4caf50;
+    }
+    
+    .folder-actions .edit-folder:hover {
+      background: #e8f5e9;
+    }
+    
+    .folder-actions .delete-folder {
+      color: #f44336;
+    }
+    
+    .folder-actions .delete-folder:hover {
+      background: #ffebee;
+    }
+    
+    hr {
+      margin: 20px 0;
+      border: none;
+      border-top: 2px solid #e0e0e0;
+    }
+    
+    /* Responsive tweaks */
+    @media (max-width: 768px) {
+      .filters {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .filters select,
+      .filters input {
+        min-width: 100%;
+      }
+
+      .container {
+        padding: 20px 25px;
+      }
+
+      tbody td {
+        font-size: 12px;
+      }
+      
+      .date-filter-section {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .time-input-group {
+        flex-direction: column;
+      }
+      
+      .time-info-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .folder-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .folder-stats {
+        margin-left: 0;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="top-bar">
+    <a href="Home.html" class="top-button">Home</a>
+    <a href="Current task.html" class="top-button">Current Works</a>
+  </div>
+
+  <h1>Tasks Overview - Company Folders</h1>
+  
+  <!-- Folder Management Bar -->
+  <div class="folder-bar">
+    <span class="folder-label"><i class="fas fa-folder"></i> Current Folder:</span>
+    <select id="folderSelector" class="folder-dropdown">
+      <option value="All Tasks">All Tasks</option>
+    </select>
+    
+    <button class="folder-btn" id="createFolderBtn">
+      <i class="fas fa-plus-circle"></i> New Folder
+    </button>
+    
+    <button class="folder-btn" id="manageFoldersBtn">
+      <i class="fas fa-edit"></i> Manage Folders
+    </button>
+    
+    <span class="folder-stats" id="folderStats">
+      <i class="fas fa-tasks"></i> <span id="taskCount">0</span> tasks
+    </span>
+  </div>
+
+  <div class="filters">
+    <input type="text" id="searchCompany" placeholder="Search Company Name" />
+    <input type="text" id="searchOwner" placeholder="Search Owner" />
+    <select id="statusFilter">
+      <option value="">All Status</option>
+      <option value="Not Started">Not Started</option>
+      <option value="In Progress">In Progress</option>
+      <option value="Pending">Pending</option>
+      <option value="Complete">Completed</option>
+    </select>
+    
+    <div class="date-filter-section">
+      <select id="dateFilter">
+        <option value="">All Dates</option>
+        <option value="today">Today</option>
+        <option value="yesterday">Yesterday</option>
+        <option value="thisWeek">This Week</option>
+        <option value="lastWeek">Last Week</option>
+        <option value="thisMonth">This Month</option>
+        <option value="lastMonth">Last Month</option>
+        <option value="custom">Custom Range</option>
+      </select>
+      
+      <input type="date" id="customDateStart" style="display: none;" placeholder="Start Date">
+      <input type="date" id="customDateEnd" style="display: none;" placeholder="End Date">
+    </div>
+  </div>
+
+  <table id="tasksTable" class="overview-table">
+    <thead>
+      <tr>
+        <th>SINO</th>
+        <th>Existing Company Name</th>
+        <th>TYPE OF WORK</th>
+        <th>Status</th>
+        <th>Owner</th>
+        <th>Due Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Rows appended by JS -->
+    </tbody>
+  </table>
+
+  <div id="paginationControls" class="pagination" style="margin-top: 20px;"></div>
+</div>
+
+<!-- Modal for Creating/Editing Task -->
+<div id="taskModal" style="display:none;">
+  <div>
+    <h3 id="modalTitle">Create New Task</h3>
+    <form id="taskForm">
+      <!-- Folder Selection (New) -->
+      <div class="form-section">
+        <h4><i class="fas fa-folder"></i> Company Folder</h4>
+        <select name="folderName" id="folderSelectInModal" required>
+          <option value="">-- Select Folder (Company) --</option>
+        </select>
+        <small style="display: block; margin-top: -10px; margin-bottom: 10px; color: #666;">
+          <i class="fas fa-info-circle"></i> Folders help organize tasks by company
+        </small>
+      </div>
+    
+      <div class="form-section">
+        <h4><i class="fas fa-building"></i> Company Information</h4>
+        <input list="companyList" name="company" id="companyInput" placeholder="Company Name" required />
+        <datalist id="companyList"></datalist>
+
+        <input list="workTypeList" name="typeOfWork" id="typeOfWorkInput" placeholder="TYPE OF WORK" required />
+        <datalist id="workTypeList"></datalist>
+
+        <select name="accountType" id="accountTypeSelect">
+          <option value="">Select ACCOUNT TYPE</option>
+          <option value="Saving Acc">Saving Acc</option>
+          <option value="Chequing Acc">Chequing Acc</option>
+          <option value="Loan Acc">Loan Acc</option>
+          <option value="Credit Card">Credit Card</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <input type="text" name="accountsCards" id="accountsCards" placeholder="Accounts / Cards" list="accountsCardsList"/>
+        <datalist id="accountsCardsList"></datalist>
+      </div>
+
+      <div class="form-section">
+        <h4><i class="fas fa-tasks"></i> Task Details</h4>
+        <input type="text" name="task" placeholder="Task" />
+
+        <select name="workFor" id="workForSelect">
+          <option value="">Select WORK FOR</option>
+          <option value="Yearly">Yearly</option>
+          <option value="Monthly">Monthly</option>
+          <option value="Weekly">Weekly</option>
+          <option value="Daily">Daily</option>
+          <option value="Custom">Custom</option>
+        </select>
+
+        <input type="text" name="period" id="periodInput" placeholder="PERIOD" style="display:none;" />
+
+        <input type="date" name="dueDate" required />
+      </div>
+
+      <div class="form-section">
+        <h4><i class="fas fa-users"></i> Assignment</h4>
+        <select name="owner" id="ownerSelect" required>
+          <option value="">Select Owner</option>
+        </select>
+
+        <select name="assignedBy" id="assignedBySelect" required>
+          <option value="">Select Assigned By</option>
+        </select>
+      </div>
+
+      <div class="form-section">
+        <h4><i class="fas fa-sticky-note"></i> Additional Information</h4>
+        <textarea name="notes" placeholder="Notes" rows="3"></textarea>
+      </div>
+      
+      <!-- Time Editing Section - Hidden by default, shown only in edit mode -->
+      <div class="time-edit-section" id="timeEditSection">
+        <h4><i class="fas fa-clock"></i> Time Tracking</h4>
+        <div class="time-input-group">
+          <input type="datetime-local" id="timeStartInput" placeholder="Start Time">
+          <input type="datetime-local" id="timeEndInput" placeholder="End Time">
+        </div>
+        <div class="time-input-group">
+          <input type="text" id="totalWorkHours" placeholder="Total Work Hours" readonly>
+          <input type="text" id="totalPauseHours" placeholder="Total Pause Hours" readonly>
+        </div>
+        <input type="text" id="remarksInput" placeholder="Remarks">
+      </div>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+        <button type="submit">Save Task</button>
+        <button type="button" onclick="closeTaskModal()">Cancel</button>
+      </div>
+    </form> 
+  </div>
+</div>
+
+<!-- Modal for Adding New Person -->
+<div id="addPersonModal" style="display:none;">
+  <div>
+    <h3 id="addPersonModalTitle">Add New Person</h3>
+    <form id="addPersonForm">
+      <input type="text" id="newPersonName" placeholder="Enter Name" required />
+      <select id="personType">
+        <option value="owner">Owner</option>
+        <option value="assignedBy">Assigned By</option>
+      </select><br/>
+      <button type="submit">Add Person</button>
+      <button type="button" onclick="closeAddPersonModal()">Cancel</button>
+    </form>
+  </div>
+</div>
+
+<!-- Modal for Folder Management -->
+<div id="folderModal" style="display:none;">
+  <div>
+    <h3>Manage Folders</h3>
+    
+    <!-- Create New Folder -->
+    <div style="margin-bottom: 25px;">
+      <h4 style="color: #3a42f4; margin-bottom: 10px;">Create New Folder</h4>
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="newFolderNameInput" placeholder="Enter folder name (e.g., ABC Corp)" style="flex: 1;">
+        <button id="createFolderModalBtn" class="folder-btn" style="white-space: nowrap;">
+          <i class="fas fa-plus"></i> Create
+        </button>
+      </div>
+    </div>
+    
+    <hr>
+    
+    <!-- Existing Folders -->
+    <h4 style="color: #3a42f4; margin-bottom: 10px;">Existing Folders</h4>
+    <div id="folderListContainer" style="max-height: 300px; overflow-y: auto;">
+      <!-- Folders will be listed here -->
+    </div>
+    
+    <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+      <button type="button" onclick="closeFolderModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for Upload Progress -->
+<div id="uploadProgressModal" style="display:none;">
+  <div>
+    <h3>Uploading Tasks</h3>
+    <div class="upload-status" id="uploadStatus">Preparing upload...</div>
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar">0%</div>
+    </div>
+    <div style="text-align: center; margin-top: 20px;">
+      <button type="button" onclick="closeUploadProgressModal()" id="cancelUploadBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast"></div>
+
+<!-- Floating Buttons -->
+<button id="createTaskBtn">+</button>
+<input type="file" id="csvUpload" style="display:none" accept=".csv" />
+<button id="uploadCSVBtn"><i class="fas fa-upload"></i></button>
+<button id="downloadTemplateBtn"><i class="fas fa-download"></i></button>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<!-- PapaParse CSV Parser -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+<script>
+// Initialize jsPDF
+const { jsPDF } = window.jspdf;
+
+let editingTaskId = null;
+let currentPersonType = null;
+let uploadInProgress = false;
+let folders = ['All Tasks']; // Array to store folder names
+let currentFolder = 'All Tasks';
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyDYhLNuJKj2ucwGimfddTfpTb32Y0c-bXg",
+  authDomain: "mytask-96a79.firebaseapp.com",
+  databaseURL: "https://mytask-96a79-default-rtdb.firebaseio.com",
+  projectId: "mytask-96a79",
+  storageBucket: "mytask-96a79.firebasestorage.app",
+  messagingSenderId: "963509757773",
+  appId: "1:963509757773:web:d9c81a108f5873702eb904",
+  measurementId: "G-L9C1LTCZRN"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// DOM Elements
+const taskTableBody = document.querySelector('#tasksTable tbody');
+const paginationDiv = document.getElementById('paginationControls');
+const searchCompany = document.getElementById('searchCompany');
+const searchOwner = document.getElementById('searchOwner');
+const statusFilter = document.getElementById('statusFilter');
+const dateFilter = document.getElementById('dateFilter');
+const customDateStart = document.getElementById('customDateStart');
+const customDateEnd = document.getElementById('customDateEnd');
+const createTaskBtn = document.getElementById('createTaskBtn');
+const taskModal = document.getElementById('taskModal');
+const taskForm = document.getElementById('taskForm');
+const ownerSelect = document.getElementById('ownerSelect');
+const assignedBySelect = document.getElementById('assignedBySelect');
+const companyInput = taskForm.elements['company'];
+const modalTitle = document.getElementById('modalTitle');
+const uploadCSVBtn = document.getElementById('uploadCSVBtn');
+const csvUpload = document.getElementById('csvUpload');
+const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
+const addPersonModal = document.getElementById('addPersonModal');
+const addPersonForm = document.getElementById('addPersonForm');
+const newPersonName = document.getElementById('newPersonName');
+const personType = document.getElementById('personType');
+const timeEditSection = document.getElementById('timeEditSection');
+const toast = document.getElementById('toast');
+const uploadProgressModal = document.getElementById('uploadProgressModal');
+const uploadStatus = document.getElementById('uploadStatus');
+const progressBar = document.getElementById('progressBar');
+const cancelUploadBtn = document.getElementById('cancelUploadBtn');
+const folderSelector = document.getElementById('folderSelector');
+const createFolderBtn = document.getElementById('createFolderBtn');
+const manageFoldersBtn = document.getElementById('manageFoldersBtn');
+const folderModal = document.getElementById('folderModal');
+const folderSelectInModal = document.getElementById('folderSelectInModal');
+const folderStats = document.getElementById('folderStats');
+const taskCountSpan = document.getElementById('taskCount');
+const folderListContainer = document.getElementById('folderListContainer');
+const newFolderNameInput = document.getElementById('newFolderNameInput');
+const createFolderModalBtn = document.getElementById('createFolderModalBtn');
+
+const rowsPerPage = 10;
+let currentPage = 1;
+let allTasks = [];
+let filteredTasks = [];
+
+// Toast notification function
+function showToast(message, type = 'info', duration = 3000) {
+  toast.textContent = message;
+  toast.className = `toast ${type}`;
+  toast.classList.add('show');
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, duration);
+}
+
+// Modal close functions
+function closeTaskModal() {
+  taskModal.style.display = 'none';
+  editingTaskId = null;
+}
+
+function closeAddPersonModal() {
+  addPersonModal.style.display = 'none';
+}
+
+function closeUploadProgressModal() {
+  if (uploadInProgress) {
+    uploadInProgress = false;
+    showToast('Upload cancelled', 'info');
+  }
+  uploadProgressModal.style.display = 'none';
+}
+
+function closeFolderModal() {
+  folderModal.style.display = 'none';
+}
+
+// Load folders from Firestore
+async function loadFolders() {
+  try {
+    const snapshot = await db.collection('folders').orderBy('name').get();
+    folders = ['All Tasks'];
+    
+    snapshot.forEach(doc => {
+      const folderName = doc.data().name;
+      if (folderName && folderName !== 'All Tasks') {
+        folders.push(folderName);
+      }
+    });
+    
+    renderFolderDropdown();
+    renderFolderList();
+    populateFolderSelectInModal();
+  } catch (error) {
+    console.error('Error loading folders:', error);
+    folders = ['All Tasks'];
+    renderFolderDropdown();
+  }
+}
+
+// Render folder dropdown in main bar
+function renderFolderDropdown() {
+  folderSelector.innerHTML = '';
+  folders.forEach(folder => {
+    const option = document.createElement('option');
+    option.value = folder;
+    option.textContent = folder;
+    if (folder === currentFolder) {
+      option.selected = true;
+    }
+    folderSelector.appendChild(option);
+  });
+}
+
+// Render folder list in management modal
+function renderFolderList() {
+  folderListContainer.innerHTML = '';
+  
+  folders.filter(f => f !== 'All Tasks').forEach(folder => {
+    const folderDiv = document.createElement('div');
+    folderDiv.className = 'folder-list-item';
+    
+    folderDiv.innerHTML = `
+      <span><i class="fas fa-folder" style="color: #3a42f4; margin-right: 8px;"></i>${folder}</span>
+      <div class="folder-actions">
+        <button class="edit-folder" onclick="promptRenameFolder('${folder}')" title="Rename">
+          <i class="fas fa-pencil-alt"></i>
+        </button>
+        <button class="delete-folder" onclick="promptDeleteFolder('${folder}')" title="Delete">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    `;
+    
+    folderListContainer.appendChild(folderDiv);
+  });
+  
+  if (folders.length <= 1) {
+    folderListContainer.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No folders created yet. Create your first folder above.</p>';
+  }
+}
+
+// Populate folder select in task modal
+function populateFolderSelectInModal() {
+  folderSelectInModal.innerHTML = '<option value="">-- Select Folder (Company) --</option>';
+  
+  folders.filter(f => f !== 'All Tasks').forEach(folder => {
+    const option = document.createElement('option');
+    option.value = folder;
+    option.textContent = folder;
+    folderSelectInModal.appendChild(option);
+  });
+}
+
+// Create new folder
+async function createFolder(folderName) {
+  if (!folderName || folderName.trim() === '') {
+    showToast('Folder name cannot be empty', 'error');
+    return false;
+  }
+  
+  folderName = folderName.trim();
+  
+  if (folders.includes(folderName)) {
+    showToast('Folder already exists', 'error');
+    return false;
+  }
+  
+  try {
+    await db.collection('folders').add({
+      name: folderName,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    folders.push(folderName);
+    folders.sort((a, b) => {
+      if (a === 'All Tasks') return -1;
+      if (b === 'All Tasks') return 1;
+      return a.localeCompare(b);
+    });
+    
+    renderFolderDropdown();
+    renderFolderList();
+    populateFolderSelectInModal();
+    showToast('Folder created successfully', 'success');
+    return true;
+  } catch (error) {
+    console.error('Error creating folder:', error);
+    showToast('Error creating folder', 'error');
+    return false;
+  }
+}
+
+// Rename folder
+async function renameFolder(oldName, newName) {
+  if (oldName === 'All Tasks') {
+    showToast('Cannot rename "All Tasks"', 'error');
+    return false;
+  }
+  
+  if (!newName || newName.trim() === '') {
+    showToast('Folder name cannot be empty', 'error');
+    return false;
+  }
+  
+  newName = newName.trim();
+  
+  if (folders.includes(newName)) {
+    showToast('A folder with that name already exists', 'error');
+    return false;
+  }
+  
+  try {
+    // Update folder document in Firestore
+    const snapshot = await db.collection('folders').where('name', '==', oldName).get();
+    const batch = db.batch();
+    
+    snapshot.forEach(doc => {
+      batch.update(doc.ref, { name: newName });
+    });
+    
+    // Update all tasks that use this folder
+    const tasksSnapshot = await db.collection('tasks').where('folderName', '==', oldName).get();
+    tasksSnapshot.forEach(doc => {
+      batch.update(doc.ref, { folderName: newName });
+    });
+    
+    await batch.commit();
+    
+    // Update local folders array
+    const index = folders.indexOf(oldName);
+    if (index !== -1) {
+      folders[index] = newName;
+    }
+    
+    if (currentFolder === oldName) {
+      currentFolder = newName;
+    }
+    
+    folders.sort((a, b) => {
+      if (a === 'All Tasks') return -1;
+      if (b === 'All Tasks') return 1;
+      return a.localeCompare(b);
+    });
+    
+    renderFolderDropdown();
+    renderFolderList();
+    populateFolderSelectInModal();
+    loadTasks(); // Reload tasks to reflect folder changes
+    showToast('Folder renamed successfully', 'success');
+    return true;
+  } catch (error) {
+    console.error('Error renaming folder:', error);
+    showToast('Error renaming folder', 'error');
+    return false;
+  }
+}
+
+// Delete folder
+async function deleteFolder(folderName) {
+  if (folderName === 'All Tasks') {
+    showToast('Cannot delete "All Tasks"', 'error');
+    return false;
+  }
+  
+  if (!confirm(`Are you sure you want to delete folder "${folderName}"? Tasks in this folder will become uncategorized.`)) {
+    return false;
+  }
+  
+  try {
+    // Delete folder document
+    const snapshot = await db.collection('folders').where('name', '==', folderName).get();
+    const batch = db.batch();
+    
+    snapshot.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    
+    // Update tasks to remove folder assignment
+    const tasksSnapshot = await db.collection('tasks').where('folderName', '==', folderName).get();
+    tasksSnapshot.forEach(doc => {
+      batch.update(doc.ref, { folderName: '' });
+    });
+    
+    await batch.commit();
+    
+    // Update local folders array
+    folders = folders.filter(f => f !== folderName);
+    
+    if (currentFolder === folderName) {
+      currentFolder = 'All Tasks';
+    }
+    
+    renderFolderDropdown();
+    renderFolderList();
+    populateFolderSelectInModal();
+    loadTasks(); // Reload tasks
+    showToast('Folder deleted successfully', 'success');
+    return true;
+  } catch (error) {
+    console.error('Error deleting folder:', error);
+    showToast('Error deleting folder', 'error');
+    return false;
+  }
+}
+
+// Prompt for folder rename
+function promptRenameFolder(oldName) {
+  const newName = prompt('Enter new folder name:', oldName);
+  if (newName && newName !== oldName) {
+    renameFolder(oldName, newName);
+  }
+}
+
+// Prompt for folder deletion
+function promptDeleteFolder(folderName) {
+  deleteFolder(folderName);
+}
+
+// Load tasks from Firestore
+async function loadTasks() {
+  try {
+    showToast('Loading tasks...', 'info');
+    const snapshot = await db.collection('tasks').get();
+    allTasks = []; // reset on reload
+    snapshot.forEach(doc => {
+      allTasks.push({ id: doc.id, ...doc.data() });
+    });
+
+    // Sort ascending by numeric part of SINO
+    allTasks.sort((a, b) => {
+      const getNumber = sino => {
+        if (!sino) return 0;
+        const match = sino.match(/(\d+)$/);
+        return match ? parseInt(match[1], 10) : 0;
+      };
+      return getNumber(a.SINO) - getNumber(b.SINO);
+    });
+
+    // Auto-calculate time information for all tasks
+    allTasks.forEach(task => {
+      calculateAndUpdateTaskTimeInfo(task);
+    });
+    
+    populateCompanyList();
+    applyFilters(); // Initial render with sorting applied
+    showToast('Tasks loaded successfully', 'success');
+  } catch (error) {
+    console.error(error);
+    showToast('Error loading tasks', 'error');
+  }
+}
+
+// Calculate time information from work sessions
+function calculateAndUpdateTaskTimeInfo(task) {
+  if (!task.workSessions || task.workSessions.length === 0) {
+    task.calculatedWorkHours = '0h 0m';
+    task.calculatedPauseHours = '0h 0m';
+    task.calculatedStartTime = null;
+    task.calculatedEndTime = null;
+    task.sessionCount = 0;
+    return task;
+  }
+
+  let totalWorkMs = 0;
+  let totalPauseMs = 0;
+  let lastEndTime = null;
+
+  // Sort sessions by start time
+  const sortedSessions = [...task.workSessions].sort((a, b) => {
+    const aStart = a.start ? (a.start.toDate ? a.start.toDate() : new Date(a.start)) : new Date(0);
+    const bStart = b.start ? (b.start.toDate ? b.start.toDate() : new Date(b.start)) : new Date(0);
+    return aStart - bStart;
+  });
+
+  // Calculate work time and pause time from sessions
+  sortedSessions.forEach(session => {
+    const start = session.start ? (session.start.toDate ? session.start.toDate() : new Date(session.start)) : null;
+    const end = session.end ? (session.end.toDate ? session.end.toDate() : new Date(session.end)) : null;
+    
+    if (start) {
+      const sessionStartMs = start.getTime();
+      const sessionEndMs = end ? end.getTime() : Date.now(); // Use current time if session is still active
+      
+      // Add work time for this session
+      totalWorkMs += sessionEndMs - sessionStartMs;
+      
+      // Calculate pause time between sessions
+      if (lastEndTime !== null) {
+        const pauseTime = sessionStartMs - lastEndTime;
+        if (pauseTime > 0) {
+          totalPauseMs += pauseTime;
+        }
+      }
+      
+      lastEndTime = sessionEndMs;
+    }
+  });
+
+  // Convert milliseconds to hours and minutes
+  const formatTime = (ms) => {
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
+  };
+
+  const firstSession = sortedSessions[0];
+  const lastSession = sortedSessions[sortedSessions.length - 1];
+  
+  const startTime = firstSession.start ? 
+    (firstSession.start.toDate ? firstSession.start.toDate() : new Date(firstSession.start)) : null;
+  const endTime = lastSession.end ? 
+    (lastSession.end.toDate ? lastSession.end.toDate() : new Date(lastSession.end)) : null;
+
+  // Update task object with calculated times
+  task.calculatedWorkHours = formatTime(totalWorkMs);
+  task.calculatedPauseHours = formatTime(totalPauseMs);
+  task.calculatedStartTime = startTime;
+  task.calculatedEndTime = endTime;
+  task.sessionCount = sortedSessions.length;
+
+  return task;
+}
+
+function populateCompanyList() {
+  const companyList = document.getElementById('companyList');
+  companyList.innerHTML = ''; // Clear previous options
+
+  const companiesSet = new Set();
+
+  allTasks.forEach(task => {
+    const company = task['Existing Company Name'];
+    if (company) {
+      companiesSet.add(company);
+    }
+  });
+
+  companiesSet.forEach(name => {
+    const option = document.createElement('option');
+    option.value = name;
+    companyList.appendChild(option);
+  });
+}
+
+// Render a specific page
+function renderTablePage(page, tasks) {
+  taskTableBody.innerHTML = '';
+  const start = (page - 1) * rowsPerPage;
+  const pageTasks = tasks.slice(start, start + rowsPerPage);
+
+  pageTasks.forEach(task => {
+    const tr = document.createElement('tr');
+    tr.classList.add('task-row');
+    
+    // Create status badge
+    let statusClass = '';
+    if (task.Status === 'Not Started') statusClass = 'status-not-started';
+    else if (task.Status === 'Complete') statusClass = 'status-complete';
+    else if (task.Status === 'In Progress') statusClass = 'status-progress';
+    else if (task.Status === 'Pending') statusClass = 'status-pending';
+    
+    tr.innerHTML = `
+      <td>${task.SINO || ''}</td>
+      <td>${task['Existing Company Name'] || ''}</td>
+      <td>${task['TYPE OF WORK'] || ''}</td>
+      <td><span class="status-badge ${statusClass}">${task.Status || ''}</span></td>
+      <td>${task.Owner || ''}</td>
+      <td>${task['Due date'] || ''}</td>
+    `;
+
+    const detailsTr = document.createElement('tr');
+    detailsTr.classList.add('details-row');
+    detailsTr.style.display = 'none';
+    
+    // Calculate time information for this task
+    const timeInfo = calculateAndUpdateTaskTimeInfo(task);
+    
+    // Show time information for all tasks that have work sessions
+    let timeInfoHtml = '';
+    
+    if (task.workSessions && task.workSessions.length > 0) {
+      timeInfoHtml = `
+        <div class="time-info">
+          <strong><i class="fas fa-clock"></i> Time Tracking Summary</strong>
+          <div class="time-info-grid">
+            <div class="time-info-item">
+              <span class="time-info-label">Start Time</span>
+              <span class="time-info-value">${timeInfo.calculatedStartTime ? timeInfo.calculatedStartTime.toLocaleString() : 'Not started'}</span>
+            </div>
+            <div class="time-info-item">
+              <span class="time-info-label">End Time</span>
+              <span class="time-info-value">${timeInfo.calculatedEndTime ? timeInfo.calculatedEndTime.toLocaleString() : 'In progress'}</span>
+            </div>
+            <div class="time-info-item">
+              <span class="time-info-label">Total Work</span>
+              <span class="time-info-value">${timeInfo.calculatedWorkHours}</span>
+            </div>
+            <div class="time-info-item">
+              <span class="time-info-label">Total Pause</span>
+              <span class="time-info-value">${timeInfo.calculatedPauseHours}</span>
+            </div>
+            <div class="time-info-item">
+              <span class="time-info-label">Work Sessions</span>
+              <span class="time-info-value">${timeInfo.sessionCount} sessions</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Show remarks if available
+    let remarksHtml = '';
+    if (task.Remarks && task.Remarks.trim() !== '') {
+      remarksHtml = `<div class="remarks-section"><strong>Remarks:</strong> ${task.Remarks}</div>`;
+    }
+    
+    detailsTr.innerHTML = `
+      <td colspan="6">
+        <div class="details-box">
+          <strong>Folder:</strong> <span style="color: #3a42f4;">${task.folderName || '<em>Uncategorized</em>'}</span><br/>
+          <strong>ACCOUNT TYPE:</strong> ${task['ACCOUNT TYPE'] || ''}<br/>
+          <strong>Accounts / Cards:</strong> ${task['Accounts / Cards'] || ''}<br/>
+          <strong>Task:</strong> ${task.Task || ''}<br/>
+          <strong>WORK FOR:</strong> ${task['WORK FOR'] || ''}<br/>
+          <strong>PERIOD:</strong> ${task.PERIOD || ''}<br/>
+          <strong>Due Date:</strong> ${task['Due date'] || ''}<br/>
+          <strong>Assigned By:</strong> ${task['Assigned By'] || ''}<br/>
+          <strong>Notes:</strong> ${task.Notes || ''}<br/>
+          ${remarksHtml}
+          ${timeInfoHtml}
+          <div style="margin-top: 15px;">
+            <button class="edit-btn action-btn" data-id="${task.id}">Edit</button>
+            <button class="delete-btn action-btn" data-id="${task.id}">Delete</button>
+            <button class="download-btn action-btn" data-id="${task.id}">
+              <i class="fas fa-download"></i> Download Report
+            </button>
+            <button class="move-btn action-btn" data-id="${task.id}">
+              <i class="fas fa-folder-open"></i> Move to Folder
+            </button>
+          </div>
+        </div>
+      </td>
+    `;
+
+    tr.addEventListener('click', () => {
+      detailsTr.style.display = detailsTr.style.display === 'none' ? 'table-row' : 'none';
+    });
+
+    taskTableBody.appendChild(tr);
+    taskTableBody.appendChild(detailsTr);
+  });
+
+  attachRowEventListeners();
+}
+
+// Format time in detailed format
+function formatTimeDetailed(ms) {
+  const hours = Math.floor(ms / (1000 * 60 * 60));
+  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((ms % (1000 * 60)) / 1000);
+  return `${hours}h ${minutes}m ${seconds}s`;
+}
+
+// Format time for charts (decimal hours)
+function formatTimeForCharts(timeStr) {
+  if (!timeStr) return 0;
+  const match = timeStr.match(/(\d+)h\s*(\d+)m/);
+  if (match) {
+    const hours = parseInt(match[1]);
+    const minutes = parseInt(match[2]);
+    return hours + (minutes / 60);
+  }
+  return 0;
+}
+
+// Attach edit/delete/download button events
+function attachRowEventListeners() {
+  // Remove existing event listeners first to prevent duplicates
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.replaceWith(btn.cloneNode(true));
+  });
+  
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.replaceWith(btn.cloneNode(true));
+  });
+  
+  document.querySelectorAll('.download-btn').forEach(btn => {
+    btn.replaceWith(btn.cloneNode(true));
+  });
+  
+  document.querySelectorAll('.move-btn').forEach(btn => {
+    btn.replaceWith(btn.cloneNode(true));
+  });
+
+  // Attach delete event listeners
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const id = e.target.dataset.id;
+      if (confirm('Are you sure you want to delete this task?')) {
+        try {
+          await db.collection('tasks').doc(id).delete();
+          showToast('Task deleted successfully', 'success');
+          loadTasks();
+        } catch (err) {
+          console.error(err);
+          showToast('Delete failed', 'error');
+        }
+      }
+    });
+  });
+
+  // Attach edit event listeners
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const id = e.target.dataset.id;
+      const task = allTasks.find(t => t.id === id);
+      if (!task) return showToast('Task not found', 'error');
+
+      editingTaskId = id; // Track the task being edited
+      modalTitle.textContent = 'Edit Task';
+      populateDropdowns(); // Ensure dropdowns are filled
+      taskForm.reset(); // Clear previous data
+
+      // Show time editing section for existing tasks
+      timeEditSection.style.display = 'block';
+
+      // Populate form fields
+      taskForm.elements['company'].value = task['Existing Company Name'] || '';
+      taskForm.elements['typeOfWork'].value = task['TYPE OF WORK'] || '';
+      taskForm.elements['accountType'].value = task['ACCOUNT TYPE'] || '';
+      taskForm.elements['accountsCards'].value = task['Accounts / Cards'] || '';
+      taskForm.elements['task'].value = task.Task || '';
+      taskForm.elements['owner'].value = task.Owner || '';
+      taskForm.elements['workFor'].value = task['WORK FOR'] || '';
+      taskForm.elements['period'].value = task.PERIOD || '';
+      taskForm.elements['dueDate'].value = task['Due date'] || '';
+      taskForm.elements['assignedBy'].value = task['Assigned By'] || '';
+      taskForm.elements['notes'].value = task.Notes || '';
+      
+      // Set folder in modal
+      if (task.folderName) {
+        folderSelectInModal.value = task.folderName;
+      } else {
+        folderSelectInModal.value = '';
+      }
+      
+      // Populate time fields with calculated values
+      const timeInfo = calculateAndUpdateTaskTimeInfo(task);
+      document.getElementById('timeStartInput').value = timeInfo.calculatedStartTime ? formatDateTimeLocal(timeInfo.calculatedStartTime) : '';
+      document.getElementById('timeEndInput').value = timeInfo.calculatedEndTime ? formatDateTimeLocal(timeInfo.calculatedEndTime) : '';
+      document.getElementById('totalWorkHours').value = timeInfo.calculatedWorkHours || '';
+      document.getElementById('totalPauseHours').value = timeInfo.calculatedPauseHours || '';
+      document.getElementById('remarksInput').value = task.Remarks || '';
+
+      taskModal.style.display = 'flex';
+    });
+  });
+
+  // Attach download event listeners
+  document.querySelectorAll('.download-btn').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const id = e.target.closest('.download-btn').dataset.id;
+      await generateTaskReport(id);
+    });
+  });
+  
+  // Attach move to folder event listeners
+  document.querySelectorAll('.move-btn').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const id = e.target.closest('.move-btn').dataset.id;
+      const task = allTasks.find(t => t.id === id);
+      if (!task) return;
+      
+      // Create a prompt with folder selection
+      const folderOptions = folders.filter(f => f !== 'All Tasks').map(f => 
+        `<option value="${f}" ${task.folderName === f ? 'selected' : ''}>${f}</option>`
+      ).join('');
+      
+      // Simple prompt - in a production app you might want a custom modal
+      const newFolder = prompt(`Move task "${task.SINO || task.id}" to folder (type existing folder name or create new):\nExisting folders: ${folders.filter(f => f !== 'All Tasks').join(', ')}`, task.folderName || '');
+      
+      if (newFolder !== null) {
+        const trimmedFolder = newFolder.trim();
+        if (trimmedFolder) {
+          // Check if folder exists, if not create it
+          if (!folders.includes(trimmedFolder) && trimmedFolder !== 'All Tasks') {
+            const created = await createFolder(trimmedFolder);
+            if (!created) return;
+          }
+          
+          try {
+            await db.collection('tasks').doc(id).update({ folderName: trimmedFolder });
+            showToast('Task moved successfully', 'success');
+            loadTasks();
+          } catch (err) {
+            console.error('Error moving task:', err);
+            showToast('Error moving task', 'error');
+          }
+        }
+      }
+    });
+  });
+}
+
+// Generate comprehensive PDF report for a task
+async function generateTaskReport(taskId) {
+  const task = allTasks.find(t => t.id === taskId);
+  if (!task) {
+    showToast('Task not found', 'error');
+    return;
+  }
+
+  // Show loading state on the button
+  const downloadBtn = document.querySelector(`.download-btn[data-id="${taskId}"]`);
+  const originalHtml = downloadBtn.innerHTML;
+  downloadBtn.innerHTML = '<div class="loading"></div> Generating PDF...';
+  downloadBtn.disabled = true;
+
+  try {
+    // Calculate time information
+    const timeInfo = calculateAndUpdateTaskTimeInfo(task);
+    
+    // Create PDF with better formatting
+    const pdf = new jsPDF();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    let yPosition = 20;
+
+    // Add elegant header
+    pdf.setFillColor(58, 66, 244);
+    pdf.rect(0, 0, pageWidth, 60, 'F');
+    
+    // Header content
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(24);
+    pdf.setFont(undefined, 'bold');
+    pdf.text('TASK PERFORMANCE REPORT', pageWidth / 2, 25, { align: 'center' });
+    
+    pdf.setFontSize(12);
+    pdf.setFont(undefined, 'normal');
+    pdf.text(`Generated on: ${new Date().toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}`, pageWidth / 2, 35, { align: 'center' });
+    
+    pdf.setFontSize(10);
+    pdf.text('Giggs Task Management System', pageWidth / 2, 45, { align: 'center' });
+
+    yPosition = 75;
+
+    // Task Information Section
+    pdf.setTextColor(58, 66, 244);
+    pdf.setFontSize(16);
+    pdf.setFont(undefined, 'bold');
+    pdf.text('TASK INFORMATION', 20, yPosition);
+    
+    // Add underline
+    pdf.setDrawColor(58, 66, 244);
+    pdf.line(20, yPosition + 2, 80, yPosition + 2);
+    
+    yPosition += 15;
+
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFontSize(10);
+    pdf.setFont(undefined, 'normal');
+
+    const taskInfo = [
+      { label: 'Task ID', value: task.SINO || 'N/A' },
+      { label: 'Folder', value: task.folderName || 'Uncategorized' },
+      { label: 'Work For', value: task['WORK FOR'] || 'N/A' },
+      { label: 'Company', value: task['Existing Company Name'] || 'N/A' },
+      { label: 'Type of Work', value: task['TYPE OF WORK'] || 'N/A' },
+      { label: 'Due Date', value: task['Due date'] || 'N/A' },
+      { label: 'Account Type', value: task['ACCOUNT TYPE'] || 'N/A' },
+      { label: 'Status', value: task.Status || 'N/A' },
+      { label: 'Accounts/Cards', value: task['Accounts / Cards'] || 'N/A' },
+      { label: 'Owner', value: task.Owner || 'N/A' },
+      { label: 'Task Description', value: task.Task || 'N/A' },
+      { label: 'Assigned By', value: task['Assigned By'] || 'N/A' },
+      { label: 'Period', value: task.PERIOD || 'N/A' }
+    ];
+
+    // Two column layout for task info
+    const col1X = 20;
+    const col2X = pageWidth / 2 + 10;
+    let currentCol = col1X;
+    let currentY = yPosition;
+
+    taskInfo.forEach((info, index) => {
+      if (currentY > pageHeight - 50) {
+        pdf.addPage();
+        currentY = 20;
+      }
+      
+      pdf.setFont(undefined, 'bold');
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(info.label + ':', currentCol, currentY);
+      
+      pdf.setFont(undefined, 'normal');
+      pdf.setTextColor(0, 0, 0);
+      
+      // Handle long text values
+      const textLines = pdf.splitTextToSize(info.value, 70);
+      pdf.text(textLines, currentCol + 35, currentY);
+      
+      currentY += (textLines.length * 5);
+      
+      // Switch column every 6 items
+      if ((index + 1) % 6 === 0) {
+        currentCol = currentCol === col1X ? col2X : col1X;
+        currentY = currentCol === col1X ? currentY : yPosition;
+      }
+    });
+
+    // Reset position after task info
+    yPosition = Math.max(currentY, 150);
+
+    // Time Tracking Summary
+    pdf.setTextColor(58, 66, 244);
+    pdf.setFontSize(16);
+    pdf.setFont(undefined, 'bold');
+    pdf.text('TIME TRACKING SUMMARY', 20, yPosition);
+    pdf.line(20, yPosition + 2, 100, yPosition + 2);
+    yPosition += 15;
+
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFontSize(10);
+    
+    const timeSummary = [
+      { label: 'Start Time', value: timeInfo.calculatedStartTime ? timeInfo.calculatedStartTime.toLocaleString() : 'Not started' },
+      { label: 'End Time', value: timeInfo.calculatedEndTime ? timeInfo.calculatedEndTime.toLocaleString() : 'In progress' },
+      { label: 'Total Work Time', value: timeInfo.calculatedWorkHours },
+      { label: 'Total Pause Time', value: timeInfo.calculatedPauseHours },
+      { label: 'Work Sessions', value: `${timeInfo.sessionCount} sessions` },
+      { label: 'Remarks', value: task.Remarks || 'No remarks provided' }
+    ];
+
+    timeSummary.forEach(info => {
+      if (yPosition > pageHeight - 30) {
+        pdf.addPage();
+        yPosition = 20;
+      }
+      
+      pdf.setFont(undefined, 'bold');
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(info.label + ':', 20, yPosition);
+      
+      pdf.setFont(undefined, 'normal');
+      pdf.setTextColor(0, 0, 0);
+      
+      // Handle long text for remarks
+      if (info.label === 'Remarks' && info.value.length > 80) {
+        const remarksLines = pdf.splitTextToSize(info.value, pageWidth - 50);
+        pdf.text(remarksLines, 60, yPosition);
+        yPosition += (remarksLines.length * 5);
+      } else {
+        const textLines = pdf.splitTextToSize(info.value, pageWidth - 60);
+        pdf.text(textLines, 60, yPosition);
+        yPosition += (textLines.length * 5);
+      }
+      
+      yPosition += 2;
+    });
+
+    yPosition += 10;
+
+    // Work Sessions Details
+    if (task.workSessions && task.workSessions.length > 0) {
+      if (yPosition > pageHeight - 100) {
+        pdf.addPage();
+        yPosition = 20;
+      }
+      
+      pdf.setTextColor(58, 66, 244);
+      pdf.setFontSize(16);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('DETAILED WORK SESSIONS', 20, yPosition);
+      pdf.line(20, yPosition + 2, 110, yPosition + 2);
+      yPosition += 15;
+
+      // Table headers
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(20, yPosition, pageWidth - 40, 8, 'F');
+      
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(9);
+      pdf.setFont(undefined, 'bold');
+      
+      const headers = ['Session', 'Start Time', 'End Time', 'Duration', 'Status'];
+      const colWidths = [15, 55, 55, 30, 25];
+      let xPosition = 22;
+
+      headers.forEach((header, index) => {
+        pdf.text(header, xPosition, yPosition + 6);
+        xPosition += colWidths[index];
+      });
+
+      yPosition += 12;
+
+      // Table rows
+      pdf.setFont(undefined, 'normal');
+      pdf.setFontSize(8);
+
+      // Sort sessions by start time
+      const sortedSessions = [...task.workSessions].sort((a, b) => {
+        const aStart = a.start ? (a.start.toDate ? a.start.toDate() : new Date(a.start)) : new Date(0);
+        const bStart = b.start ? (b.start.toDate ? b.start.toDate() : new Date(b.start)) : new Date(0);
+        return aStart - bStart;
+      });
+
+      sortedSessions.forEach((session, index) => {
+        if (yPosition > pageHeight - 20) {
+          pdf.addPage();
+          yPosition = 20;
+          // Redraw headers on new page
+          pdf.setFillColor(240, 240, 240);
+          pdf.rect(20, yPosition, pageWidth - 40, 8, 'F');
+          pdf.setFont(undefined, 'bold');
+          pdf.setFontSize(9);
+          xPosition = 22;
+          headers.forEach((header, i) => {
+            pdf.text(header, xPosition, yPosition + 6);
+            xPosition += colWidths[i];
+          });
+          yPosition += 12;
+          pdf.setFont(undefined, 'normal');
+          pdf.setFontSize(8);
+        }
+
+        const start = session.start ? 
+          (session.start.toDate ? session.start.toDate() : new Date(session.start)).toLocaleString() : '—';
+        const end = session.end ? 
+          (session.end.toDate ? session.end.toDate() : new Date(session.end)).toLocaleString() : '—';
+        
+        let duration = '—';
+        if (session.start && session.end) {
+          const startMs = session.start.toDate ? session.start.toDate().getTime() : new Date(session.start).getTime();
+          const endMs = session.end.toDate ? session.end.toDate().getTime() : new Date(session.end).getTime();
+          duration = formatTimeDetailed(endMs - startMs);
+        } else if (session.start && !session.end) {
+          duration = 'In Progress';
+        }
+        
+        const status = session.end ? 'Completed' : (session.start ? 'Active' : '—');
+
+        xPosition = 22;
+        const rowData = [
+          (index + 1).toString(),
+          start,
+          end,
+          duration,
+          status
+        ];
+
+        // Alternate row background
+        if (index % 2 === 0) {
+          pdf.setFillColor(250, 250, 250);
+          pdf.rect(20, yPosition - 4, pageWidth - 40, 6, 'F');
+        }
+
+        rowData.forEach((data, i) => {
+          pdf.setTextColor(0, 0, 0);
+          pdf.text(data, xPosition, yPosition);
+          xPosition += colWidths[i];
+        });
+
+        yPosition += 7;
+      });
+
+      yPosition += 10;
+    }
+
+    // Add footer
+    const totalPages = pdf.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      pdf.setPage(i);
+      pdf.setFontSize(8);
+      pdf.setTextColor(150, 150, 150);
+      pdf.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+      pdf.text('Confidential Task Report - Giggs System', pageWidth / 2, pageHeight - 5, { align: 'center' });
+    }
+
+    // Save PDF with professional filename
+    const fileName = `Task_Report_${task.SINO || task.id}_${new Date().toISOString().split('T')[0]}.pdf`;
+    pdf.save(fileName);
+    showToast('PDF report generated successfully', 'success');
+
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    showToast('Error generating PDF report', 'error');
+  } finally {
+    // Restore button state
+    downloadBtn.innerHTML = originalHtml;
+    downloadBtn.disabled = false;
+  }
+}
+
+function formatDateTimeLocal(date) {
+  if (!date) return '';
+  
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+// Render pagination with page numbers
+function renderPagination(tasks) {
+  paginationDiv.innerHTML = '';
+  const totalPages = Math.ceil(tasks.length / rowsPerPage);
+  if (totalPages <= 1) return;
+
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+    btn.disabled = i === currentPage;
+    btn.addEventListener('click', () => {
+      currentPage = i;
+      renderTablePage(currentPage, filteredTasks);
+      renderPagination(filteredTasks);
+    });
+    paginationDiv.appendChild(btn);
+  }
+}
+
+// Filter tasks based on inputs and selected folder
+function applyFilters() {
+  const company = searchCompany.value.toLowerCase();
+  const owner = searchOwner.value.toLowerCase();
+  const status = statusFilter.value;
+  const dateFilterValue = dateFilter.value;
+  
+  filteredTasks = allTasks.filter(task => {
+    // Folder filter
+    if (currentFolder !== 'All Tasks' && task.folderName !== currentFolder) {
+      return false;
+    }
+    
+    const matchCompany = task['Existing Company Name']?.toLowerCase().includes(company);
+    const matchOwner = task.Owner?.toLowerCase().includes(owner);
+    const matchStatus = !status || task.Status === status;
+    
+    // Date filtering
+    let matchDate = true;
+    if (dateFilterValue) {
+      const dueDate = task['Due date'] ? new Date(task['Due date']) : null;
+      
+      if (dueDate) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        // Start of week (Monday)
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
+        startOfWeek.setHours(0, 0, 0, 0);
+        
+        // End of week (Sunday)
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+        
+        // Start of last week
+        const startOfLastWeek = new Date(startOfWeek);
+        startOfLastWeek.setDate(startOfWeek.getDate() - 7);
+        
+        // End of last week
+        const endOfLastWeek = new Date(startOfLastWeek);
+        endOfLastWeek.setDate(startOfLastWeek.getDate() + 6);
+        endOfLastWeek.setHours(23, 59, 59, 999);
+        
+        // Start of month
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        
+        // End of month
+        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        endOfMonth.setHours(23, 59, 59, 999);
+        
+        // Start of last month
+        const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        
+        // End of last month
+        const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+        endOfLastMonth.setHours(23, 59, 59, 999);
+        
+        // Custom date range
+        const customStart = customDateStart.value ? new Date(customDateStart.value) : null;
+        const customEnd = customDateEnd.value ? new Date(customDateEnd.value) : null;
+        if (customEnd) customEnd.setHours(23, 59, 59, 999);
+        
+        switch(dateFilterValue) {
+          case 'today':
+            matchDate = dueDate >= today && dueDate < tomorrow;
+            break;
+          case 'yesterday':
+            matchDate = dueDate >= yesterday && dueDate < today;
+            break;
+          case 'thisWeek':
+            matchDate = dueDate >= startOfWeek && dueDate <= endOfWeek;
+            break;
+          case 'lastWeek':
+            matchDate = dueDate >= startOfLastWeek && dueDate <= endOfLastWeek;
+            break;
+          case 'thisMonth':
+            matchDate = dueDate >= startOfMonth && dueDate <= endOfMonth;
+            break;
+          case 'lastMonth':
+            matchDate = dueDate >= startOfLastMonth && dueDate <= endOfLastMonth;
+            break;
+          case 'custom':
+            if (customStart && customEnd) {
+              matchDate = dueDate >= customStart && dueDate <= customEnd;
+            } else if (customStart) {
+              matchDate = dueDate >= customStart;
+            } else if (customEnd) {
+              matchDate = dueDate <= customEnd;
+            }
+            break;
+        }
+      } else {
+        matchDate = false; // If no due date and filtering by date
+      }
+    }
+    
+    return matchCompany && matchOwner && matchStatus && matchDate;
+  });
+
+  // Update folder stats
+  taskCountSpan.textContent = filteredTasks.length;
+
+  currentPage = 1;
+  renderTablePage(currentPage, filteredTasks);
+  renderPagination(filteredTasks);
+}
+
+// Attach filter input listeners
+[searchCompany, searchOwner, statusFilter, dateFilter, customDateStart, customDateEnd].forEach(el =>
+  el.addEventListener('input', applyFilters)
+);
+
+// Show/hide custom date inputs based on date filter selection
+dateFilter.addEventListener('change', function() {
+  if (this.value === 'custom') {
+    customDateStart.style.display = 'inline-block';
+    customDateEnd.style.display = 'inline-block';
+  } else {
+    customDateStart.style.display = 'none';
+    customDateEnd.style.display = 'none';
+  }
+  applyFilters();
+});
+
+// Folder selector change
+folderSelector.addEventListener('change', function() {
+  currentFolder = this.value;
+  applyFilters();
+});
+
+// Load tasks and folders on page load
+window.onload = async () => {
+  await loadFolders();
+  await loadTasks();
+};
+
+// Open modal on + button click
+createTaskBtn.addEventListener('click', () => {
+  editingTaskId = null;
+  modalTitle.textContent = 'Create New Task';
+  populateDropdowns();
+  taskForm.reset();
+  
+  // Hide time editing section for new tasks
+  timeEditSection.style.display = 'none';
+  
+  document.getElementById('timeStartInput').value = '';
+  document.getElementById('timeEndInput').value = '';
+  document.getElementById('totalWorkHours').value = '';
+  document.getElementById('totalPauseHours').value = '';
+  document.getElementById('remarksInput').value = '';
+  
+  // Set default folder if a specific folder is selected
+  if (currentFolder !== 'All Tasks') {
+    folderSelectInModal.value = currentFolder;
+  } else {
+    folderSelectInModal.value = '';
+  }
+  
+  taskModal.style.display = 'flex';
+});
+
+// Create folder button
+createFolderBtn.addEventListener('click', () => {
+  const folderName = prompt('Enter new folder name:');
+  if (folderName) {
+    createFolder(folderName);
+  }
+});
+
+// Manage folders button
+manageFoldersBtn.addEventListener('click', () => {
+  renderFolderList();
+  folderModal.style.display = 'flex';
+});
+
+// Create folder in modal
+createFolderModalBtn.addEventListener('click', () => {
+  const folderName = newFolderNameInput.value.trim();
+  if (folderName) {
+    createFolder(folderName);
+    newFolderNameInput.value = '';
+  } else {
+    showToast('Please enter a folder name', 'error');
+  }
+});
+
+// Prevent modal from closing when clicking outside
+taskModal.addEventListener('click', (e) => {
+  if (e.target === taskModal) {
+    // Do nothing - prevent closing
+  }
+});
+
+folderModal.addEventListener('click', (e) => {
+  if (e.target === folderModal) {
+    // Do nothing - prevent closing
+  }
+});
+
+// Close modal with cancel button or escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && taskModal.style.display === 'flex') {
+    closeTaskModal();
+  }
+  if (e.key === 'Escape' && folderModal.style.display === 'flex') {
+    closeFolderModal();
+  }
+});
+
+// Populate Owner and Assigned By dropdowns from existing tasks
+function populateDropdowns() {
+  const owners = new Set();
+  const assignedBys = new Set();
+  const workTypes = new Set();
+  const accountsCards = new Set();
+
+  allTasks.forEach(task => {
+    if (task.Owner) owners.add(task.Owner);
+    if (task['Assigned By']) assignedBys.add(task['Assigned By']);
+    if (task['TYPE OF WORK']) workTypes.add(task['TYPE OF WORK']);
+    if (task['Accounts / Cards']) accountsCards.add(task['Accounts / Cards']);
+  });
+
+  ownerSelect.innerHTML = '<option value="">Select Owner</option>';
+  assignedBySelect.innerHTML = '<option value="">Select Assigned By</option>';
+  
+  const workTypeList = document.getElementById('workTypeList');
+  workTypeList.innerHTML = '';
+  
+  const accountsCardsList = document.getElementById('accountsCardsList');
+  accountsCardsList.innerHTML = '';
+
+  owners.forEach(name => {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    ownerSelect.appendChild(option);
+  });
+
+  assignedBys.forEach(name => {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    assignedBySelect.appendChild(option);
+  });
+  
+  workTypes.forEach(type => {
+    const option = document.createElement('option');
+    option.value = type;
+    workTypeList.appendChild(option);
+  });
+  
+  accountsCards.forEach(account => {
+    const option = document.createElement('option');
+    option.value = account;
+    accountsCardsList.appendChild(option);
+  });
+  
+  // Add "Add New" option to both dropdowns
+  const addNewOptionOwner = document.createElement('option');
+  addNewOptionOwner.value = "add-new";
+  addNewOptionOwner.textContent = "+ Add New Owner";
+  addNewOptionOwner.classList.add('add-new');
+  ownerSelect.appendChild(addNewOptionOwner);
+  
+  const addNewOptionAssignedBy = document.createElement('option');
+  addNewOptionAssignedBy.value = "add-new";
+  addNewOptionAssignedBy.textContent = "+ Add New Assigner";
+  addNewOptionAssignedBy.classList.add('add-new');
+  assignedBySelect.appendChild(addNewOptionAssignedBy);
+}
+
+// When user types company name, prefill if exists
+companyInput.addEventListener('input', () => {
+  const val = companyInput.value.trim().toLowerCase();
+  if (!val) return;
+  const existingTask = allTasks.find(task => (task['Existing Company Name']?.toLowerCase() === val));
+  if (existingTask) {
+    taskForm.elements['typeOfWork'].value = existingTask['TYPE OF WORK'] || '';
+    taskForm.elements['accountType'].value = existingTask['ACCOUNT TYPE'] || '';
+    taskForm.elements['accountsCards'].value = existingTask['Accounts / Cards'] || '';
+    taskForm.elements['owner'].value = existingTask.Owner || '';
+    taskForm.elements['assignedBy'].value = existingTask['Assigned By'] || '';
+  }
+});
+
+// Handle "Add New" option in dropdowns
+ownerSelect.addEventListener('change', function() {
+  if (this.value === "add-new") {
+    currentPersonType = "owner";
+    document.getElementById('addPersonModalTitle').textContent = "Add New Owner";
+    document.getElementById('newPersonName').value = '';
+    addPersonModal.style.display = 'flex';
+    this.selectedIndex = 0; // Reset selection
+  }
+});
+
+assignedBySelect.addEventListener('change', function() {
+  if (this.value === "add-new") {
+    currentPersonType = "assignedBy";
+    document.getElementById('addPersonModalTitle').textContent = "Add New Assigner";
+    document.getElementById('newPersonName').value = '';
+    addPersonModal.style.display = 'flex';
+    this.selectedIndex = 0; // Reset selection
+  }
+});
+
+// Handle adding new person
+addPersonForm.addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const name = newPersonName.value.trim();
+  if (!name) {
+    showToast('Please enter a name', 'error');
+    return;
+  }
+  
+  // Add the new person to the appropriate dropdown
+  if (currentPersonType === "owner") {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    ownerSelect.insertBefore(option, ownerSelect.lastChild);
+    ownerSelect.value = name;
+  } else if (currentPersonType === "assignedBy") {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    assignedBySelect.insertBefore(option, assignedBySelect.lastChild);
+    assignedBySelect.value = name;
+  }
+  
+  closeAddPersonModal();
+  showToast('Person added successfully', 'success');
+});
+
+// Generate SINO: generates globally incremented SINO ignoring company name
+function generateSINO() {
+  let maxNumber = 0;
+  allTasks.forEach(task => {
+    if (task.SINO) {
+      const match = task.SINO.match(/(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNumber) maxNumber = num;
+      }
+    }
+  });
+
+  const nextNumber = maxNumber + 1;
+  return String(nextNumber).padStart(3, '0');
+}
+
+function cleanUndefined(obj) {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, v]) => v !== undefined)
+  );
+}
+
+// Calculate time difference between two timestamps
+function calculateTimeDifference(start, end) {
+  if (!start || !end) return { hours: 0, minutes: 0 };
+  
+  let startTime, endTime;
+  
+  // Handle Firestore timestamps
+  if (start.toDate) {
+    startTime = start.toDate();
+  } else if (start instanceof Date) {
+    startTime = start;
+  } else {
+    startTime = new Date(start);
+  }
+  
+  if (end.toDate) {
+    endTime = end.toDate();
+  } else if (end instanceof Date) {
+    endTime = end;
+  } else {
+    endTime = new Date(end);
+  }
+  
+  const diffMs = endTime - startTime;
+  
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  
+  return { hours, minutes };
+}
+
+// Update time display when start/end times change
+document.getElementById('timeStartInput').addEventListener('change', updateTimeDisplay);
+document.getElementById('timeEndInput').addEventListener('change', updateTimeDisplay);
+
+function updateTimeDisplay() {
+  const startTime = document.getElementById('timeStartInput').value;
+  const endTime = document.getElementById('timeEndInput').value;
+  
+  if (startTime && endTime) {
+    const { hours, minutes } = calculateTimeDifference(new Date(startTime), new Date(endTime));
+    document.getElementById('totalWorkHours').value = `${hours}h ${minutes}m`;
+  }
+}
+
+taskForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData(taskForm);
+  const data = {};
+
+  formData.forEach((value, key) => {
+    data[key] = value.trim();
+  });
+
+  if (!data.folderName || !data.company || !data.typeOfWork || !data.dueDate || !data.owner || !data.assignedBy) {
+    showToast('Please fill in all required fields including Folder.', 'error');
+    return;
+  }
+
+  // Handle time inputs
+  const timeStartInput = document.getElementById('timeStartInput').value;
+  const timeEndInput = document.getElementById('timeEndInput').value;
+  const remarksInput = document.getElementById('remarksInput').value;
+  
+  let taskStart = null;
+  let taskEnd = null;
+  
+  if (timeStartInput) {
+    taskStart = firebase.firestore.Timestamp.fromDate(new Date(timeStartInput));
+  }
+  
+  if (timeEndInput) {
+    taskEnd = firebase.firestore.Timestamp.fromDate(new Date(timeEndInput));
+  }
+
+  // Create or update work sessions based on time inputs
+  let workSessions = [];
+  if (timeStartInput && timeEndInput) {
+    workSessions = [{
+      start: taskStart,
+      end: taskEnd
+    }];
+  } else if (timeStartInput) {
+    workSessions = [{
+      start: taskStart,
+      end: null
+    }];
+  }
+
+  const taskData = {
+    SINO: editingTaskId ? undefined : generateSINO(),
+    Status: editingTaskId ? undefined : 'Not Started',
+    'Existing Company Name': data.company,
+    'TYPE OF WORK': data.typeOfWork,
+    'ACCOUNT TYPE': data.accountType || '',
+    'Accounts / Cards': data.accountsCards || '',
+    Task: data.task || '',
+    Owner: data.owner,
+    'WORK FOR': data.workFor || '',
+    PERIOD: data.period || '',
+    'Due date': data.dueDate,
+    'Assigned By': data.assignedBy,
+    Notes: data.notes || '',
+    taskStart: taskStart,
+    taskEnd: taskEnd,
+    TimeStarted: timeStartInput ? new Date(timeStartInput).toLocaleString() : '',
+    TimeEnd: timeEndInput ? new Date(timeEndInput).toLocaleString() : '',
+    TotalWorkHours: document.getElementById('totalWorkHours').value,
+    TotalPauseHours: document.getElementById('totalPauseHours').value,
+    Remarks: remarksInput || '',
+    workSessions: workSessions,
+    folderName: data.folderName
+  };
+
+  try {
+    if (editingTaskId) {
+      // Update existing task - preserve existing fields not in the form
+      const existingTask = allTasks.find(t => t.id === editingTaskId);
+      if (!existingTask) throw new Error("Task not found for editing.");
+
+      // Create updated task data by merging existing with new
+      const updatedTask = { 
+        ...existingTask, 
+        ...cleanUndefined(taskData)
+      };
+
+      // Preserve existing work sessions if no new time data is provided
+      if (!timeStartInput && !timeEndInput && existingTask.workSessions) {
+        updatedTask.workSessions = existingTask.workSessions;
+      }
+
+      await db.collection('tasks').doc(editingTaskId).set(updatedTask);
+      showToast('Task updated successfully!', 'success');
+      editingTaskId = null;
+    } else {
+      // Create new task
+      await db.collection('tasks').add(taskData);
+      showToast('Task created successfully!', 'success');
+    }
+
+    closeTaskModal();
+    loadTasks();
+  } catch (err) {
+    console.error('Error saving task:', err);
+    showToast('Error saving task. See console for details.', 'error');
+  }
+});
+
+// Update Accounts/Cards list based on company and account type
+const accountTypeSelect = taskForm.elements['accountType'];
+const accountsCardsList = document.getElementById('accountsCardsList');
+
+function updateAccountsCardsList() {
+  const company = companyInput.value.trim();
+  const accountType = accountTypeSelect.value;
+
+  accountsCardsList.innerHTML = '';
+
+  if (!company) return;
+
+  const cardsSet = new Set();
+
+  allTasks.forEach(task => {
+    const taskCompany = task['Existing Company Name'] || '';
+    const taskAccountType = task['ACCOUNT TYPE'] || '';
+
+    if (
+      taskCompany.toLowerCase() === company.toLowerCase() &&
+      taskAccountType.toLowerCase() === accountType.toLowerCase() &&
+      task['Accounts / Cards']
+    ) {
+      cardsSet.add(task['Accounts / Cards']);
+    }
+  });
+
+  cardsSet.forEach(card => {
+    const option = document.createElement('option');
+    option.value = card;
+    accountsCardsList.appendChild(option);
+  });
+}
+
+// Add event listeners to update Accounts / Cards dynamically
+companyInput.addEventListener('input', updateAccountsCardsList);
+accountTypeSelect.addEventListener('change', updateAccountsCardsList);
+
+// Show/hide period input based on WORK FOR selection
+document.getElementById('workForSelect').addEventListener('change', function () {
+  const val = this.value;
+  const period = document.getElementById('periodInput');
+  if (val) {
+    period.style.display = 'inline-block';
+    period.placeholder = `${val} Period`;
+  } else {
+    period.style.display = 'none';
+  }
+});
+
+// CSV Upload functionality
+uploadCSVBtn.addEventListener('click', () => {
+  csvUpload.click();
+});
+
+csvUpload.addEventListener('change', handleCSVUpload);
+
+async function handleCSVUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return showToast('No file selected.', 'error');
+
+  // Reset upload state
+  uploadInProgress = true;
+  uploadProgressModal.style.display = 'flex';
+  progressBar.style.width = '0%';
+  progressBar.textContent = '0%';
+  uploadStatus.textContent = 'Parsing CSV file...';
+  
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: async function (results) {
+      if (!uploadInProgress) return;
+      
+      const rows = results.data;
+      uploadStatus.textContent = `Processing ${rows.length} tasks...`;
+
+      const requiredHeaders = ['SINO', 'Company', 'Type of Work', 'Owner', 'DueDate', 'Assigned By', 'Status'];
+      const csvHeaders = Object.keys(rows[0]);
+
+      const hasAllRequired = requiredHeaders.every(h => csvHeaders.includes(h));
+      if (!hasAllRequired) {
+        closeUploadProgressModal();
+        return showToast('Missing required headers in CSV.', 'error');
+      }
+
+      const tasksToUpload = [];
+      const tasksToUpdate = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        if (!uploadInProgress) break;
+        
+        const row = rows[i];
+        const dueDateStr = row['DueDate'];
+        const timeStartStr = row['Time Started'];
+        const timeEndStr = row['Time End'];
+        const folderName = row['Folder'] || ''; // New folder column
+
+        let timeStart = null, timeEnd = null;
+        try {
+          // Convert to valid Date
+          timeStart = timeStartStr ? new Date(timeStartStr) : null;
+          timeEnd = timeEndStr ? new Date(timeEndStr) : null;
+        } catch (e) {
+          console.warn(`Invalid time format in row ${i + 2}`);
+        }
+
+        const workSessions = (timeStart && timeEnd)
+          ? [{
+              start: firebase.firestore.Timestamp.fromDate(timeStart),
+              end: firebase.firestore.Timestamp.fromDate(timeEnd)
+            }]
+          : [];
+
+        const finalTask = {
+          SINO: row['SINO'],
+          'Existing Company Name': row['Company'],
+          'TYPE OF WORK': row['Type of Work'],
+          'ACCOUNT TYPE': row['Account Type'],
+          'Accounts / Cards': row['Accounts / Cards'],
+          Task: row['Task'],
+          Owner: row['Owner'],
+          'WORK FOR': row['Work For'],
+          PERIOD: row['Period'],
+          'Due date': row['DueDate'],
+          'Assigned By': row['Assigned By'],
+          Notes: row['Notes'],
+          Status: row['Status'] || 'Not Started',
+          folderName: folderName, // Add folder from CSV
+
+          TimeStarted: timeStart ? timeStart.toLocaleString() : '',
+          TimeEnd: timeEnd ? timeEnd.toLocaleString() : '',
+          taskStart: timeStart ? firebase.firestore.Timestamp.fromDate(timeStart) : null,
+          taskEnd: timeEnd ? firebase.firestore.Timestamp.fromDate(timeEnd) : null,
+
+          TotalWorkHours: row['Total Work Hours'] || '',
+          TotalPauseHours: row['Total Pause Hours'] || '',
+          Remarks: row['Remarks'] || '',
+          workSessions
+        };
+
+        // If folder doesn't exist, create it
+        if (folderName && !folders.includes(folderName) && folderName !== 'All Tasks') {
+          await createFolder(folderName);
+        }
+
+        // Check if task already exists by SINO
+        const existingTask = allTasks.find(t => t.SINO === row['SINO']);
+        
+        if (existingTask) {
+          // Task exists - check for changes
+          const changes = getTaskChanges(existingTask, finalTask);
+          
+          if (Object.keys(changes).length > 0) {
+            // Ask for confirmation if there are significant changes
+            if (await confirmTaskUpdate(existingTask, finalTask, changes)) {
+              tasksToUpdate.push({
+                id: existingTask.id,
+                ...finalTask
+              });
+            }
+          }
+        } else {
+          // New task
+          tasksToUpload.push(finalTask);
+        }
+        
+        // Update progress
+        const progress = Math.round(((i + 1) / rows.length) * 100);
+        progressBar.style.width = `${progress}%`;
+        progressBar.textContent = `${progress}%`;
+        uploadStatus.textContent = `Processing ${i + 1} of ${rows.length} tasks...`;
+      }
+
+      if (!uploadInProgress) {
+        closeUploadProgressModal();
+        return;
+      }
+
+      try {
+        uploadStatus.textContent = 'Uploading to database...';
+        
+        const batch = db.batch();
+        const tasksRef = db.collection('tasks');
+
+        // Upload new tasks
+        for (let i = 0; i < tasksToUpload.length; i++) {
+          if (!uploadInProgress) break;
+          
+          const task = tasksToUpload[i];
+          const newDoc = tasksRef.doc();
+          batch.set(newDoc, task);
+          
+          // Update progress
+          const progress = Math.round(((i + 1) / (tasksToUpload.length + tasksToUpdate.length)) * 100);
+          progressBar.style.width = `${progress}%`;
+          progressBar.textContent = `${progress}%`;
+          uploadStatus.textContent = `Uploading ${i + 1} of ${tasksToUpload.length + tasksToUpdate.length} tasks...`;
+        }
+
+        // Update existing tasks
+        for (let i = 0; i < tasksToUpdate.length; i++) {
+          if (!uploadInProgress) break;
+          
+          const task = tasksToUpdate[i];
+          batch.set(tasksRef.doc(task.id), task);
+          
+          // Update progress
+          const progress = Math.round(((tasksToUpload.length + i + 1) / (tasksToUpload.length + tasksToUpdate.length)) * 100);
+          progressBar.style.width = `${progress}%`;
+          progressBar.textContent = `${progress}%`;
+          uploadStatus.textContent = `Uploading ${tasksToUpload.length + i + 1} of ${tasksToUpload.length + tasksToUpdate.length} tasks...`;
+        }
+
+        if (uploadInProgress) {
+          await batch.commit();
+          closeUploadProgressModal();
+          showToast(`${tasksToUpload.length} new tasks uploaded and ${tasksToUpdate.length} tasks updated successfully.`, 'success');
+          loadTasks(); // Reload the task table
+        }
+      } catch (err) {
+        console.error('Error uploading tasks:', err);
+        closeUploadProgressModal();
+        showToast('Failed to upload tasks. See console for details.', 'error');
+      }
+    },
+    error: function (err) {
+      console.error("PapaParse error:", err);
+      closeUploadProgressModal();
+      showToast("CSV parsing failed.", 'error');
+    }
+  });
+}
+
+// Get changes between existing and new task data
+function getTaskChanges(existingTask, newTask) {
+  const changes = {};
+  
+  // Compare key fields
+  const fieldsToCompare = [
+    'Existing Company Name', 'TYPE OF WORK', 'ACCOUNT TYPE', 'Accounts / Cards',
+    'Task', 'Owner', 'WORK FOR', 'PERIOD', 'Due date', 'Assigned By',
+    'Status', 'Notes', 'Remarks', 'folderName'
+  ];
+  
+  fieldsToCompare.forEach(field => {
+    const existingValue = existingTask[field] || '';
+    const newValue = newTask[field] || '';
+    
+    if (existingValue !== newValue) {
+      changes[field] = {
+        from: existingValue,
+        to: newValue
+      };
+    }
+  });
+  
+  return changes;
+}
+
+// Confirm task update with user
+async function confirmTaskUpdate(existingTask, newTask, changes) {
+  return new Promise((resolve) => {
+    // Create a modal to show changes
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    `;
+    
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+    `;
+    
+    let changesHtml = '<h3>Task Update Required</h3>';
+    changesHtml += `<p>Task ${existingTask.SINO} already exists. The following changes will be made:</p>`;
+    changesHtml += '<ul style="margin: 15px 0;">';
+    
+    Object.keys(changes).forEach(field => {
+      changesHtml += `<li><strong>${field}:</strong> "${changes[field].from}" → "${changes[field].to}"</li>`;
+    });
+    
+    changesHtml += '</ul>';
+    changesHtml += '<p>Do you want to proceed with these changes?</p>';
+    
+    modalContent.innerHTML = changesHtml;
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = 'display: flex; justify-content: space-between; margin-top: 20px;';
+    
+    const confirmBtn = document.createElement('button');
+    confirmBtn.textContent = 'Yes, Update';
+    confirmBtn.style.cssText = 'background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;';
+    confirmBtn.onclick = () => {
+      document.body.removeChild(modal);
+      resolve(true);
+    };
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'No, Skip';
+    cancelBtn.style.cssText = 'background: #f44336; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;';
+    cancelBtn.onclick = () => {
+      document.body.removeChild(modal);
+      resolve(false);
+    };
+    
+    buttonContainer.appendChild(confirmBtn);
+    buttonContainer.appendChild(cancelBtn);
+    modalContent.appendChild(buttonContainer);
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
+  });
+}
+
+// Download CSV Template (updated with Folder column)
+function downloadCSVTemplate() {
+  // Create sample data for the template with Folder column
+  const sampleData = [
+    {
+      'SINO': '001',
+      'Folder': 'ABC Corp', // New folder column
+      'Company': 'ABC Corporation',
+      'Type of Work': 'Account Reconciliation',
+      'Account Type': 'Saving Acc',
+      'Accounts / Cards': 'Account 12345',
+      'Task': 'Monthly reconciliation',
+      'Owner': 'John Doe',
+      'Work For': 'Monthly',
+      'Period': 'January 2023',
+      'DueDate': '2023-01-31',
+      'Assigned By': 'Manager',
+      'Notes': 'Complete reconciliation by end of month',
+      'Status': 'Not Started',
+      'Time Started': '2023-01-15T09:00',
+      'Time End': '2023-01-15T17:00',
+      'Total Work Hours': '8h 0m',
+      'Total Pause Hours': '1h 0m',
+      'Remarks': 'Completed successfully'
+    },
+    {
+      'SINO': '002',
+      'Folder': 'XYZ Ltd',
+      'Company': 'XYZ Ltd',
+      'Type of Work': 'Tax Filing',
+      'Account Type': 'Chequing Acc',
+      'Accounts / Cards': 'Account 67890',
+      'Task': 'Quarterly tax filing',
+      'Owner': 'Jane Smith',
+      'Work For': 'Quarterly',
+      'Period': 'Q1 2023',
+      'DueDate': '2023-04-15',
+      'Assigned By': 'Supervisor',
+      'Notes': 'File quarterly taxes',
+      'Status': 'In Progress',
+      'Time Started': '2023-04-01T10:00',
+      'Time End': '2023-04-01T16:30',
+      'Total Work Hours': '6h 30m',
+      'Total Pause Hours': '0h 30m',
+      'Remarks': 'In progress'
+    }
+  ];
+
+  // Convert to CSV
+  const csv = Papa.unparse(sampleData);
+  
+  // Create and download the file
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'task_template_with_folders.csv');
+  link.style.visibility = 'hidden';
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('CSV template with Folder column downloaded', 'success');
+}
+
+// Make functions available globally
+window.closeTaskModal = closeTaskModal;
+window.closeAddPersonModal = closeAddPersonModal;
+window.closeUploadProgressModal = closeUploadProgressModal;
+window.closeFolderModal = closeFolderModal;
+window.promptRenameFolder = promptRenameFolder;
+window.promptDeleteFolder = promptDeleteFolder;
+</script>
+</body>
+</html>
